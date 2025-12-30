@@ -93,7 +93,7 @@
 
                         <p class="text-center">
                             <span>Belum ada Akun ?</span>
-                            <a href="{{ route('register') }}">
+                            <a href="{{ route('pegawai.register.form') }}">
                                 <span>Daftar Akun</span>
                             </a>
                         </p>

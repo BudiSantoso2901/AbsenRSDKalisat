@@ -17,7 +17,10 @@ class Pegawai extends Model
         'id_jabatan',
         'id_lokasi',
         'id_jam_kerja',
-        'foto_pegawai'
+        'foto_pegawai',
+        'status',
     ];
-    protected $hidden = ['password'];
+    protected $hidden = [
+        'password',
+    ];
 }

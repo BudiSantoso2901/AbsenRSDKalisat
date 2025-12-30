@@ -64,7 +64,7 @@
                         <!-- /Logo -->
                         <h4 class="mb-2">Pendaftaran Pegawai</h4>
                         <p class="mb-4">Isikan sesuai dengan form yang ada !</p>
-                        <form action="" method="POST" enctype="multipart/form-data">
+                        <form action="{{ route('pegawai.register') }}" method="POST" enctype="multipart/form-data">
 
                             @csrf
 
@@ -95,9 +95,9 @@
                                     <label class="form-label">Jabatan</label>
                                     <select name="id_jabatan" class="form-select" required>
                                         <option value="">Pilih Jabatan</option>
-                                        {{-- @foreach ($jabatan as $j)
+                                        @foreach ($jabatan as $j)
                                         <option value="{{ $j->id }}">{{ $j->nama_jabatan }}</option>
-                                        @endforeach --}}
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -108,9 +108,9 @@
                                     <label class="form-label">Lokasi Kerja</label>
                                     <select name="id_lokasi" class="form-select" required>
                                         <option value="">Pilih Lokasi</option>
-                                        {{-- @foreach ($lokasi as $l)
+                                        @foreach ($lokasi as $l)
                                         <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
-                                        @endforeach --}}
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -118,9 +118,9 @@
                                     <label class="form-label">Jam Kerja</label>
                                     <select name="id_jam_kerja" class="form-select" required>
                                         <option value="">Pilih Jam Kerja</option>
-                                        {{-- @foreach ($jamKerja as $jk)
-                                        <option value="{{ $jk->id }}">{{ $jk->nama_shift }}</option>
-                                        @endforeach --}}
+                                        @foreach ($jamKerja as $jk)
+                                        <option value="{{ $jk->id }}">{{ $jk->nama_jam_kerja }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -139,12 +139,6 @@
                                         placeholder="••••••••" required>
                                 </div>
                             </div>
-
-                            <!-- FOTO -->
-                            {{-- <div class="mb-3">
-                                <label class="form-label">Foto Pegawai (Opsional)</label>
-                                <input type="file" name="foto_pegawai" class="form-control" accept="image/*">
-                            </div> --}}
 
                             <!-- INFO -->
                             <div class="alert alert-light small mb-3">
