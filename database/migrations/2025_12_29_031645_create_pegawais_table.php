@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pegawai', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_pegawai');
+            $table->string('name');
             $table->char('nip', 18)->unique();
             $table->string('email')->unique();
             $table->string('password');
@@ -21,6 +21,8 @@ return new class extends Migration
             $table->foreignId('id_lokasi')->constrained('lokasi')->cascadeOnDelete();
             $table->foreignId('id_jam_kerja')->constrained('jam_kerja')->cascadeOnDelete();
             $table->string('foto_pegawai')->nullable();
+
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
         });
     }
