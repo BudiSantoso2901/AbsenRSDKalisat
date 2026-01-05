@@ -31,19 +31,19 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'login' => 'required',
-            'password' => 'required'
+            'login'    => 'required|string',
+            'password' => 'required|string'
         ]);
 
-        $login = $request->login;
+        $login    = $request->login;
         $password = $request->password;
 
-        /**
-         * ======================
-         * LOGIN ADMIN (USERS)
-         * ======================
-         * Login pakai NAME
-         */
+        /*
+    |--------------------------------------------------------------------------
+    | LOGIN ADMIN
+    |--------------------------------------------------------------------------
+    | Login menggunakan NAME
+    */
         $admin = User::where('name', $login)->first();
 
         if ($admin && Hash::check($password, $admin->password)) {
@@ -53,26 +53,49 @@ class LoginController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        /**
-         * ======================
-         * LOGIN PEGAWAI
-         * ======================
-         * Login pakai NIP
-         */
+        /*
+    |--------------------------------------------------------------------------
+    | LOGIN PEGAWAI
+    |--------------------------------------------------------------------------
+    | Login menggunakan NIP + status approved
+    */
         $pegawai = Pegawai::where('nip', $login)->first();
 
-        if ($pegawai && Hash::check($password, $pegawai->password)) {
+        if ($pegawai) {
+
+            // cek password
+            if (!Hash::check($password, $pegawai->password)) {
+                return back()->withErrors([
+                    'login' => 'Password salah'
+                ])->withInput();
+            }
+
+            // cek status akun
+            if ($pegawai->status !== 'approved') {
+
+                $pesan = match ($pegawai->status) {
+                    'pending'  => 'Akun belum disetujui oleh admin',
+                    'rejected' => 'Akun ditolak, silakan hubungi admin',
+                    default    => 'Status akun tidak valid'
+                };
+
+                return back()->withErrors([
+                    'login' => $pesan
+                ])->withInput();
+            }
+
+            // login pegawai
             Auth::login($pegawai);
             session(['role' => 'pegawai']);
 
             return redirect()->route('pegawai.dashboard');
         }
 
-        /**
-         * ======================
-         * GAGAL LOGIN
-         * ======================
-         */
+        /*
+    |--------------------------------------------------------------------------
+    | LOGIN GAGAL
+    |--------------------------------------------------------------------------
+    */
         return back()->withErrors([
             'login' => 'Username / NIP atau password salah'
         ])->withInput();

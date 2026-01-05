@@ -73,7 +73,7 @@
                                 <input type="text" name="login"
                                     class="form-control @error('login') is-invalid @enderror"
                                     placeholder="Masukkan Username Admin atau NIP Pegawai" value="{{ old('login') }}"
-                                    autofocus>
+                                    autofocus maxlength="18">
                                 @error('login')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

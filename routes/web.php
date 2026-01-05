@@ -14,11 +14,11 @@ use App\Http\Controllers\LoginController;
 |
 */
 
-Route::get('/', function () {
-    return view('_layouts.Dashboard');
-});
+// Route::get('/', function () {
+//     return view('_layouts.Dashboard');
+// });
 
-Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
+Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::get('/register', [LoginController::class, 'showRegister'])->name('register');
 Route::post('/login', [LoginController::class, 'login'])->name('login.process');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
