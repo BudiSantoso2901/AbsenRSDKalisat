@@ -6,6 +6,30 @@
     --rs-white: #ffffff;
 }
 
+/* Toggle sidebar background hijau */
+.layout-menu-toggle {
+    background-color: var(--rs-green) !important;
+    /* border-radius: 8px;
+    padding: 6px 10px; */
+}
+
+/* Chevron putih */
+.layout-menu-toggle i {
+    color: var(--rs-white) !important;
+}
+
+/* Hover effect */
+.layout-menu-toggle:hover {
+    background-color: #075e0e !important;
+    /* hijau lebih gelap */
+}
+
+/* Animasi halus */
+.layout-menu-toggle,
+.layout-menu-toggle i {
+    transition: all 0.3s ease;
+}
+
 /* Background sidebar netral */
 .bg-menu-theme,
 .layout-menu {
@@ -54,6 +78,7 @@
     font-weight: 600;
 }
 
-.layout-menu-toggle i {
+/* .layout-menu-toggle i {
     color: var(--rs-white) !important;
-}
+} */
+

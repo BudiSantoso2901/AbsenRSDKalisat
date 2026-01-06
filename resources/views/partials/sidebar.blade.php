@@ -66,6 +66,12 @@
                 <div data-i18n="Analytics">Dashboard</div>
             </a>
         </li>
+        <li class="menu-item">
+            <a href="cards-basic.html" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-clipboard"></i>
+                <div data-i18n="Basic">Camera</div>
+            </a>
+        </li>
 
         <!-- Layouts -->
         <li class="menu-item">
@@ -102,7 +108,7 @@
             </ul>
         </li>
         <!-- Components -->
-        <li class="menu-header small text-uppercase"><span class="menu-header-text">Components</span></li>
+        <li class="menu-header small text-uppercase"><span class="menu-header-text"></span></li>
         <!-- Cards -->
         <li class="menu-item">
             <a href="cards-basic.html" class="menu-link">
@@ -117,7 +123,7 @@
             </a>
         </li>
         <!-- Misc -->
-        <li class="menu-header small text-uppercase"><span class="menu-header-text">Misc</span></li>
+        <li class="menu-header small text-uppercase"><span class="menu-header-text"></span></li>
         <li class="menu-item">
             <a href="https://themeselection.com/demo/sneat-bootstrap-html-admin-template/documentation/" target="_blank"
                 class="menu-link">
@@ -126,13 +132,16 @@
             </a>
         </li>
         <li class="menu-item">
-            <a href="https://github.com/themeselection/sneat-html-admin-template-free/issues" target="_blank"
-                class="menu-link">
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                @csrf
+            </form>
+
+            <a href="#" class="menu-link"
+                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                 <i class="menu-icon tf-icons bx bx-exit"></i>
                 <div data-i18n="Support">Logout</div>
             </a>
         </li>
-
     </ul>
 </aside>
 <!-- / Menu -->

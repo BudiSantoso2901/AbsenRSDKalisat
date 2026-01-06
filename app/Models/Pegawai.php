@@ -14,6 +14,7 @@ class Pegawai extends Model
         'nip',
         'email',
         'password',
+        'tanggal_lahir',
         'id_jabatan',
         'id_lokasi',
         'id_jam_kerja',
@@ -23,4 +24,16 @@ class Pegawai extends Model
     protected $hidden = [
         'password',
     ];
+    public function jabatan()
+    {
+        return $this->belongsTo(Jabatan::class, 'id_jabatan');
+    }
+    public function lokasi()
+    {
+        return $this->belongsTo(Lokasi::class, 'id_lokasi');
+    }
+    public function jamKerja()
+    {
+        return $this->belongsTo(JamKerja::class, 'id_jam_kerja');
+    }
 }

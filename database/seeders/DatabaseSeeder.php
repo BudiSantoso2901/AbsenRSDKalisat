@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
             JabatanSeeder::class,
             LokasiSeeder::class,
             JamKerjaSeeder::class,
+            PegawaiSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }
