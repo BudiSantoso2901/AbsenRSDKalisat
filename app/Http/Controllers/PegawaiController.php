@@ -132,9 +132,8 @@ class PegawaiController extends Controller
             'id_lokasi' => 'required|exists:lokasi,id',
             'id_jam_kerja' => 'required|exists:jam_kerja,id',
             // password tidak wajib (auto)
-            'password' => $id
-                ? 'nullable|min:6|confirmed'
-                : 'nullable',
+            'password' => $id ? 'nullable|min:6|confirmed' : 'nullable',
+
             'status' => 'nullable|in:pending,approved,rejected',
         ], [
             'name.required' => 'Nama wajib diisi',
