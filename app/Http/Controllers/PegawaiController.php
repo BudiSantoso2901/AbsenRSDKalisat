@@ -111,7 +111,11 @@ class PegawaiController extends Controller
         $pegawai = Pegawai::findOrFail($id);
 
         $validated = $this->validatePegawai($request, $id);
-
+        if (!empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
         $pegawai->update($validated);
 
         return response()->json([
@@ -145,6 +149,7 @@ class PegawaiController extends Controller
             'id_jabatan.required' => 'Jabatan wajib dipilih',
             'id_lokasi.required' => 'Lokasi wajib dipilih',
             'id_jam_kerja.required' => 'Jam kerja wajib dipilih',
+            'password.confirmed' => 'Konfirmasi password tidak cocok',
         ]);
     }
 
