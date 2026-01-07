@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\JabatanController;
+use App\Http\Controllers\JamKerjaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\PegawaiController;
 
 /*
@@ -34,4 +37,23 @@ Route::prefix('pegawai')->group(function () {
     Route::post('/tambah', [PegawaiController::class, 'store'])->name('pegawai.store');
     Route::put('/edit/{id}', [PegawaiController::class, 'update'])->name('pegawai.update');
     Route::delete('/hapus/{id}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
+});
+Route::prefix('jabatan')->group(function () {
+    Route::get('/list', [JabatanController::class, 'index'])->name('jabatan.index');
+    Route::post('/tambah', [JabatanController::class, 'store'])->name('jabatan.store');
+    Route::put('/edit/{id}', [JabatanController::class, 'update'])->name('jabatan.update');
+    Route::delete('/hapus/{id}', [JabatanController::class, 'destroy'])->name('jabatan.destroy');
+});
+Route::prefix('jam-kerja')->group(function () {
+    Route::get('/list', [JamKerjaController::class, 'index'])->name('jam-kerja.index');
+    Route::post('/tambah', [JamKerjaController::class, 'store'])->name('jam-kerja.store');
+    Route::put('/edit/{id}', [JamKerjaController::class, 'update'])->name('jam-kerja.update');
+    Route::delete('/hapus/{id}', [JamKerjaController::class, 'destroy'])->name('jam-kerja.destroy');
+});
+
+Route::prefix('lokasi')->group(function () {
+    Route::get('/list', [LokasiController::class, 'index'])->name('lokasi.index');
+    Route::post('/tambah', [LokasiController::class, 'store'])->name('lokasi.store');
+    Route::put('/edit/{id}', [LokasiController::class, 'update'])->name('lokasi.update');
+    Route::delete('/hapus/{id}', [LokasiController::class, 'destroy'])->name('lokasi.destroy');
 });
