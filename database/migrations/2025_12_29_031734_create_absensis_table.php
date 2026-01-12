@@ -12,11 +12,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_pegawai')->constrained('pegawai')->cascadeOnDelete();
             $table->date('tanggal');
-            $table->dateTime('waktu_masuk')->nullable();
-            $table->dateTime('waktu_pulang')->nullable();
+            $table->Time('waktu_masuk')->nullable();
+            $table->Time('waktu_pulang')->nullable();
             $table->string('foto_masuk')->nullable();
             $table->string('foto_pulang')->nullable();
-            $table->enum('status', ['hadir', 'izin', 'sakit'])->default('hadir');
+            $table->enum('status', ['hadir', 'izin', 'sakit', 'belum_hadir']);
             $table->string('surat')->nullable();
             $table->timestamps();
 

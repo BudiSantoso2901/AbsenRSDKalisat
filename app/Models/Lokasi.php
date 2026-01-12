@@ -16,4 +16,8 @@ class Lokasi extends Model
         'longitude',
         'radius_meter',
     ];
+    public function pegawai()
+    {
+        return $this->hasMany(Pegawai::class, 'id_lokasi');
+    }
 }

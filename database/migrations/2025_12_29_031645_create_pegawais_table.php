@@ -18,9 +18,15 @@ return new class extends Migration
             $table->date('tanggal_lahir')->unique();
             $table->string('email')->unique();
             $table->string('password');
-            $table->foreignId('id_jabatan')->constrained('jabatan')->cascadeOnDelete();
-            $table->foreignId('id_lokasi')->constrained('lokasi')->cascadeOnDelete();
-            $table->foreignId('id_jam_kerja')->constrained('jam_kerja')->cascadeOnDelete();
+            $table->foreignId('id_jabatan')
+                ->constrained('jabatan')
+                ->restrictOnDelete();
+            $table->foreignId('id_lokasi')
+                ->constrained('lokasi')
+                ->restrictOnDelete();
+            $table->foreignId('id_jam_kerja')
+                ->constrained('jam_kerja')
+                ->restrictOnDelete();
             $table->string('foto_pegawai')->nullable();
 
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');

@@ -14,13 +14,15 @@ class Absensi extends Model
         'id_pegawai',
         'tanggal',
         'waktu_masuk',
-        'waktu_keluar',
+        'waktu_pulang',
         'status',
         'keterangan',
-        'lokasi_masuk',
-        'lokasi_keluar',
         'foto_masuk',
-        'foto_keluar',
+        'foto_pulang',
         'surat'
     ];
+    protected $casts = [
+        'tanggal' => 'date',
+    ];
+
 }

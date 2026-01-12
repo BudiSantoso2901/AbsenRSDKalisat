@@ -25,35 +25,55 @@ use App\Http\Controllers\PegawaiController;
 
 // Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::get('/register', [LoginController::class, 'showRegister'])->name('register');
-Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
+Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login-prosess', [LoginController::class, 'login'])->name('login.process');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/admin/dashboard', [LoginController::class, 'dashboard'])->name('admin.dashboard');
 Route::get('/pegawai/register', [LoginController::class, 'get_register'])->name('pegawai.register.form');
 Route::post('/pegawai/register', [LoginController::class, 'register'])->name('pegawai.register');
-Route::get('/pegawai/kamera', [AbsensiController::class, 'kamera'])->name('pegawai.kamera');
-Route::prefix('pegawai')->group(function () {
-    Route::get('/list', [PegawaiController::class, 'index'])->name('pegawai.index');
-    Route::post('/tambah', [PegawaiController::class, 'store'])->name('pegawai.store');
-    Route::put('/edit/{id}', [PegawaiController::class, 'update'])->name('pegawai.update');
-    Route::delete('/hapus/{id}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
-});
-Route::prefix('jabatan')->group(function () {
-    Route::get('/list', [JabatanController::class, 'index'])->name('jabatan.index');
-    Route::post('/tambah', [JabatanController::class, 'store'])->name('jabatan.store');
-    Route::put('/edit/{id}', [JabatanController::class, 'update'])->name('jabatan.update');
-    Route::delete('/hapus/{id}', [JabatanController::class, 'destroy'])->name('jabatan.destroy');
-});
-Route::prefix('jam-kerja')->group(function () {
-    Route::get('/list', [JamKerjaController::class, 'index'])->name('jam-kerja.index');
-    Route::post('/tambah', [JamKerjaController::class, 'store'])->name('jam-kerja.store');
-    Route::put('/edit/{id}', [JamKerjaController::class, 'update'])->name('jam-kerja.update');
-    Route::delete('/hapus/{id}', [JamKerjaController::class, 'destroy'])->name('jam-kerja.destroy');
-});
 
-Route::prefix('lokasi')->group(function () {
-    Route::get('/list', [LokasiController::class, 'index'])->name('lokasi.index');
-    Route::post('/tambah', [LokasiController::class, 'store'])->name('lokasi.store');
-    Route::put('/edit/{id}', [LokasiController::class, 'update'])->name('lokasi.update');
-    Route::delete('/hapus/{id}', [LokasiController::class, 'destroy'])->name('lokasi.destroy');
-});
+Route::prefix('/')
+    ->middleware('admin.auth')
+    ->group(function () {
+
+        Route::prefix('pegawai')->group(function () {
+            Route::get('/list', [PegawaiController::class, 'index'])->name('pegawai.index');
+            Route::post('/tambah', [PegawaiController::class, 'store'])->name('pegawai.store');
+            Route::put('/edit/{id}', [PegawaiController::class, 'update'])->name('pegawai.update');
+            Route::delete('/hapus/{id}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
+        });
+
+        Route::prefix('jabatan')->group(function () {
+            Route::get('/list', [JabatanController::class, 'index'])->name('jabatan.index');
+            Route::post('/tambah', [JabatanController::class, 'store'])->name('jabatan.store');
+            Route::put('/edit/{id}', [JabatanController::class, 'update'])->name('jabatan.update');
+            Route::delete('/hapus/{id}', [JabatanController::class, 'destroy'])->name('jabatan.destroy');
+        });
+
+        Route::prefix('jam-kerja')->group(function () {
+            Route::get('/list', [JamKerjaController::class, 'index'])->name('jam-kerja.index');
+            Route::post('/tambah', [JamKerjaController::class, 'store'])->name('jam-kerja.store');
+            Route::put('/edit/{id}', [JamKerjaController::class, 'update'])->name('jam-kerja.update');
+            Route::delete('/hapus/{id}', [JamKerjaController::class, 'destroy'])->name('jam-kerja.destroy');
+        });
+
+        Route::prefix('lokasi')->group(function () {
+            Route::get('/list', [LokasiController::class, 'index'])->name('lokasi.index');
+            Route::post('/tambah', [LokasiController::class, 'store'])->name('lokasi.store');
+            Route::put('/edit/{id}', [LokasiController::class, 'update'])->name('lokasi.update');
+            Route::delete('/hapus/{id}', [LokasiController::class, 'destroy'])->name('lokasi.destroy');
+        });
+
+        Route::prefix('absensi')->group(function () {
+            Route::get('/', [AbsensiController::class, 'index'])->name('absensi.index');
+            Route::get('/detail/{pegawai}', [AbsensiController::class, 'detail'])->name('absensi.detail');
+        });
+    });
+Route::prefix('pegawai')
+    ->middleware('pegawai.auth')
+    ->group(function () {
+
+        Route::post('/absensi', [AbsensiController::class, 'absen'])
+            ->name('absensi.store');
+        Route::get('/kamera', [AbsensiController::class, 'kamera'])->name('pegawai.kamera');
+    });
