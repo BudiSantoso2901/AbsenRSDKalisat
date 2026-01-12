@@ -40,42 +40,30 @@ class LoginController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | LOGIN ADMIN
+    | LOGIN PEGAWAI (NIP = ANGKA)
     |--------------------------------------------------------------------------
-    | Login menggunakan NAME
     */
-        $admin = User::where('name', $login)->first();
+        if (ctype_digit($login)) {
 
-        if ($admin && Hash::check($password, $admin->password)) {
-            Auth::login($admin);
-            session(['role' => 'admin']);
+            $pegawai = Pegawai::where('nip', $login)->first();
 
-            return redirect()->route('admin.dashboard');
-        }
+            if (!$pegawai) {
+                return back()->withErrors([
+                    'login' => 'NIP tidak terdaftar'
+                ])->withInput();
+            }
 
-        /*
-    |--------------------------------------------------------------------------
-    | LOGIN PEGAWAI
-    |--------------------------------------------------------------------------
-    | Login menggunakan NIP + status approved
-    */
-        $pegawai = Pegawai::where('nip', $login)->first();
-
-        if ($pegawai) {
-
-            // cek password
             if (!Hash::check($password, $pegawai->password)) {
                 return back()->withErrors([
                     'login' => 'Password salah'
                 ])->withInput();
             }
 
-            // cek status akun
             if ($pegawai->status !== 'approved') {
 
                 $pesan = match ($pegawai->status) {
-                    'pending'  => 'Akun belum disetujui oleh admin',
-                    'rejected' => 'Akun ditolak, silakan hubungi admin',
+                    'pending'  => 'Akun belum disetujui admin',
+                    'rejected' => 'Akun ditolak, hubungi admin',
                     default    => 'Status akun tidak valid'
                 };
 
@@ -84,11 +72,24 @@ class LoginController extends Controller
                 ])->withInput();
             }
 
-            // login pegawai
-            Auth::login($pegawai);
+            Auth::guard('pegawai')->login($pegawai);
             session(['role' => 'pegawai']);
 
-            return redirect()->route('pegawai.dashboard');
+            return redirect()->route('pegawai.kamera');
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | LOGIN ADMIN (USERNAME)
+    |--------------------------------------------------------------------------
+    */
+        $admin = User::where('name', $login)->first();
+
+        if ($admin && Hash::check($password, $admin->password)) {
+            Auth::guard('web')->login($admin);
+            session(['role' => 'admin']);
+
+            return redirect()->route('admin.dashboard');
         }
 
         /*
@@ -100,8 +101,6 @@ class LoginController extends Controller
             'login' => 'Username / NIP atau password salah'
         ])->withInput();
     }
-
-
 
     // logout
     public function logout()
