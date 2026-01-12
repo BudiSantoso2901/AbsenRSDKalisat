@@ -88,19 +88,19 @@
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="layouts-without-navbar.html" class="menu-link">
+                    <a href="{{ route('jabatan.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-id-card"></i>
                         <div data-i18n="Without navbar">Data Jabatan</div>
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="layouts-container.html" class="menu-link">
+                    <a href="{{ route('jam-kerja.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-time"></i>
                         <div data-i18n="Container">Jam Kerja</div>
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="layouts-fluid.html" class="menu-link">
+                    <a href="{{ route('lokasi.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-map"></i>
                         <div data-i18n="Fluid">Lokasi</div>
                     </a>
@@ -111,7 +111,7 @@
         <li class="menu-header small text-uppercase"><span class="menu-header-text"></span></li>
         <!-- Cards -->
         <li class="menu-item">
-            <a href="cards-basic.html" class="menu-link">
+            <a href="{{ route('absensi.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-clipboard"></i>
                 <div data-i18n="Basic">Data Absensi</div>
             </a>

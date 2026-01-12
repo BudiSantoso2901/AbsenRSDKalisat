@@ -157,7 +157,7 @@
                                         <div class="col-md-12">
                                             <label class="form-label">Jam Kerja</label>
                                             <select class="form-select" name="id_jam_kerja" id="id_jam_kerja">
-                                               <option value="">Pilih</option>
+                                                <option value="">Pilih</option>
                                                 @foreach ($jamKerjas as $jam)
                                                     <option value="{{ $jam->id }}">
                                                         {{ $jam->nama_jam_kerja }}
@@ -167,18 +167,21 @@
                                         </div>
                                         <div class="col-md-6 d-none" id="passwordSection">
                                             <label class="form-label">Password Baru</label>
-                                            <input type="password" class="form-control" name="password" autocomplete="new-password">
+                                            <input type="password" class="form-control" name="password"
+                                                autocomplete="new-password">
                                         </div>
 
                                         <div class="col-md-6 d-none" id="passwordConfirmSection">
                                             <label class="form-label">Konfirmasi Password</label>
-                                            <input type="password" class="form-control" name="password_confirmation" autocomplete="new-password">
+                                            <input type="password" class="form-control" name="password_confirmation"
+                                                autocomplete="new-password">
                                         </div>
 
                                         {{-- 🔘 STATUS (EDIT ONLY) --}}
                                         <div class="col-md-12 d-none" id="statusSection">
                                             <label class="form-label">Status</label>
                                             <select class="form-select" name="status" id="status">
+                                                <option value="">Pilih Status</option>
                                                 <option value="pending">Pending</option>
                                                 <option value="approved">Approved</option>
                                                 <option value="rejected">Rejected</option>
@@ -277,6 +280,7 @@
                 $('#id_lokasi').val($(this).data('id_lokasi'));
                 $('#id_jam_kerja').val($(this).data('id_jam_kerja'));
                 $('#passwordSection, #passwordConfirmSection, #statusSection').removeClass('d-none');
+                $('#status').val($(this).data('status')).trigger('change');
                 $('.is-invalid').removeClass('is-invalid');
                 $('#modalPegawaiTitle').text('Edit Pegawai');
                 $('#modalPegawai').modal('show');

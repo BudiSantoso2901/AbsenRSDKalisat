@@ -52,22 +52,56 @@
                         </small>
                         {{-- Waktu --}}
                         <div class="mb-3">
-                            <i class="bx bx-time"></i>
-                            <small id="currentTime">--:--:--</small>
+                            <div class="alert alert-info">
+                                <strong>Lokasi:</strong> {{ $lokasi->nama_lokasi }} <br>
+                                <strong>Radius:</strong> {{ $lokasi->radius_meter }} meter <br>
+                                <strong>Jam Kerja:</strong>
+                                {{ $jamKerja->jam_mulai }} - {{ $jamKerja->jam_selesai }}
+                                <br><strong><i class="bx bx-time"></i>
+                                    <small id="currentTime">--:--:--</small></strong>
+                            </div>
                         </div>
+                        <form id="form-absensi" enctype="multipart/form-data">
+                            @csrf
 
-                        {{-- Kamera --}}
-                        <div id="my_camera" class="mb-3"></div>
+                            {{-- STATUS --}}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Jenis Absensi</label>
+                                <select class="form-select" name="status" id="status_absen">
+                                    <option value="hadir">Hadir</option>
+                                    <option value="izin">Izin</option>
+                                    <option value="sakit">Sakit</option>
+                                </select>
+                            </div>
 
-                        {{-- Hasil --}}
-                        <div id="results" class="mb-3"></div>
+                            {{-- ================= HADIR ================= --}}
+                            <div id="section-hadir">
 
-                        <div class="text-center">
-                            <button class="btn btn-success px-4 py-2" onclick="take_snapshot()">
-                                <i class="bx bx-camera"></i> Ambil Foto
+                                <div id="my_camera" class="mb-3"></div>
+                                <input type="hidden" name="foto" id="fotoBase64">
+                                <input type="hidden" name="latitude" id="inputLat">
+                                <input type="hidden" name="longitude" id="inputLng">
+
+                            </div>
+
+                            {{-- ================= IZIN / SAKIT ================= --}}
+                            <div id="section-izin" style="display:none">
+
+                                <div class="mb-3">
+                                    <label class="form-label">Keterangan</label>
+                                    <textarea class="form-control" name="keterangan" rows="3"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Upload Surat</label>
+                                    <input type="file" name="surat" class="form-control">
+                                </div>
+
+                            </div>
+                            <button class="btn btn-primary w-100 mt-2" type="submit">
+                                <i class="bx bx-camera"></i> Ambil Foto & Absen
                             </button>
-                        </div>
-
+                        </form>
                     </div>
                 </div>
             </div>
@@ -96,7 +130,7 @@
                     <div class="table-responsive text-nowrap">
                         <table class="table">
                             <caption class="ms-4">
-                                List of Projects
+                                Data Absensi Bulan Ini
                             </caption>
                             <thead>
                                 <tr>
@@ -107,12 +141,59 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>5 Januari 2026</td>
-                                    <td>Albert Cook</td>
-                                    <td>test</td>
-                                    <td><span class="badge bg-label-primary me-1">Active</span></td>
-                                </tr>
+                                @foreach ($absensi as $row)
+                                    @php
+                                        $badge = null;
+                                        $jamKerja = auth()->guard('pegawai')->user()->jamKerja;
+
+                                        if ($row->status === 'hadir' && $row->waktu_masuk && $jamKerja) {
+                                            // waktu masuk sudah datetime → cukup parse biasa
+                                            $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
+
+                                            // AMBIL TANGGAL SAJA (tanpa jam)
+                                            $tanggal = \Carbon\Carbon::parse($row->tanggal)->toDateString();
+
+                                            // gabungkan tanggal + jam kerja
+                                            $jamMulai = \Carbon\Carbon::createFromFormat(
+                                                'Y-m-d H:i:s',
+                                                $tanggal . ' ' . $jamKerja->jam_mulai,
+                                                'Asia/Jakarta',
+                                            );
+
+                                            $jamMulaiToleransi = $jamMulai
+                                                ->copy()
+                                                ->addMinutes($jamKerja->toleransi_menit ?? 0);
+
+                                            if ($waktuMasuk->gt($jamMulaiToleransi)) {
+                                                $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+
+                                                $badge = match (true) {
+                                                    $menitTelat <= 30 => 'TL1',
+                                                    $menitTelat <= 60 => 'TL2',
+                                                    $menitTelat <= 90 => 'TL3',
+                                                    default => 'TL4',
+                                                };
+                                            }
+                                        }
+                                    @endphp
+
+                                    <tr>
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
+                                        </td>
+                                        <td>
+                                            {{ $row->waktu_masuk ?? '-' }}
+
+                                            @if ($badge)
+                                                <span class="badge bg-warning ms-1">{{ $badge }}</span>
+                                            @endif
+                                        </td>
+                                        <td>{{ $row->waktu_pulang ?? '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-success">{{ strtoupper($row->status) }}</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -123,6 +204,121 @@
 @endsection
 @push('scripts')
     <script>
+        /* ================= Tampilan  ================= */
+        const statusSelect = document.getElementById('status_absen');
+        const sectionHadir = document.getElementById('section-hadir');
+        const sectionIzin = document.getElementById('section-izin');
+
+        statusSelect.addEventListener('change', function() {
+            if (this.value === 'hadir') {
+                sectionHadir.style.display = 'block';
+                sectionIzin.style.display = 'none';
+            } else {
+                sectionHadir.style.display = 'none';
+                sectionIzin.style.display = 'block';
+            }
+        });
+
+        /* ================= FORM SUBMIT ================= */
+        document.getElementById('form-absensi').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const status = statusSelect.value;
+            const formData = new FormData(this);
+
+            if (status === 'hadir') {
+                Webcam.snap(function(data_uri) {
+                    formData.append('foto', dataURItoBlob(data_uri), 'absen.jpg');
+                    kirim(formData);
+                });
+            } else {
+                kirim(formData);
+            }
+        });
+
+        function kirim(formData) {
+            fetch("{{ route('absensi.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    return {
+                        status: res.status,
+                        data
+                    };
+                })
+                .then(({
+                    status,
+                    data
+                }) => {
+
+                    // ===============================
+                    // ERROR / VALIDASI (422)
+                    // ===============================
+                    if (status === 422) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Perhatian',
+                            text: data.message
+                        });
+                        return;
+                    }
+
+                    // ===============================
+                    // TELAT
+                    // ===============================
+                    if (data.telat === true) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: '⚠️ Anda Terlambat',
+                            html: `
+                    <b>${data.telat_menit} menit</b><br>
+                    Badge: <b>${data.badge}</b>
+                `
+                        }).then(() => {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: 'Absen masuk berhasil (terlambat)'
+                            }).then(() => location.reload());
+                        });
+                        return;
+                    }
+                    // ===============================
+                    // BERHASIL NORMAL
+                    // ===============================
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: data.message
+                    }).then(() => location.reload());
+                })
+                .catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Terjadi kesalahan server'
+                    });
+                });
+        }
+
+        /* ================= HELPER ================= */
+        function dataURItoBlob(dataURI) {
+            const byteString = atob(dataURI.split(',')[1]);
+            const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+            return new Blob([ab], {
+                type: mimeString
+            });
+        }
+
         /* ================= WAKTU REALTIME ================= */
         function updateTime() {
             const now = new Date();
@@ -134,16 +330,16 @@
 
             if (hours >= 4 && hours < 11) {
                 waktu = 'Pagi';
-                icon = '🌅';
+                icon = '🌅 ';
             } else if (hours >= 11 && hours < 15) {
                 waktu = 'Siang';
-                icon = '☀️';
+                icon = '☀️ ';
             } else if (hours >= 15 && hours < 18) {
                 waktu = 'Sore';
-                icon = '🌤';
+                icon = '🌤 ';
             } else {
                 waktu = 'Malam';
-                icon = '🌙';
+                icon = '🌙 ';
             }
 
             document.getElementById('currentTime').innerText =
@@ -194,6 +390,12 @@
         }
 
         /* ================= MAP ================= */
+        const lokasiPegawai = {
+            lat: {{ $lokasi->latitude }},
+            lng: {{ $lokasi->longitude }},
+            radius: {{ $lokasi->radius_meter }},
+            nama: "{{ $lokasi->nama_lokasi }}"
+        };
         const osm = L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
@@ -202,20 +404,37 @@
 
         const esri = L.tileLayer(
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics'
+                attribution: 'Tiles © Esri'
             }
         );
 
+        // ================= MAP INIT =================
         const map = L.map('map', {
-            center: [-8.219233, 114.369141],
-            zoom: 15,
-            layers: [esri] // default satelit
+            center: [lokasiPegawai.lat, lokasiPegawai.lng],
+            zoom: 17,
+            layers: [esri]
         });
 
         L.control.layers({
             "OpenStreetMap": osm,
             "Satelit": esri
         }).addTo(map);
+
+        // ================= MARKER LOKASI ABSENSI =================
+        const lokasiMarker = L.marker([lokasiPegawai.lat, lokasiPegawai.lng])
+            .addTo(map)
+            .bindPopup(`Lokasi Absensi<br><b>${lokasiPegawai.nama}</b>`)
+            .openPopup();
+
+        // ================= RADIUS ABSENSI =================
+        const radiusCircle = L.circle(
+            [lokasiPegawai.lat, lokasiPegawai.lng], {
+                radius: lokasiPegawai.radius,
+                color: 'green',
+                fillColor: '#4CAF50',
+                fillOpacity: 0.2
+            }
+        ).addTo(map);
 
         let marker;
 
@@ -227,7 +446,8 @@
 
                     document.getElementById('lat').innerText = lat.toFixed(6);
                     document.getElementById('lng').innerText = lng.toFixed(6);
-
+                    document.getElementById('inputLat').value = lat;
+                    document.getElementById('inputLng').value = lng;
                     map.setView([lat, lng], 17);
 
                     marker = L.marker([lat, lng]).addTo(map)
@@ -238,7 +458,8 @@
                     alert('Gagal mengambil lokasi. Aktifkan GPS.');
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 10000
+                    timeout: 15000,
+                    maximumAge: 0
                 }
             );
         }
