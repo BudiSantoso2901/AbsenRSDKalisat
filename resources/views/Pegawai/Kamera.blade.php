@@ -458,7 +458,7 @@
                     alert('Gagal mengambil lokasi. Aktifkan GPS.');
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 15000,
+                    timeout: 10000,
                     maximumAge: 0
                 }
             );

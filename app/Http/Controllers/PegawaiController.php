@@ -8,6 +8,8 @@ use App\Models\JamKerja;
 use App\Models\Pegawai;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Validation\ValidationException;
@@ -160,5 +162,70 @@ class PegawaiController extends Controller
         return response()->json([
             'success' => 'Data berhasil dihapus'
         ]);
+    }
+    public function dashboard_pegawai()
+    {
+        $pegawai = Auth::guard('pegawai')->user();
+
+        $bulan = now()->month;
+        $tahun = now()->year;
+
+        // ================= RINGKASAN =================
+        $hadir = DB::table('absensi')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'hadir')
+            ->count();
+
+        $izin = DB::table('absensi')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'izin')
+            ->count();
+
+        $sakit = DB::table('absensi')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'sakit')
+            ->count();
+
+        // ================= CHART BULANAN =================
+        $chartHadirDB = DB::table('absensi')
+            ->select(
+                DB::raw('WEEK(tanggal, 1) as minggu'),
+                DB::raw('COUNT(*) as total')
+            )
+            ->where('id_pegawai', $pegawai->id)
+            ->where('status', 'hadir')
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->groupBy(DB::raw('WEEK(tanggal, 1)'))
+            ->pluck('total', 'minggu')
+            ->toArray();
+
+        // ================= FORMAT 4 MINGGU =================
+        $chartHadir = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $chartHadir[] = $chartHadirDB[$i] ?? 0;
+        }
+
+        // Tidak hadir = izin + sakit
+        $chartTidakHadir = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $chartTidakHadir[] =
+                ($izin ?? 0) + ($sakit ?? 0);
+        }
+
+        return view('_layouts.Dashboard_pegawai', compact(
+            'pegawai',
+            'hadir',
+            'izin',
+            'sakit',
+            'chartHadir',
+            'chartTidakHadir'
+        ));
     }
 }

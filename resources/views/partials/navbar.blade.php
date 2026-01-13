@@ -16,66 +16,54 @@
 
 
             <!-- User -->
-            <li class="nav-item navbar-dropdown dropdown-user dropdown">
-                <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle hide-arrow" href="#" role="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+
                     <div class="avatar avatar-online">
-                        <img src="../assets/img/avatars/1.png" alt class="w-px-40 h-auto rounded-circle" />
+                        <img src="{{ asset('assets/img/icon.png') }}" class="w-px-40 h-auto rounded-circle" />
                     </div>
                 </a>
+
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                         <a class="dropdown-item" href="#">
                             <div class="d-flex">
                                 <div class="flex-shrink-0 me-3">
                                     <div class="avatar avatar-online">
-                                        <img src="../assets/img/avatars/1.png" alt
+                                        <img src="{{ asset('assets/img/icon.png') }}"
                                             class="w-px-40 h-auto rounded-circle" />
                                     </div>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <span class="fw-semibold d-block">John Doe</span>
-                                    <small class="text-muted">Admin</small>
+                                    <span class="fw-semibold d-block">
+                                        {{ auth()->user()->name ?? 'User' }}
+                                    </span>
+                                    <small class="text-muted">
+                                        {{ auth()->user()->role ?? 'Pegawai' }}
+                                    </small>
                                 </div>
                             </div>
                         </a>
                     </li>
+
                     <li>
                         <div class="dropdown-divider"></div>
                     </li>
+
                     <li>
                         <a class="dropdown-item" href="#">
-                            <i class="bx bx-user me-2"></i>
-                            <span class="align-middle">My Profile</span>
+                            <i class="bx bx-user me-2"></i> My Profile
                         </a>
                     </li>
+
                     <li>
-                        <a class="dropdown-item" href="#">
-                            <i class="bx bx-cog me-2"></i>
-                            <span class="align-middle">Settings</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#">
-                            <span class="d-flex align-items-center align-middle">
-                                <i class="flex-shrink-0 bx bx-credit-card me-2"></i>
-                                <span class="flex-grow-1 align-middle">Billing</span>
-                                <span
-                                    class="flex-shrink-0 badge badge-center rounded-pill bg-danger w-px-20 h-px-20">4</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li>
-                        <div class="dropdown-divider"></div>
-                    </li>
-                    <li>
-                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                        <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button type="submit" class="dropdown-item">
-                                <i class="bx bx-power-off me-2"></i>
-                                <span class="align-middle">Log Out</span>
+                            <button class="dropdown-item">
+                                <i class="bx bx-power-off me-2"></i> Logout
                             </button>
                         </form>
-
                     </li>
                 </ul>
             </li>

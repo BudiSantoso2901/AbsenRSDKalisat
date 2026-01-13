@@ -1,71 +1,136 @@
 <!DOCTYPE html>
-<html lang="en" class="light-style customizer-hide" dir="ltr" data-theme="theme-default" data-assets-path="../assets/"
-    data-template="vertical-menu-template-free">
+<html lang="id" class="light-style customizer-hide" dir="ltr">
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register Pegawai</title>
 
-    <title>Login Absensi</title>
-
-    <meta name="description" content="" />
-
-    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/images-removebg-preview.png') }}" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
 
-    <!-- Icons. Uncomment required icon fonts -->
-    <link rel="stylesheet" href="{{ asset('/assets/vendor/fonts/boxicons.css') }}" />
+    <!-- Icons -->
+    <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/boxicons.css') }}" />
 
     <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ asset('/assets/vendor/css/core.css') }}" class="template-customizer-core-css" />
-    <link rel="stylesheet" href="{{ asset('/assets/vendor/css/theme-default.css') }}"
-        class="template-customizer-theme-css" />
-    <link rel="stylesheet" href="{{ asset('/assets/css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/theme-default.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/pages/page-auth.css') }}" />
 
-    <!-- Vendors CSS -->
-    <link rel="stylesheet" href="{{ asset('/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
+    <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
+    <script src="{{ asset('assets/js/config.js') }}"></script>
 
-    <!-- Page CSS -->
-    <!-- Page -->
-    <link rel="stylesheet" href="{{ asset('/assets/vendor/css/pages/page-auth.css') }}" />
-    <!-- Helpers -->
-    <script src="{{ asset('/assets/vendor/js/helpers.js') }}"></script>
+    <!-- ===== CUSTOM STYLE ===== -->
+    <style>
+        :root {
+            --rs-green: #097612;
+            --rs-pink: #f06292;
+        }
 
-    <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
-    <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
-    <script src="{{ asset('/assets/js/config.js') }}"></script>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg,
+                    var(--rs-green),
+                    var(--rs-pink));
+        }
+
+        .video-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .video-bg video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* GRADIENT OVERLAY */
+        .video-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(135deg,
+                    rgba(9, 118, 18, 0.75),
+                    rgba(240, 98, 146, 0.65));
+        }
+
+        .authentication-inner .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, .35);
+            animation: fadeUp .8s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg,
+                    var(--rs-green),
+                    var(--rs-pink));
+            border: none;
+        }
+
+        .btn-primary:hover {
+            opacity: .9;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .app-brand img {
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .2));
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Content -->
-
+    <div class="video-bg">
+        <video autoplay muted loop playsinline>
+            <source src="{{ asset('assets/video/rsd kalisat.mp4') }}" type="video/mp4">
+        </video>
+    </div>
+    <div class="video-overlay"></div>
     <div class="container-xxl">
         <div class="authentication-wrapper authentication-basic container-p-y">
             <div class="authentication-inner">
-                <!-- Register Card -->
+
+                <!-- REGISTER CARD -->
                 <div class="card">
                     <div class="card-body">
-                        <!-- Logo -->
-                        <div class="app-brand justify-content-center">
-                            <a href="index.html" class="app-brand-link gap-2">
-                                <span class="app-brand-logo demo">
-                                    <img src="{{ asset('assets/img/images-removebg-preview.png') }}" alt="" width="250">
-                                </span>
-                            </a>
-                        </div>
-                        <!-- /Logo -->
-                        <h4 class="mb-2">Pendaftaran Pegawai</h4>
-                        <p class="mb-4">Isikan sesuai dengan form yang ada !</p>
-                        <form action="{{ route('pegawai.register') }}" method="POST" enctype="multipart/form-data">
 
+                        <!-- Logo -->
+                        <div class="app-brand justify-content-center mb-3">
+                            <img src="{{ asset('assets/img/images-removebg-preview.png') }}" width="220">
+                        </div>
+
+                        <h4 class="mb-1 text-center">Pendaftaran Pegawai</h4>
+                        <p class="mb-4 text-center text-muted">
+                            Lengkapi data berikut dengan benar
+                        </p>
+
+                        <form action="{{ route('pegawai.register') }}" method="POST">
                             @csrf
 
                             <!-- ROW 1 -->
@@ -78,8 +143,8 @@
 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">NIP</label>
-                                    <input type="text" name="nip" class="form-control" placeholder="NIP" maxlength="18"
-                                        required>
+                                    <input type="text" name="nip" class="form-control" placeholder="NIP"
+                                        maxlength="18" required>
                                 </div>
                             </div>
 
@@ -96,7 +161,7 @@
                                     <select name="id_jabatan" class="form-select" required>
                                         <option value="">Pilih Jabatan</option>
                                         @foreach ($jabatan as $j)
-                                        <option value="{{ $j->id }}">{{ $j->nama_jabatan }}</option>
+                                            <option value="{{ $j->id }}">{{ $j->nama_jabatan }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -109,7 +174,7 @@
                                     <select name="id_lokasi" class="form-select" required>
                                         <option value="">Pilih Lokasi</option>
                                         @foreach ($lokasi as $l)
-                                        <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
+                                            <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -119,7 +184,7 @@
                                     <select name="id_jam_kerja" class="form-select" required>
                                         <option value="">Pilih Jam Kerja</option>
                                         @foreach ($jamKerja as $jk)
-                                        <option value="{{ $jk->id }}">{{ $jk->nama_jam_kerja }}</option>
+                                            <option value="{{ $jk->id }}">{{ $jk->nama_jam_kerja }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -141,7 +206,7 @@
                             </div>
 
                             <!-- INFO -->
-                            <div class="alert alert-light small mb-3">
+                            <div class="alert alert-light d-flex align-items-center gap-2 small mb-3">
                                 <i class="bx bx-info-circle"></i>
                                 Akun akan aktif setelah disetujui admin
                             </div>
@@ -150,44 +215,28 @@
                             <button class="btn btn-primary w-100">
                                 Daftar Pegawai
                             </button>
-
                         </form>
 
-                        <p class="text-center mt-3">
-                            <span>Sudah Punya Akun ?</span>
-                            <a href="{{ route('login') }}">
-                                <span>Masuk</span>
+                        <p class="text-center mt-3 mb-0">
+                            Sudah punya akun?
+                            <a href="{{ route('login') }}" class="fw-semibold">
+                                Masuk
                             </a>
                         </p>
+
                     </div>
                 </div>
-                <!-- Register Card -->
+                <!-- /REGISTER CARD -->
+
             </div>
         </div>
     </div>
 
-    <!-- / Content -->
-
-
     <!-- Core JS -->
-    <!-- build:js assets/vendor/js/core.js -->
-    <script src="{{ asset('/assets/vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="{{ asset('/assets/vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ asset('/assets/vendor/js/bootstrap.js') }}"></script>
-    <script src="{{ asset('/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
+    <script src="{{ asset('assets/js/main.js') }}"></script>
 
-    <script src="{{ asset('/assets/vendor/js/menu.js') }}"></script>
-    <!-- endbuild -->
-
-    <!-- Vendors JS -->
-
-    <!-- Main JS -->
-    <script src="{{ asset('/assets/js/main.js') }}"></script>
-
-    <!-- Page JS -->
-
-    <!-- Place this tag in your head or just before your close body tag. -->
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
 </body>
 
 </html>

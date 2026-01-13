@@ -28,14 +28,14 @@ Route::get('/register', [LoginController::class, 'showRegister'])->name('registe
 Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login-prosess', [LoginController::class, 'login'])->name('login.process');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-Route::get('/admin/dashboard', [LoginController::class, 'dashboard'])->name('admin.dashboard');
+
 Route::get('/pegawai/register', [LoginController::class, 'get_register'])->name('pegawai.register.form');
 Route::post('/pegawai/register', [LoginController::class, 'register'])->name('pegawai.register');
 
 Route::prefix('/')
     ->middleware('admin.auth')
     ->group(function () {
-
+        Route::get('dashboard', [LoginController::class, 'dashboard'])->name('admin.dashboard');
         Route::prefix('pegawai')->group(function () {
             Route::get('/list', [PegawaiController::class, 'index'])->name('pegawai.index');
             Route::post('/tambah', [PegawaiController::class, 'store'])->name('pegawai.store');
@@ -76,4 +76,5 @@ Route::prefix('pegawai')
         Route::post('/absensi', [AbsensiController::class, 'absen'])
             ->name('absensi.store');
         Route::get('/kamera', [AbsensiController::class, 'kamera'])->name('pegawai.kamera');
+        Route::get('/dashboard', [PegawaiController::class, 'dashboard_pegawai'])->name('pegawai.dashboard');
     });
