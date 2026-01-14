@@ -182,6 +182,17 @@ class AbsensiController extends Controller
             'tahunList'
         ));
     }
+    public function lokasi($id)
+    {
+        $absensi = Absensi::findOrFail($id);
+
+        return response()->json([
+            'latitude'  => $absensi->latitude,
+            'longitude' => $absensi->longitude,
+            'tanggal'   => $absensi->tanggal,
+        ]);
+    }
+
     public function updateAbsen(Request $request, $id)
     {
         $absen = Absensi::findOrFail($id);
@@ -205,7 +216,6 @@ class AbsensiController extends Controller
             'message' => 'Absensi berhasil diperbarui'
         ]);
     }
-
     public function absen(Request $request)
     {
         /** ======================================
@@ -221,26 +231,57 @@ class AbsensiController extends Controller
          * ===================================== */
         $request->validate([
             'status'     => 'required|in:hadir,izin,sakit',
+
+            // HADIR
             'latitude'   => 'required_if:status,hadir',
             'longitude'  => 'required_if:status,hadir',
-            'foto'       => 'required|image',
-            'surat'      => 'nullable|file|mimes:jpg,png,pdf',
-            'keterangan' => 'nullable|string',
+            'foto'       => 'required_if:status,hadir|image',
+
+            // IZIN / SAKIT
+            'keterangan' => 'required_if:status,izin|required_if:status,sakit|string',
+            'surat'      => 'nullable|file|mimes:jpg,png,pdf|max:2048',
         ]);
 
         /** ======================================
          * WAKTU (WIB)
          * ===================================== */
-        $sekarang = Carbon::now('Asia/Jakarta');
-        $hariIni  = $sekarang->toDateString();
+        $sekarang = Carbon::now('Asia/Jakarta');             // datetime
+        $hariIni  = Carbon::today('Asia/Jakarta');          // date (00:00:00)
 
         /** ======================================
-         * AMBIL / BUAT ABSENSI HARI INI
+         * AMBIL ABSENSI HARI INI
          * ===================================== */
-        $absensi = Absensi::firstOrNew([
-            'id_pegawai' => $pegawai->id,
-            'tanggal'    => $hariIni,
-        ]);
+        $absensi = Absensi::where('id_pegawai', $pegawai->id)
+            ->whereDate('tanggal', $hariIni)
+            ->first();
+
+        /** ======================================
+         * KUNCI STATUS ABSENSI
+         * ===================================== */
+        if ($absensi && in_array($absensi->status, ['izin', 'sakit'])) {
+            return response()->json([
+                'message' => 'Anda sudah absen ' . strtoupper($absensi->status) . ' hari ini'
+            ], 422);
+        }
+
+        if (
+            $absensi &&
+            $absensi->status === 'hadir' &&
+            in_array($request->status, ['izin', 'sakit'])
+        ) {
+            return response()->json([
+                'message' => 'Anda sudah absen HADIR, tidak bisa izin atau sakit'
+            ], 422);
+        }
+
+        /** ======================================
+         * BUAT ABSENSI JIKA BELUM ADA
+         * ===================================== */
+        if (!$absensi) {
+            $absensi = new Absensi();
+            $absensi->id_pegawai = $pegawai->id;
+            $absensi->tanggal    = $hariIni; // Carbon (AMAN)
+        }
 
         /** ======================================
          * IZIN / SAKIT
@@ -257,7 +298,7 @@ class AbsensiController extends Controller
             $absensi->save();
 
             return response()->json([
-                'message' => 'Absensi ' . $request->status . ' berhasil'
+                'message' => 'Absensi ' . strtoupper($request->status) . ' berhasil'
             ]);
         }
 
@@ -294,13 +335,17 @@ class AbsensiController extends Controller
             ], 422);
         }
 
-        $jamMulai = Carbon::parse(
-            $hariIni . ' ' . $jamKerja->jam_mulai,
+        $tanggalString = $hariIni->toDateString(); // ⬅️ FIX UTAMA
+
+        $jamMulai = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $tanggalString . ' ' . $jamKerja->jam_mulai,
             'Asia/Jakarta'
         );
 
-        $jamSelesai = Carbon::parse(
-            $hariIni . ' ' . $jamKerja->jam_selesai,
+        $jamSelesai = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $tanggalString . ' ' . $jamKerja->jam_selesai,
             'Asia/Jakarta'
         );
 
@@ -328,17 +373,18 @@ class AbsensiController extends Controller
 
             $absensi->waktu_masuk = $sekarang;
             $absensi->foto_masuk  = $fotoPath;
+            $absensi->latitude     = $request->latitude;
+            $absensi->longitude    = $request->longitude;
             $absensi->status      = 'hadir';
-
             $absensi->save();
 
             return response()->json([
-                'message'      => $isTelat
+                'message'     => $isTelat
                     ? "Anda terlambat {$telatMenit} menit"
                     : 'Absen masuk berhasil',
-                'telat'        => $isTelat,
-                'telat_menit'  => $telatMenit,
-                'badge'        => $isTelat ? $this->badgeTelat($telatMenit) : null
+                'telat'       => $isTelat,
+                'telat_menit' => $telatMenit,
+                'badge'       => $isTelat ? $this->badgeTelat($telatMenit) : null
             ]);
         }
 
@@ -369,6 +415,172 @@ class AbsensiController extends Controller
             'message' => 'Absensi hari ini sudah lengkap'
         ], 422);
     }
+    // public function absen(Request $request)
+    // {
+    //     /** ======================================
+    //      * AUTH
+    //      * ===================================== */
+    //     $pegawai = auth()->guard('pegawai')->user();
+    //     if (!$pegawai) {
+    //         abort(401);
+    //     }
+
+    //     /** ======================================
+    //      * VALIDASI REQUEST
+    //      * ===================================== */
+    //     $request->validate([
+    //         'status'     => 'required|in:hadir,izin,sakit',
+    //         // KHUSUS HADIR
+    //         'latitude'   => 'required_if:status,hadir',
+    //         'longitude'  => 'required_if:status,hadir',
+    //         'foto'       => 'required_if:status,hadir|image',
+
+    //         // KHUSUS IZIN / SAKIT
+    //         'keterangan' => 'required_if:status,izin|required_if:status,sakit|string',
+    //         'surat'      => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+    //     ]);
+
+    //     /** ======================================
+    //      * WAKTU (WIB)
+    //      * ===================================== */
+    //     $sekarang = Carbon::now('Asia/Jakarta');
+    //     $hariIni  = $sekarang->toDateString();
+
+    //     /** ======================================
+    //      * AMBIL / BUAT ABSENSI HARI INI
+    //      * ===================================== */
+    //     $absensi = Absensi::firstOrNew([
+    //         'id_pegawai' => $pegawai->id,
+    //         'tanggal'    => $hariIni,
+    //     ]);
+
+    //     /** ======================================
+    //      * IZIN / SAKIT
+    //      * ===================================== */
+    //     if (in_array($request->status, ['izin', 'sakit'])) {
+
+    //         if ($request->hasFile('surat')) {
+    //             $absensi->surat = $request->file('surat')
+    //                 ->store('surat_absensi', 'public');
+    //         }
+
+    //         $absensi->status     = $request->status;
+    //         $absensi->keterangan = $request->keterangan;
+    //         $absensi->save();
+
+    //         return response()->json([
+    //             'message' => 'Absensi ' . $request->status . ' berhasil'
+    //         ]);
+    //     }
+
+    //     /** ======================================
+    //      * VALIDASI LOKASI
+    //      * ===================================== */
+    //     $lokasi = $pegawai->lokasi;
+    //     if (!$lokasi) {
+    //         return response()->json([
+    //             'message' => 'Lokasi kerja belum ditentukan'
+    //         ], 422);
+    //     }
+
+    //     $jarak = $this->hitungJarak(
+    //         $lokasi->latitude,
+    //         $lokasi->longitude,
+    //         $request->latitude,
+    //         $request->longitude
+    //     );
+
+    //     if ($jarak > $lokasi->radius_meter) {
+    //         return response()->json([
+    //             'message' => 'Anda berada di luar area absensi'
+    //         ], 422);
+    //     }
+
+    //     /** ======================================
+    //      * VALIDASI JAM KERJA
+    //      * ===================================== */
+    //     $jamKerja = $pegawai->jamKerja;
+    //     if (!$jamKerja) {
+    //         return response()->json([
+    //             'message' => 'Jam kerja belum ditentukan'
+    //         ], 422);
+    //     }
+
+    //     $jamMulai = Carbon::parse(
+    //         $hariIni . ' ' . $jamKerja->jam_mulai,
+    //         'Asia/Jakarta'
+    //     );
+
+    //     $jamSelesai = Carbon::parse(
+    //         $hariIni . ' ' . $jamKerja->jam_selesai,
+    //         'Asia/Jakarta'
+    //     );
+
+    //     $toleransi = $jamKerja->toleransi_menit ?? 0;
+    //     $jamMulaiToleransi = $jamMulai->copy()->addMinutes($toleransi);
+
+    //     /** ======================================
+    //      * SIMPAN FOTO
+    //      * ===================================== */
+    //     $fotoPath = $request->file('foto')
+    //         ->store('absensi_foto', 'public');
+
+    //     /** ======================================
+    //      * ABSEN MASUK
+    //      * ===================================== */
+    //     if (!$absensi->waktu_masuk) {
+
+    //         $isTelat = false;
+    //         $telatMenit = 0;
+
+    //         if ($sekarang->gt($jamMulaiToleransi)) {
+    //             $isTelat = true;
+    //             $telatMenit = $jamMulaiToleransi->diffInMinutes($sekarang);
+    //         }
+
+    //         $absensi->waktu_masuk = $sekarang;
+    //         $absensi->foto_masuk  = $fotoPath;
+    //         $absensi->status      = 'hadir';
+
+    //         $absensi->save();
+
+    //         return response()->json([
+    //             'message'      => $isTelat
+    //                 ? "Anda terlambat {$telatMenit} menit"
+    //                 : 'Absen masuk berhasil',
+    //             'telat'        => $isTelat,
+    //             'telat_menit'  => $telatMenit,
+    //             'badge'        => $isTelat ? $this->badgeTelat($telatMenit) : null
+    //         ]);
+    //     }
+
+    //     /** ======================================
+    //      * ABSEN PULANG
+    //      * ===================================== */
+    //     if (!$absensi->waktu_pulang) {
+
+    //         if ($sekarang->lt($jamSelesai)) {
+    //             return response()->json([
+    //                 'message' => 'Belum waktunya absen pulang'
+    //             ], 422);
+    //         }
+
+    //         $absensi->waktu_pulang = $sekarang;
+    //         $absensi->foto_pulang  = $fotoPath;
+    //         $absensi->save();
+
+    //         return response()->json([
+    //             'message' => 'Absen pulang berhasil'
+    //         ]);
+    //     }
+
+    //     /** ======================================
+    //      * SUDAH LENGKAP
+    //      * ===================================== */
+    //     return response()->json([
+    //         'message' => 'Absensi hari ini sudah lengkap'
+    //     ], 422);
+    // }
 
     /** ======================================
      * HITUNG JARAK (HAVERSINE)

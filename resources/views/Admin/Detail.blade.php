@@ -88,15 +88,48 @@
                                 <td>
                                     {{ \Carbon\Carbon::parse($row->tanggal)->translatedFormat('l, d F Y') }}
                                 </td>
-
                                 <td>
                                     {{ $row->waktu_masuk ?? '-' }}
 
-                                    @if ($row->status === 'hadir' && !empty($row->tl))
-                                        <span class="badge bg-warning ms-1">{{ $row->tl }}</span>
+                                    @if ($row->status === 'hadir' && $row->waktu_masuk && $pegawai->jamKerja)
+                                        @php
+                                            $jamKerja = $pegawai->jamKerja;
+
+                                            // tanggal absensi
+                                            $tanggal = \Carbon\Carbon::parse($row->tanggal)->toDateString();
+
+                                            // jam mulai kerja
+                                            $jamMulai = \Carbon\Carbon::parse(
+                                                $tanggal . ' ' . $jamKerja->jam_mulai,
+                                                'Asia/Jakarta',
+                                            );
+
+                                            // toleransi
+                                            $toleransi = $jamKerja->toleransi_menit ?? 0;
+                                            $jamMulaiToleransi = $jamMulai->copy()->addMinutes($toleransi);
+
+                                            // waktu masuk
+                                            $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
+
+                                            // hitung menit telat
+                                            $menitTelat = $waktuMasuk->gt($jamMulaiToleransi)
+                                                ? $jamMulaiToleransi->diffInMinutes($waktuMasuk)
+                                                : 0;
+
+                                            $badgeTL = match (true) {
+                                                $menitTelat > 0 && $menitTelat <= 30 => 'TL1',
+                                                $menitTelat <= 60 => 'TL2',
+                                                $menitTelat <= 90 => 'TL3',
+                                                $menitTelat > 90 => 'TL4',
+                                                default => null,
+                                            };
+                                        @endphp
+
+                                        @if ($badgeTL)
+                                            <span class="badge bg-warning ms-1">{{ $badgeTL }}</span>
+                                        @endif
                                     @endif
                                 </td>
-
                                 <td class="text-center">
                                     @if (!empty($row->foto_masuk))
                                         <img src="{{ asset('storage/' . $row->foto_masuk) }}" class="img-thumbnail"
@@ -128,8 +161,8 @@
                                     @endif
                                 </td>
                                 <td>
-                                    Lat: {{ $row->lat ?? '-' }} <br>
-                                    Long: {{ $row->lng ?? '-' }}
+                                    Lat: {{ $row->latitude ?? '-' }} <br>
+                                    Long: {{ $row->longitude ?? '-' }}
                                 </td>
 
                                 <td>
@@ -145,9 +178,12 @@
                                 </td>
 
                                 <td>
-                                    <button class="btn btn-warning btn-sm">
+                                    <button class="btn btn-warning btn-sm btn-lokasi" data-bs-toggle="modal"
+                                        data-bs-target="#modalLokasi" data-lat="{{ $row->latitude }}"
+                                        data-lng="{{ $row->longitude }}" data-tanggal="{{ $row->tanggal }}">
                                         Lokasi
                                     </button>
+
                                 </td>
                             </tr>
                         @empty
@@ -161,6 +197,109 @@
                 </table>
             </div>
         </div>
+        {{-- Modal Lokasi --}}
+        <div class="modal fade" id="modalLokasi" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
 
+                    <div class="modal-header">
+                        <h5 class="modal-title">Lokasi Absensi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="alert alert-warning d-none" id="lokasiKosong">
+                        Pegawai belum melakukan absensi atau lokasi tidak tersedia.
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2 text-muted" id="infoTanggal"></div>
+                        <div id="mapLokasi" style="height: 400px; border-radius: 8px;"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
+@push('scripts')
+    <script>
+        let map;
+        let marker;
+        let layerControl;
+
+        // ====== TILE LAYERS ======
+        const osm = L.tileLayer(
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }
+        );
+
+        const esri = L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri'
+            }
+        );
+
+        document.querySelectorAll('.btn-lokasi').forEach(btn => {
+            btn.addEventListener('click', function() {
+
+                const lat = this.dataset.lat;
+                const lng = this.dataset.lng;
+                const tanggal = this.dataset.tanggal;
+
+                document.getElementById('infoTanggal').innerText =
+                    tanggal ? 'Tanggal: ' + tanggal : '';
+
+                const infoKosong = document.getElementById('lokasiKosong');
+                const mapDiv = document.getElementById('mapLokasi');
+
+                // ====== KONDISI BELUM ABSEN / LOKASI KOSONG ======
+                if (!lat || !lng) {
+                    infoKosong.classList.remove('d-none');
+                    mapDiv.classList.add('d-none');
+                    return;
+                }
+
+                infoKosong.classList.add('d-none');
+                mapDiv.classList.remove('d-none');
+
+                setTimeout(() => {
+                    if (!map) {
+                        map = L.map('mapLokasi', {
+                            center: [lat, lng],
+                            zoom: 17,
+                            layers: [osm]
+                        });
+
+                        // marker
+                        marker = L.marker([lat, lng])
+                            .addTo(map)
+                            .bindPopup('Lokasi Absensi')
+                            .openPopup();
+
+                        // layer switcher
+                        layerControl = L.control.layers({
+                            "OpenStreetMap": osm,
+                            "Satelit (ESRI)": esri
+                        }).addTo(map);
+
+                    } else {
+                        map.setView([lat, lng], 17);
+                        marker.setLatLng([lat, lng]);
+                    }
+
+                    map.invalidateSize();
+                }, 300);
+            });
+        });
+
+        // ====== RESET MAP SAAT MODAL DITUTUP ======
+        document.getElementById('modalLokasi')
+            .addEventListener('hidden.bs.modal', function() {
+                if (map) {
+                    map.remove();
+                    map = null;
+                    marker = null;
+                    layerControl = null;
+                }
+            });
+    </script>
+@endpush

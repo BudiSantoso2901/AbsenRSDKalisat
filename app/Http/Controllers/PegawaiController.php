@@ -170,7 +170,7 @@ class PegawaiController extends Controller
         $bulan = now()->month;
         $tahun = now()->year;
 
-        // ================= RINGKASAN =================
+        /** ================= RINGKASAN BULANAN ================= */
         $hadir = DB::table('absensi')
             ->where('id_pegawai', $pegawai->id)
             ->whereMonth('tanggal', $bulan)
@@ -192,31 +192,39 @@ class PegawaiController extends Controller
             ->where('status', 'sakit')
             ->count();
 
-        // ================= CHART BULANAN =================
-        $chartHadirDB = DB::table('absensi')
+        /** ================= DATA CHART MINGGUAN ================= */
+        $chartDB = DB::table('absensi')
             ->select(
                 DB::raw('WEEK(tanggal, 1) as minggu'),
+                'status',
                 DB::raw('COUNT(*) as total')
             )
             ->where('id_pegawai', $pegawai->id)
-            ->where('status', 'hadir')
             ->whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
-            ->groupBy(DB::raw('WEEK(tanggal, 1)'))
-            ->pluck('total', 'minggu')
-            ->toArray();
+            ->groupBy(
+                DB::raw('WEEK(tanggal, 1)'),
+                'status'
+            )
+            ->get();
 
-        // ================= FORMAT 4 MINGGU =================
-        $chartHadir = [];
-        for ($i = 1; $i <= 4; $i++) {
-            $chartHadir[] = $chartHadirDB[$i] ?? 0;
-        }
+        /** ================= INIT 4 MINGGU ================= */
+        $chartHadir = $chartIzin = $chartSakit = [0, 0, 0, 0];
 
-        // Tidak hadir = izin + sakit
-        $chartTidakHadir = [];
-        for ($i = 1; $i <= 4; $i++) {
-            $chartTidakHadir[] =
-                ($izin ?? 0) + ($sakit ?? 0);
+        foreach ($chartDB as $row) {
+            $index = ((int) $row->minggu % 4); // 0–3
+
+            if ($row->status === 'hadir') {
+                $chartHadir[$index] = $row->total;
+            }
+
+            if ($row->status === 'izin') {
+                $chartIzin[$index] = $row->total;
+            }
+
+            if ($row->status === 'sakit') {
+                $chartSakit[$index] = $row->total;
+            }
         }
 
         return view('_layouts.Dashboard_pegawai', compact(
@@ -225,7 +233,8 @@ class PegawaiController extends Controller
             'izin',
             'sakit',
             'chartHadir',
-            'chartTidakHadir'
+            'chartIzin',
+            'chartSakit'
         ));
     }
 }

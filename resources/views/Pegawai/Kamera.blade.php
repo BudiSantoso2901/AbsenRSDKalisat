@@ -78,7 +78,7 @@
                             <div id="section-hadir">
 
                                 <div id="my_camera" class="mb-3"></div>
-                                <input type="hidden" name="foto" id="fotoBase64">
+                                {{-- <input type="hidden" name="foto" id="fotoBase64"> --}}
                                 <input type="hidden" name="latitude" id="inputLat">
                                 <input type="hidden" name="longitude" id="inputLng">
 
@@ -226,16 +226,43 @@
             const status = statusSelect.value;
             const formData = new FormData(this);
 
-            if (status === 'hadir') {
-                Webcam.snap(function(data_uri) {
-                    formData.append('foto', dataURItoBlob(data_uri), 'absen.jpg');
-                    kirim(formData);
-                });
-            } else {
+            // ================= VALIDASI IZIN / SAKIT =================
+            if (status !== 'hadir') {
+                formData.delete('foto');
+                const keteranganField = this.querySelector('textarea[name="keterangan"]');
+                const keterangan = keteranganField ? keteranganField.value.trim() : '';
+
+                if (!keterangan.trim()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Keterangan wajib diisi untuk izin atau sakit'
+                    });
+                    return;
+                }
+
                 kirim(formData);
+                return;
             }
+
+            // ================= VALIDASI HADIR =================
+            if (typeof Webcam === 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kamera tidak aktif',
+                    text: 'Webcam belum siap'
+                });
+                return;
+            }
+            formData.delete('keterangan');
+            formData.delete('surat');
+            Webcam.snap(function(data_uri) {
+                formData.append('foto', dataURItoBlob(data_uri), 'absen.jpg');
+                kirim(formData);
+            });
         });
 
+        /* ================= AJAX ================= */
         function kirim(formData) {
             fetch("{{ route('absensi.store') }}", {
                     method: 'POST',
@@ -257,9 +284,6 @@
                     data
                 }) => {
 
-                    // ===============================
-                    // ERROR / VALIDASI (422)
-                    // ===============================
                     if (status === 422) {
                         Swal.fire({
                             icon: 'warning',
@@ -269,17 +293,14 @@
                         return;
                     }
 
-                    // ===============================
-                    // TELAT
-                    // ===============================
                     if (data.telat === true) {
                         Swal.fire({
                             icon: 'warning',
                             title: '⚠️ Anda Terlambat',
                             html: `
-                    <b>${data.telat_menit} menit</b><br>
-                    Badge: <b>${data.badge}</b>
-                `
+                        <b>${data.telat_menit} menit</b><br>
+                        Badge: <b>${data.badge}</b>
+                    `
                         }).then(() => {
                             Swal.fire({
                                 icon: 'success',
@@ -289,9 +310,7 @@
                         });
                         return;
                     }
-                    // ===============================
-                    // BERHASIL NORMAL
-                    // ===============================
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',

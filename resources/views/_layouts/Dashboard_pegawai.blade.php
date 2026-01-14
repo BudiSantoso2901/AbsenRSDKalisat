@@ -121,8 +121,7 @@
                     <!-- HEADER -->
                     <div class="profile-header text-center">
                         <div class="avatar-wrapper">
-                            <img src="{{ asset('assets/img/icon.png') }}" class="profile-avatar"
-                                alt="Foto Pegawai">
+                            <img src="{{ asset('assets/img/icon.png') }}" class="profile-avatar" alt="Foto Pegawai">
                         </div>
                         <h5 class="mt-3 mb-0">{{ $pegawai->name }}</h5>
                         <small class="text-shadow">
@@ -196,10 +195,16 @@
                         backgroundColor: '#28a745'
                     },
                     {
-                        label: 'Tidak Hadir',
-                        data: @json($chartTidakHadir),
-                        backgroundColor: '#dc3545'
+                        label: 'Izin',
+                        data: @json($chartIzin),
+                        backgroundColor: '#ffc107'
+                    },
+                    {
+                        label: 'Sakit',
+                        data: @json($chartSakit),
+                        backgroundColor: '#17a2b8'
                     }
+
                 ]
             },
             options: {
