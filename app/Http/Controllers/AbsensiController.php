@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\Pegawai;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -182,6 +183,7 @@ class AbsensiController extends Controller
             'tahunList'
         ));
     }
+
     public function lokasi($id)
     {
         $absensi = Absensi::findOrFail($id);
@@ -292,7 +294,10 @@ class AbsensiController extends Controller
                 $absensi->surat = $request->file('surat')
                     ->store('surat_absensi', 'public');
             }
-
+            $absensi->latitude    = null;
+            $absensi->longitude   = null;
+            $absensi->waktu_masuk = null;
+            $absensi->waktu_pulang = null;
             $absensi->status     = $request->status;
             $absensi->keterangan = $request->keterangan;
             $absensi->save();
@@ -362,6 +367,18 @@ class AbsensiController extends Controller
          * ABSEN MASUK
          * ===================================== */
         if (!$absensi->waktu_masuk) {
+            $jamBolehAbsen = $jamMulai->copy()->subMinutes($jamKerja->early_absen_menit ?? 0);
+            if ($sekarang->lt($jamBolehAbsen)) {
+                return response()->json([
+                    'message' => 'Belum waktunya absen'
+                ], 422);
+            }
+            if ($sekarang->lt($jamMulai)) {
+                return response()->json([
+                    'message' => 'Belum waktunya absen masuk',
+                    'jam_mulai' => $jamMulai->format('H:i')
+                ], 422);
+            }
 
             $isTelat = false;
             $telatMenit = 0;
@@ -607,5 +624,110 @@ class AbsensiController extends Controller
             $menit <= 90 => 'TL3',
             default      => 'TL4',
         };
+    }
+    public function update(Request $request, $id)
+    {
+        // ✅ Validasi
+        $request->validate([
+            'waktu'       => 'required|date_format:H:i',
+            'alasan_edit' => 'required|string|min:5',
+        ]);
+
+        // ✅ Pastikan admin / web guard
+        if (!auth()->guard('web')->check()) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        // ✅ Ambil absensi + relasi editor
+        $absensi = Absensi::with('editor')->findOrFail($id);
+
+        // ✅ Update data
+        $absensi->update([
+            'waktu_masuk' => $request->waktu,
+            'alasan_edit' => $request->alasan_edit,
+            'edited_by'   => auth()->id(),
+            'edited_at'   => now(),
+        ]);
+
+        // 🔄 Refresh relasi editor (penting!)
+        $absensi->load('editor');
+
+        // ✅ Response lengkap (UNTUK MODAL & SWEETALERT)
+        return response()->json([
+            'success'        => true,
+            'waktu_masuk'    => Carbon::parse($absensi->waktu_masuk)->format('H:i'),
+            'alasan_edit'    => $absensi->alasan_edit,
+            'edited_by'      => $absensi->editor->name ?? '-',
+            'edited_at'      => $absensi->edited_at
+                ? Carbon::parse($absensi->edited_at)->format('d-m-Y H:i')
+                : '-',
+        ]);
+    }
+    public function exportPdf(Request $request, Pegawai $pegawai)
+    {
+        $bulanAktif = (int) $request->get('bulan', now()->month);
+        $tahunAktif = (int) $request->get('tahun', now()->year);
+
+        $bulanList = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        $pegawai->load(['jabatan', 'lokasi', 'jamKerja']);
+
+        $start  = Carbon::create($tahunAktif, $bulanAktif, 1);
+        $end    = $start->copy()->endOfMonth();
+        $period = CarbonPeriod::create($start, $end);
+
+        $absensiDb = Absensi::with('editor')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulanAktif)
+            ->whereYear('tanggal', $tahunAktif)
+            ->get()
+            ->keyBy(fn($i) => $i->tanggal->format('Y-m-d'));
+
+        $absensi = [];
+
+        foreach ($period as $date) {
+            $tgl = $date->format('Y-m-d');
+
+            if (isset($absensiDb[$tgl])) {
+                $absensi[] = $absensiDb[$tgl];
+            } else {
+                $absensi[] = (object)[
+                    'tanggal'       => $tgl,
+                    'waktu_masuk'   => null,
+                    'waktu_pulang'  => null,
+                    'status'        => 'belum_hadir',
+                    'alasan_edit'   => null,
+                    'edited_by'     => null,
+                    'edited_at'     => null,
+                    'keterangan'    => null,
+                    'edited_by_name' => '-',
+                ];
+            }
+        }
+        $namaBulan = $bulanList[$bulanAktif];
+
+        $pdf = Pdf::loadView(
+            'Export.laporan-absensi',
+            compact('pegawai', 'absensi', 'bulanAktif', 'tahunAktif', 'namaBulan')
+        )->setPaper('A4', 'portrait');
+
+        return $pdf->download(
+            "Laporan_Absensi_{$pegawai->name}_{$namaBulan}_{$tahunAktif}.pdf"
+        );
     }
 }

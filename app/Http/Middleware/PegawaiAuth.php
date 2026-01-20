@@ -8,11 +8,14 @@ use Illuminate\Support\Facades\Auth;
 
 class PegawaiAuth
 {
-    public function handle(Request $request, Closure $next)
+    public function handle($request, Closure $next)
     {
-        // cek login pegawai (guard pegawai)
         if (!Auth::guard('pegawai')->check()) {
-            abort(401);
+            abort(403);
+        }
+
+        if (Auth::guard('web')->check()) {
+            abort(403);
         }
 
         return $next($request);

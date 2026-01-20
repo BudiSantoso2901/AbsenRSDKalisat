@@ -33,7 +33,7 @@ Route::get('/pegawai/register', [LoginController::class, 'get_register'])->name(
 Route::post('/pegawai/register', [LoginController::class, 'register'])->name('pegawai.register');
 
 Route::prefix('/')
-    ->middleware('admin.auth')
+    ->middleware('auth:web')
     ->group(function () {
         Route::get('dashboard', [LoginController::class, 'dashboard'])->name('admin.dashboard');
         Route::prefix('pegawai')->group(function () {
@@ -67,10 +67,12 @@ Route::prefix('/')
         Route::prefix('absensi')->group(function () {
             Route::get('/', [AbsensiController::class, 'index'])->name('absensi.index');
             Route::get('/detail/{pegawai}', [AbsensiController::class, 'detail'])->name('absensi.detail');
+            Route::put('edit/{id}', [AbsensiController::class, 'update'])->name('absensi.inline-update');
+            Route::get('export/pdf/{pegawai}', [AbsensiController::class, 'exportPdf'])->name('absensi.export.pdf');
         });
     });
 Route::prefix('pegawai')
-    ->middleware('pegawai.auth')
+    ->middleware('auth:pegawai')
     ->group(function () {
 
         Route::post('/absensi', [AbsensiController::class, 'absen'])
