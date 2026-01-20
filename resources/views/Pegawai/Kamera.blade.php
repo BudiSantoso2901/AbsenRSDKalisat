@@ -30,6 +30,44 @@
             border-radius: 12px;
             transform: scaleX(1) !important;
         }
+
+        .btn-absen {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 12px;
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+            transition: all 0.25s ease;
+        }
+
+        .btn-absen:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(40, 167, 69, 0.55);
+        }
+
+        .btn-absen:active {
+            transform: scale(0.98);
+        }
+
+        .alert-lokasi {
+            background: linear-gradient(135deg, #f06292, #2ecc71);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 16px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+        }
+
+        .alert-lokasi strong {
+            color: #fff;
+        }
+
+        .alert-lokasi i {
+            font-size: 1.1rem;
+        }
     </style>
     <div class="container-xxl flex-grow-1 container-p-y">
 
@@ -52,13 +90,16 @@
                         </small>
                         {{-- Waktu --}}
                         <div class="mb-3">
-                            <div class="alert alert-info">
+                            <div class="alert alert-lokasi mt-3">
                                 <strong>Lokasi:</strong> {{ $lokasi->nama_lokasi }} <br>
                                 <strong>Radius:</strong> {{ $lokasi->radius_meter }} meter <br>
                                 <strong>Jam Kerja:</strong>
                                 {{ $jamKerja->jam_mulai }} - {{ $jamKerja->jam_selesai }}
-                                <br><strong><i class="bx bx-time"></i>
-                                    <small id="currentTime">--:--:--</small></strong>
+                                <br>
+                                <strong>
+                                    <i class="bx bx-time"></i>
+                                    <small id="currentTime">--:--:--</small>
+                                </strong>
                             </div>
                         </div>
                         <form id="form-absensi" enctype="multipart/form-data">
@@ -98,9 +139,9 @@
                                 </div>
 
                             </div>
-                            <button class="btn btn-primary w-100 mt-2" type="submit">
+                            <button class="btn btn-absen w-100 mt-2" type="submit">
                                 <i class="bx bx-camera"></i> Ambil Foto & Absen
-                            </button>
+                                </button>
                         </form>
                     </div>
                 </div>

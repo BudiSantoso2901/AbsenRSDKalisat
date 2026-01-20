@@ -8,16 +8,14 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminAuth
 {
-    public function handle(Request $request, Closure $next)
+    public function handle($request, Closure $next)
     {
-        // belum login
-        if (!Auth::check()) {
-            abort(401);
+        if (!Auth::guard('web')->check()) {
+            abort(403);
         }
 
-        // login tapi bukan admin
-        if (session('role') !== 'admin') {
-            abort(401);
+        if (Auth::guard('pegawai')->check()) {
+            abort(403);
         }
 
         return $next($request);

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->Time('waktu_pulang')->nullable();
             $table->string('foto_masuk')->nullable();
             $table->string('foto_pulang')->nullable();
-            $table->decimal('latitude', 10, 8);
-            $table->decimal('longitude', 11, 8);
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
             $table->enum('status', ['hadir', 'izin', 'sakit', 'belum_hadir']);
             $table->string('surat')->nullable();
             $table->text('keterangan')->nullable();

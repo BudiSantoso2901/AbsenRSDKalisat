@@ -45,13 +45,25 @@
                 </form>
 
                 <div class="ms-auto">
-                    <button class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown">
-                        Ekspor / Cetak
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">PDF</a></li>
-                        <li><a class="dropdown-item" href="#">Excel</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-warning dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Ekspor / Cetak
+                        </button>
+
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item"
+                                    href="{{ route('absensi.export.pdf', [
+                                        'pegawai' => $pegawai->id,
+                                        'bulan' => $bulanAktif,
+                                        'tahun' => $tahunAktif,
+                                    ]) }}"
+                                    target="_blank">
+                                    PDF
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,46 +100,26 @@
                                 <td>
                                     {{ \Carbon\Carbon::parse($row->tanggal)->translatedFormat('l, d F Y') }}
                                 </td>
-                                <td>
-                                    {{ $row->waktu_masuk ?? '-' }}
+                                <td style="min-width:180px">
+                                    @if (auth()->guard('web')->check() && strtolower(trim($row->status)) === 'hadir')
+                                        <button class="btn btn-sm btn-outline-primary"
+                                            onclick="openEditWaktuModal(
+            {{ $row->id }},
+            '{{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}',
+            '{{ $row->alasan_edit ?? '' }}',
+            '{{ $row->edited_by_name ?? '-' }}',
+            '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}'
+        )">
+                                            {{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}
+                                        </button>
+                                    @else
+                                        <span class="text-muted">
+                                            {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
+                                        </span>
+                                    @endif
 
-                                    @if ($row->status === 'hadir' && $row->waktu_masuk && $pegawai->jamKerja)
-                                        @php
-                                            $jamKerja = $pegawai->jamKerja;
-
-                                            // tanggal absensi
-                                            $tanggal = \Carbon\Carbon::parse($row->tanggal)->toDateString();
-
-                                            // jam mulai kerja
-                                            $jamMulai = \Carbon\Carbon::parse(
-                                                $tanggal . ' ' . $jamKerja->jam_mulai,
-                                                'Asia/Jakarta',
-                                            );
-
-                                            // toleransi
-                                            $toleransi = $jamKerja->toleransi_menit ?? 0;
-                                            $jamMulaiToleransi = $jamMulai->copy()->addMinutes($toleransi);
-
-                                            // waktu masuk
-                                            $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
-
-                                            // hitung menit telat
-                                            $menitTelat = $waktuMasuk->gt($jamMulaiToleransi)
-                                                ? $jamMulaiToleransi->diffInMinutes($waktuMasuk)
-                                                : 0;
-
-                                            $badgeTL = match (true) {
-                                                $menitTelat > 0 && $menitTelat <= 30 => 'TL1',
-                                                $menitTelat <= 60 => 'TL2',
-                                                $menitTelat <= 90 => 'TL3',
-                                                $menitTelat > 90 => 'TL4',
-                                                default => null,
-                                            };
-                                        @endphp
-
-                                        @if ($badgeTL)
-                                            <span class="badge bg-warning ms-1">{{ $badgeTL }}</span>
-                                        @endif
+                                    @if (!empty($row->tl))
+                                        <span class="badge bg-warning ms-1">{{ $row->tl }}</span>
                                     @endif
                                 </td>
                                 <td class="text-center">
@@ -217,6 +209,49 @@
                 </div>
             </div>
         </div>
+        {{-- MODAL EDIT WAKTU --}}
+        <div class="modal fade" id="modalEditWaktu" tabindex="-1">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header py-2">
+                        <h6 class="modal-title">Edit Waktu Masuk</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-id">
+
+                        <div class="mb-2">
+                            <label class="form-label">Waktu Masuk</label>
+                            <input type="time" class="form-control" id="edit-waktu">
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Alasan Edit <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="edit-alasan" rows="2"></textarea>
+                        </div>
+
+                        <hr class="my-2">
+
+                        <small class="text-muted d-block">
+                            Terakhir diedit oleh: <b id="edit-by">-</b>
+                        </small>
+                        <small class="text-muted">
+                            Waktu edit: <b id="edit-at">-</b>
+                        </small>
+                    </div>
+
+                    <div class="modal-footer py-2">
+                        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button class="btn btn-sm btn-success" onclick="simpanEditWaktu()">
+                            Simpan
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 @push('scripts')
@@ -301,5 +336,96 @@
                     layerControl = null;
                 }
             });
+        // ====== EDIT WAKTU MASUK ======
+        function openEditWaktuModal(id, waktu, alasan, editedBy, editedAt) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-waktu').value = waktu;
+            document.getElementById('edit-alasan').value = alasan ?? '';
+
+            document.getElementById('edit-by').innerText = editedBy || '-';
+            document.getElementById('edit-at').innerText = editedAt || '-';
+
+            new bootstrap.Modal(document.getElementById('modalEditWaktu')).show();
+        }
+
+        function simpanEditWaktu() {
+            const id = document.getElementById('edit-id').value;
+            const waktu = document.getElementById('edit-waktu').value;
+            const alasan = document.getElementById('edit-alasan').value.trim();
+
+            if (!alasan || alasan.length < 5) {
+                const modalEl = document.getElementById('modalEditWaktu');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                modalInstance.hide();
+
+                modalEl.addEventListener('hidden.bs.modal', function handler() {
+                    modalEl.removeEventListener('hidden.bs.modal', handler);
+
+                    Swal.fire({
+                        icon: 'warning',
+                        text: 'Alasan minimal 5 karakter'
+                    });
+                });
+
+                return;
+            }
+
+
+            // ⬅️ TUTUP MODAL DAHULU
+            const modalEl = document.getElementById('modalEditWaktu');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            modalInstance.hide();
+
+            // ⏳ TUNGGU MODAL BENAR-BENAR TERTUTUP
+            modalEl.addEventListener('hidden.bs.modal', function handler() {
+                modalEl.removeEventListener('hidden.bs.modal', handler);
+
+                Swal.fire({
+                    title: 'Simpan perubahan?',
+                    text: 'Perubahan akan tercatat di sistem',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Simpan',
+                    cancelButtonText: 'Batal'
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+
+                    Swal.fire({
+                        title: 'Menyimpan...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    fetch(`{{ route('absensi.inline-update', ':id') }}`.replace(':id', id), {
+                            method: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                waktu: waktu,
+                                alasan_edit: alasan
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(() => {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: 'Waktu masuk diperbarui',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                        })
+                        .catch(() => {
+                            Swal.fire({
+                                icon: 'error',
+                                text: 'Gagal menyimpan data'
+                            });
+                        });
+                });
+            });
+        }
     </script>
 @endpush

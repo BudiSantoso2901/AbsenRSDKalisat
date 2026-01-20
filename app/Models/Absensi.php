@@ -21,10 +21,22 @@ class Absensi extends Model
         'foto_pulang',
         'latitude',
         'longitude',
-        'surat'
+        'surat',
+        'alasan_edit',
+        'edited_by',
+        'edited_at',
     ];
     protected $casts = [
         'tanggal' => 'date',
     ];
-
+    // Absensi.php
+    public function editor()
+    {
+        return $this->belongsTo(User::class, 'edited_by');
+    }
+    // Absensi.php
+    public function getEditedByNameAttribute()
+    {
+        return $this->editor->name ?? '-';
+    }
 }

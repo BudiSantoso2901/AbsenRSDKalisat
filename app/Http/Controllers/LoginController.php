@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Absensi;
 use App\Models\Jabatan;
 use App\Models\Lokasi;
 use App\Models\JamKerja;
 use App\Models\Pegawai;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +19,63 @@ class LoginController extends Controller
 {
     public function dashboard()
     {
-        return view('_layouts.Dashboard');
+        $bulan = now()->month;
+        $tahun = now()->year;
+
+        // ================= TOTAL PEGAWAI =================
+        $totalPegawai = Pegawai::count();
+
+        // ================= ABSENSI BULAN INI =================
+        $hadir = Absensi::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'hadir')
+            ->count();
+
+        $izin = Absensi::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'izin')
+            ->count();
+
+        $sakit = Absensi::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'sakit')
+            ->count();
+
+        // ================= BELUM ABSEN HARI INI =================
+        $hariIni = Carbon::today();
+
+        $sudahAbsen = Absensi::whereDate('tanggal', $hariIni)
+            ->pluck('id_pegawai');
+
+        $belumAbsen = Pegawai::whereNotIn('id', $sudahAbsen)->count();
+
+        // ================= PIE CHART ABSENSI =================
+        $chartAbsensiLabel = ['Hadir', 'Izin', 'Sakit', 'Belum Absen'];
+        $chartAbsensiData  = [$hadir, $izin, $sakit, $belumAbsen];
+
+        // ================= BAR CHART JABATAN =================
+        $jabatan = Jabatan::withCount('pegawai')->get();
+        $chartJabatanLabel = $jabatan->pluck('nama_jabatan');
+        $chartJabatanData  = $jabatan->pluck('pegawai_count');
+
+        // ================= BAR CHART LOKASI =================
+        $lokasi = Lokasi::withCount('pegawai')->get();
+        $chartLokasiLabel = $lokasi->pluck('nama_lokasi');
+        $chartLokasiData  = $lokasi->pluck('pegawai_count');
+
+        return view('_layouts.Dashboard', compact(
+            'totalPegawai',
+            'hadir',
+            'izin',
+            'sakit',
+            'belumAbsen',
+            'chartAbsensiLabel',
+            'chartAbsensiData',
+            'chartJabatanLabel',
+            'chartJabatanData',
+            'chartLokasiLabel',
+            'chartLokasiData'
+        ));
     }
     public function showLogin()
     {
@@ -37,6 +95,16 @@ class LoginController extends Controller
 
         $login    = $request->login;
         $password = $request->password;
+
+        /*
+    |--------------------------------------------------------------------------
+    | BERSIHKAN SESSION SEBELUM LOGIN
+    |--------------------------------------------------------------------------
+    */
+        Auth::guard('web')->logout();
+        Auth::guard('pegawai')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         /*
     |--------------------------------------------------------------------------
@@ -60,7 +128,6 @@ class LoginController extends Controller
             }
 
             if ($pegawai->status !== 'approved') {
-
                 $pesan = match ($pegawai->status) {
                     'pending'  => 'Akun belum disetujui admin',
                     'rejected' => 'Akun ditolak, hubungi admin',
@@ -75,7 +142,7 @@ class LoginController extends Controller
             Auth::guard('pegawai')->login($pegawai);
             session(['role' => 'pegawai']);
 
-            return redirect()->route('pegawai.kamera');
+            return redirect()->route('pegawai.dashboard');
         }
 
         /*
@@ -86,6 +153,7 @@ class LoginController extends Controller
         $admin = User::where('name', $login)->first();
 
         if ($admin && Hash::check($password, $admin->password)) {
+
             Auth::guard('web')->login($admin);
             session(['role' => 'admin']);
 
@@ -103,11 +171,17 @@ class LoginController extends Controller
     }
 
     // logout
-    public function logout()
+    public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
+        Auth::guard('pegawai')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
+
     public function get_register()
     {
         $lokasi = Lokasi::all();
