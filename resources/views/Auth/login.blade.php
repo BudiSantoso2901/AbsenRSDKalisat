@@ -4,6 +4,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#28a745">
+
+    <link rel="apple-touch-icon" href="/icon/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Login Presensi</title>
 
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/images-removebg-preview.png') }}" />
@@ -22,6 +28,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/theme-default.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/pages/page-auth.css') }}" />
+
 
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
@@ -105,7 +112,7 @@
 
     <!-- VIDEO BACKGROUND -->
     <div class="video-bg">
-        <video autoplay muted loop playsinline>
+        <video autoplay muted playsinline preload="auto" id="bgVideo">
             <source src="{{ asset('assets/video/rsd kalisat.mp4') }}" type="video/mp4">
         </video>
     </div>
@@ -174,7 +181,20 @@
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('SW registered'))
+                .catch(err => console.error('SW failed', err));
+        }
 
+        const video = document.getElementById('bgVideo');
+
+        video.addEventListener('ended', function() {
+            video.pause();
+            video.currentTime = video.duration - 0.1; // tahan di frame akhir
+        });
+    </script>
 </body>
 
 </html>

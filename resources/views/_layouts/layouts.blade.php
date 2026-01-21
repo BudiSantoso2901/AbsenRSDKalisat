@@ -41,11 +41,30 @@
 
     <!-- LEAFLET -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#28a745">
 
+    <link rel="apple-touch-icon" href="/icon/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
 </head>
+<style>
+    /* mobile feel */
+    body {
+        overscroll-behavior: contain;
+    }
+
+    .card {
+        border-radius: 16px;
+    }
+
+    button {
+        border-radius: 12px;
+    }
+</style>
 
 <body>
 
@@ -113,6 +132,13 @@
     {{-- sweert Alerts --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     {{-- ================= PAGE SCRIPT ================= --}}
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('SW registered'))
+                .catch(err => console.error('SW failed', err));
+        }
+    </script>
     @stack('scripts')
 
 </body>
