@@ -76,7 +76,7 @@ class PegawaiController extends Controller
                 ->make(true);
         }
 
-        return view('pegawai.pegawai', [
+        return view('Pegawai.Pegawai', [
             'jabatan'   => Jabatan::all(),
             'lokasis'   => Lokasi::all(),
             'jamKerjas' => JamKerja::all(),
