@@ -140,7 +140,7 @@
 
                             </div>
                             <button class="btn btn-absen w-100 mt-2" type="submit">
-                                <i class="bx bx-camera"></i> Ambil Foto & Absen
+                                <i class="bx bx-camera"></i> Absen
                                 </button>
                         </form>
                     </div>

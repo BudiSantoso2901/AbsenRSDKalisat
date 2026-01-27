@@ -25,6 +25,7 @@
 
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- ===== CUSTOM STYLE ===== -->
     <style>
@@ -121,8 +122,8 @@
                     <div class="card-body">
 
                         <!-- Logo -->
-                        <div class="app-brand justify-content-center mb-3">
-                            <img src="{{ asset('assets/img/images-removebg-preview.png') }}" width="220">
+                        <div class="app-brand justify-content-center mb-3"><a href="{{ route('login') }}"> <img
+                                    src="{{ asset('assets/img/images-removebg-preview.png') }}" width="220"></a>
                         </div>
 
                         <h4 class="mb-1 text-center">Pendaftaran Pegawai</h4>
@@ -135,17 +136,24 @@
 
                             <!-- ROW 1 -->
                             <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-12 mb-3">
                                     <label class="form-label">Nama Lengkap</label>
                                     <input type="text" name="name" class="form-control" placeholder="Nama lengkap"
-                                        required>
+                                        value="{{ old('name') }}" required>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-12 mb-3">
                                     <label class="form-label">NIP</label>
                                     <input type="text" name="nip" class="form-control" placeholder="NIP"
-                                        maxlength="18" required>
+                                        value="{{ old('nip') }}" required>
                                 </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" class="form-control"
+                                        value="{{ old('tanggal_lahir') }}" placeholder="Tanggal Lahir" required>
+                                </div>
+
                             </div>
 
                             <!-- ROW 2 -->
@@ -153,7 +161,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Email</label>
                                     <input type="email" name="email" class="form-control" placeholder="Email aktif"
-                                        required>
+                                        value="{{ old('email') }}" required>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -161,7 +169,10 @@
                                     <select name="id_jabatan" class="form-select" required>
                                         <option value="">Pilih Jabatan</option>
                                         @foreach ($jabatan as $j)
-                                            <option value="{{ $j->id }}">{{ $j->nama_jabatan }}</option>
+                                            <option value="{{ $j->id }}"
+                                                {{ old('id_jabatan') == $j->id ? 'selected' : '' }}>
+                                                {{ $j->nama_jabatan }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -174,7 +185,10 @@
                                     <select name="id_lokasi" class="form-select" required>
                                         <option value="">Pilih Lokasi</option>
                                         @foreach ($lokasi as $l)
-                                            <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
+                                            <option value="{{ $l->id }}"
+                                                {{ old('id_lokasi') == $l->id ? 'selected' : '' }}>
+                                                {{ $l->nama_lokasi }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -184,7 +198,10 @@
                                     <select name="id_jam_kerja" class="form-select" required>
                                         <option value="">Pilih Jam Kerja</option>
                                         @foreach ($jamKerja as $jk)
-                                            <option value="{{ $jk->id }}">{{ $jk->nama_jam_kerja }}</option>
+                                            <option value="{{ $jk->id }}"
+                                                {{ old('id_jam_kerja') == $jk->id ? 'selected' : '' }}>
+                                                {{ $jk->nama_jam_kerja }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -231,6 +248,26 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            @if ($errors->any())
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pendaftaran Gagal',
+                    html: `
+                <ul style="text-align:left; padding-left:20px;">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            `,
+                    confirmButtonColor: '#097612'
+                });
+            @endif
+
+        });
+    </script>
 
     <!-- Core JS -->
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>

@@ -65,6 +65,14 @@
             font-size: 0.9rem;
             padding: 6px 10px;
         }
+
+        .modal {
+            z-index: 1055 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
     </style>
     <div class="container-xxl flex-grow-1 container-p-y">
 
@@ -118,7 +126,7 @@
                                         </div>
 
                                         <div class="col-md-6">
-                                            <label class="form-label">NIP</label>
+                                            <label class="form-label">NIP atau Username</label>
                                             <input type="text" class="form-control" id="nip" name="nip"
                                                 required>
                                         </div>
@@ -182,8 +190,8 @@
                                             <label class="form-label">Status</label>
                                             <select class="form-select" name="status" id="status">
                                                 <option value="">Pilih Status</option>
-                                                <option value="pending">Pending</option>
                                                 <option value="approved">Approved</option>
+                                                <option value="pending">Pending</option>
                                                 <option value="rejected">Rejected</option>
                                             </select>
                                         </div>

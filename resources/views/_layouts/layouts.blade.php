@@ -138,6 +138,45 @@
                 .then(() => console.log('SW registered'))
                 .catch(err => console.error('SW failed', err));
         }
+        document.addEventListener('DOMContentLoaded', function() {
+
+            @if (session('swal_success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: '{{ session('swal_success') }}',
+                    confirmButtonColor: '#097612'
+                });
+            @endif
+
+            @if (session('swal_error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: '{{ session('swal_error') }}',
+                    confirmButtonColor: '#dc3545'
+                });
+            @endif
+
+            @if (session('swal_warning'))
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Perhatian',
+                    text: '{{ session('swal_warning') }}',
+                    confirmButtonColor: '#ffc107'
+                });
+            @endif
+
+            @if (session('swal_info'))
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Informasi',
+                    text: '{{ session('swal_info') }}',
+                    confirmButtonColor: '#0dcaf0'
+                });
+            @endif
+
+        });
     </script>
     @stack('scripts')
 

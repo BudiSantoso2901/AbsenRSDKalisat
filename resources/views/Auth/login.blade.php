@@ -33,6 +33,7 @@
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- ===== CUSTOM STYLE ===== -->
     <style>
@@ -193,6 +194,49 @@
         video.addEventListener('ended', function() {
             video.pause();
             video.currentTime = video.duration - 0.1; // tahan di frame akhir
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+
+            @if (session('swal_error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Gagal',
+                    text: '{{ session('swal_error') }}',
+                    confirmButtonColor: '#097612'
+                });
+            @endif
+
+            @if (session('swal_warning'))
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Perhatian',
+                    text: '{{ session('swal_warning') }}',
+                    confirmButtonColor: '#f06292'
+                });
+            @endif
+
+            @if (session('swal_success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: '{{ session('swal_success') }}',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            @endif
+
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+
+            @if (session('swal_success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registrasi Berhasil',
+                    text: '{{ session('swal_success') }}',
+                    confirmButtonColor: '#097612'
+                });
+            @endif
+
         });
     </script>
 </body>

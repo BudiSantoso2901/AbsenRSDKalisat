@@ -67,6 +67,17 @@
             margin: 0;
             font-weight: 600;
         }
+
+        .btn-absen {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 12px;
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+            transition: all 0.25s ease;
+        }
     </style>
     <div class="container-xxl flex-grow-1 container-p-y">
 
@@ -76,8 +87,10 @@
             {{-- Welcome --}}
             <div class="col-lg-8 col-md-12">
                 <div class="card h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
-                        <div>
+                    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center">
+
+                        <!-- TEKS -->
+                        <div class="text-center text-md-start mb-3 mb-md-0">
                             <h5 class="card-title text-success mb-2">
                                 Selamat Datang, {{ $pegawai->name }} 👋
                             </h5>
@@ -85,16 +98,22 @@
                                 Semoga harimu menyenangkan.
                                 <span class="fw-bold text-success">Jangan lupa absensi hari ini.</span>
                             </p>
-                            <a href="{{ route('pegawai.kamera') }}" class="btn btn-outline-success btn-sm">
-                                Absen Sekarang
-                            </a>
+
+                            <!-- BUTTON CENTER -->
+                            <div class="d-flex justify-content-center justify-content-md-start">
+                                <a href="{{ route('pegawai.kamera') }}" class="btn btn-absen px-4">
+                                    Absen Sekarang
+                                </a>
+                            </div>
                         </div>
 
+                        <!-- GAMBAR -->
                         <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}"
                             class="d-none d-md-block" height="120" alt="welcome">
                     </div>
                 </div>
             </div>
+
 
             {{-- Ringkasan Hadir --}}
             <div class="col-lg-4 col-md-6">

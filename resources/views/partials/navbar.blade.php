@@ -51,11 +51,11 @@
                         <div class="dropdown-divider"></div>
                     </li>
 
-                    <li>
+                    {{-- <li>
                         <a class="dropdown-item" href="#">
                             <i class="bx bx-user me-2"></i> My Profile
                         </a>
-                    </li>
+                    </li> --}}
 
                     <li>
                         <form action="{{ route('logout') }}" method="POST">

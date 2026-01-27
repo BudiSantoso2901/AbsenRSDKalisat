@@ -23,7 +23,7 @@ use App\Http\Controllers\PegawaiController;
 //     return view(view: 'Auth.login');
 // });
 
-// Route::get('/', [LoginController::class, 'showLogin'])->name('login');
+Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::get('/register', [LoginController::class, 'showRegister'])->name('register');
 Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login-prosess', [LoginController::class, 'login'])->name('login.process');
@@ -33,7 +33,7 @@ Route::get('/pegawai/register', [LoginController::class, 'get_register'])->name(
 Route::post('/pegawai/register', [LoginController::class, 'register'])->name('pegawai.register');
 
 Route::prefix('/')
-    ->middleware('auth:web')
+    ->middleware('admin.auth')
     ->group(function () {
         Route::get('dashboard', [LoginController::class, 'dashboard'])->name('admin.dashboard');
         Route::prefix('pegawai')->group(function () {
@@ -72,7 +72,7 @@ Route::prefix('/')
         });
     });
 Route::prefix('pegawai')
-    ->middleware('auth:pegawai')
+    ->middleware(['pegawai.auth'])
     ->group(function () {
 
         Route::post('/absensi', [AbsensiController::class, 'absen'])
