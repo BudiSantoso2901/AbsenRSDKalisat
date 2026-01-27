@@ -124,10 +124,10 @@
                                 </td>
                                 <td class="text-center">
                                     @if (!empty($row->foto_masuk))
-                                        <img src="{{ asset('storage/' . $row->foto_masuk) }}" class="img-thumbnail"
+                                        <img src="{{ Storage::url($row->foto_masuk) }}" class="img-thumbnail"
                                             style="width: 100px; cursor: pointer" data-bs-toggle="modal"
                                             data-bs-target="#fotoModal"
-                                            onclick="showFoto('{{ asset('storage/' . $row->foto_masuk) }}')">
+                                            onclick="showFoto('{{ Storage::url($row->foto_masuk) }}')">
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
