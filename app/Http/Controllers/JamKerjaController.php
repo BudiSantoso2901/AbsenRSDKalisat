@@ -33,7 +33,7 @@ class JamKerjaController extends Controller
                 ->make(true);
         }
 
-        return view('Admin.JamKerja');
+        return view('Admin.Jamkerja');
     }
 
     public function store(Request $request)
