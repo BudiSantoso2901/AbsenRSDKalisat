@@ -96,7 +96,7 @@ class PegawaiController extends Controller
         // generate password
         $validated['password'] = Hash::make($tgl);
 
-        $validated['status'] = 'pending';
+        $validated['status'] = 'approved';
 
         Pegawai::create($validated);
 
@@ -131,7 +131,7 @@ class PegawaiController extends Controller
     {
         return $request->validate([
             'name' => 'required|string|max:100',
-            'nip' => 'required|string|max:18|unique:pegawai,nip,' . $id,
+            'nip' => 'required|string|unique:pegawai,nip,' . $id,
             'tanggal_lahir' => 'required|date',
             'email' => 'required|email|unique:pegawai,email,' . $id,
             'id_jabatan' => 'required|exists:jabatan,id',

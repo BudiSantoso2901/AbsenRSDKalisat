@@ -79,27 +79,48 @@ class LoginController extends Controller
     }
     public function showLogin()
     {
+        if (Auth::guard('web')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if (Auth::guard('pegawai')->check()) {
+            return redirect()->route('pegawai.dashboard');
+        }
+
         return view('Auth.login');
     }
+
     public function showRegister()
     {
+        if (Auth::guard('web')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if (Auth::guard('pegawai')->check()) {
+            return redirect()->route('pegawai.dashboard');
+        }
+
         return view('Auth.Register');
     }
+
 
     public function login(Request $request)
     {
         $request->validate([
             'login'    => 'required|string',
             'password' => 'required|string'
+        ], [
+            'login.required'    => 'Username atau NIP wajib diisi',
+            'password.required' => 'Password wajib diisi'
         ]);
 
-        $login    = $request->login;
+        $login    = trim($request->login);
         $password = $request->password;
 
         /*
-    |--------------------------------------------------------------------------
-    | BERSIHKAN SESSION SEBELUM LOGIN
-    |--------------------------------------------------------------------------
+    |------------------------------------------------
+    | BERSIHKAN SESSION
+    |------------------------------------------------
     */
         Auth::guard('web')->logout();
         Auth::guard('pegawai')->logout();
@@ -107,48 +128,9 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         /*
-    |--------------------------------------------------------------------------
-    | LOGIN PEGAWAI (NIP = ANGKA)
-    |--------------------------------------------------------------------------
-    */
-        if (ctype_digit($login)) {
-
-            $pegawai = Pegawai::where('nip', $login)->first();
-
-            if (!$pegawai) {
-                return back()->withErrors([
-                    'login' => 'NIP tidak terdaftar'
-                ])->withInput();
-            }
-
-            if (!Hash::check($password, $pegawai->password)) {
-                return back()->withErrors([
-                    'login' => 'Password salah'
-                ])->withInput();
-            }
-
-            if ($pegawai->status !== 'approved') {
-                $pesan = match ($pegawai->status) {
-                    'pending'  => 'Akun belum disetujui admin',
-                    'rejected' => 'Akun ditolak, hubungi admin',
-                    default    => 'Status akun tidak valid'
-                };
-
-                return back()->withErrors([
-                    'login' => $pesan
-                ])->withInput();
-            }
-
-            Auth::guard('pegawai')->login($pegawai);
-            session(['role' => 'pegawai']);
-
-            return redirect()->route('pegawai.dashboard');
-        }
-
-        /*
-    |--------------------------------------------------------------------------
+    |------------------------------------------------
     | LOGIN ADMIN (USERNAME)
-    |--------------------------------------------------------------------------
+    |------------------------------------------------
     */
         $admin = User::where('name', $login)->first();
 
@@ -157,18 +139,50 @@ class LoginController extends Controller
             Auth::guard('web')->login($admin);
             session(['role' => 'admin']);
 
-            return redirect()->route('admin.dashboard');
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('swal_success', 'Login admin berhasil');
         }
 
         /*
-    |--------------------------------------------------------------------------
-    | LOGIN GAGAL
-    |--------------------------------------------------------------------------
+    |------------------------------------------------
+    | LOGIN PEGAWAI (NIP)
+    |------------------------------------------------
     */
-        return back()->withErrors([
-            'login' => 'Username / NIP atau password salah'
-        ])->withInput();
+        $pegawai = Pegawai::where('nip', $login)->first();
+
+        if (!$pegawai) {
+            return back()
+                ->with('swal_error', 'Username atau NIP tidak terdaftar')
+                ->withInput();
+        }
+
+        if (!Hash::check($password, $pegawai->password)) {
+            return back()
+                ->with('swal_error', 'Password salah')
+                ->withInput();
+        }
+
+        if ($pegawai->status !== 'approved') {
+            $pesan = match ($pegawai->status) {
+                'pending'  => 'Akun belum disetujui admin',
+                'rejected' => 'Akun ditolak, hubungi admin',
+                default    => 'Status akun tidak valid'
+            };
+
+            return back()
+                ->with('swal_warning', $pesan)
+                ->withInput();
+        }
+
+        Auth::guard('pegawai')->login($pegawai);
+        session(['role' => 'pegawai']);
+
+        return redirect()
+            ->route('pegawai.dashboard')
+            ->with('swal_success', 'Login berhasil, selamat datang!');
     }
+
 
     // logout
     public function logout(Request $request)
@@ -184,16 +198,17 @@ class LoginController extends Controller
 
     public function get_register()
     {
-        $lokasi = Lokasi::all();
-        $jamKerja = JamKerja::all();
-        $jabatan = Jabatan::all();
+        if (Auth::guard('pegawai')->check()) {
+            return redirect()->route('pegawai.dashboard');
+        }
 
-        return view('auth.register', compact([
-            'lokasi',
-            'jamKerja',
-            'jabatan'
-        ]));
+        if (Auth::guard('web')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return view('Auth.pegawai-register');
     }
+
     public function register(Request $request)
     {
         // ======================
@@ -201,12 +216,13 @@ class LoginController extends Controller
         // ======================
         $request->validate([
             'name' => 'required|string|max:255',
-            'nip' => 'required|string|max:18|unique:pegawai,nip',
+            'nip' => 'required|string|unique:pegawai,nip',
             'email' => 'required|email|unique:pegawai,email',
             'password' => 'required|min:6|confirmed',
             'id_jabatan' => 'required|exists:jabatan,id',
             'id_lokasi' => 'required|exists:lokasi,id',
             'id_jam_kerja' => 'required|exists:jam_kerja,id',
+            'tanggal_lahir' => 'required|date',
         ]);
 
         // ======================
@@ -231,6 +247,7 @@ class LoginController extends Controller
             'id_lokasi' => $request->id_lokasi,
             'id_jam_kerja' => $request->id_jam_kerja,
             'foto_pegawai' => $fotoPath,
+            'tanggal_lahir' => $request->tanggal_lahir,
             'status' => 'pending', // menunggu ACC admin
         ]);
 
@@ -238,6 +255,6 @@ class LoginController extends Controller
         // REDIRECT
         // ======================
         return redirect()->route('login')
-            ->with('success', 'Pendaftaran berhasil. Menunggu persetujuan admin.');
+            ->with('swal_success', 'Pendaftaran berhasil. Menunggu persetujuan admin.');
     }
 }
