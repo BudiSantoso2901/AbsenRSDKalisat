@@ -7,15 +7,16 @@
 }
 
 /* Toggle sidebar background hijau */
-.layout-menu-toggle {
+/* .layout-menu-toggle {
     background-color: var(--rs-green) !important;
-    /* border-radius: 8px;
-    padding: 6px 10px; */
-}
+    border-radius: 8px;
+} */
 
 /* Chevron putih */
-.layout-menu-toggle i {
-    color: var(--rs-white) !important;
+.layout-menu-toggle i,
+.layout-menu-toggle .bx {
+    color: var(--rs-green) !important;
+    font-size: 22px;
 }
 
 /* Hover effect */
@@ -81,4 +82,3 @@
 /* .layout-menu-toggle i {
     color: var(--rs-white) !important;
 } */
-
