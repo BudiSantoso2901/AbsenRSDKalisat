@@ -141,7 +141,7 @@
                             </div>
                             <button class="btn btn-absen w-100 mt-2" type="submit">
                                 <i class="bx bx-camera"></i> Absen
-                                </button>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -433,9 +433,7 @@
             image_format: 'jpeg',
             jpeg_quality: 85,
             constraints: {
-                facingMode: {
-                    ideal: "environment"
-                } // kamera belakang HP
+                facingMode: "user" // kamera depan
             }
         });
 
