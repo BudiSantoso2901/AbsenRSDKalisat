@@ -1,6 +1,7 @@
 @extends('_layouts.layouts')
 
 @section('content')
+
     <div class="container-xxl flex-grow-1 container-p-y">
 
         {{-- ================= ROW 1 : WELCOME + STATISTIK ================= --}}
@@ -116,11 +117,65 @@
             </div>
 
         </div>
+        {{-- card pegawai absensi hari ini  --}}
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Absensi Pegawai Hari Ini</h5>
 
+                <select id="filterAbsensi" class="form-select w-auto">
+                    <option value="all">Semua</option>
+                    <option value="hadir">Sudah Absen</option>
+                    <option value="belum">Belum Absen</option>
+                </select>
+            </div>
+
+            <div class="card-body table-responsive">
+                <table class="table table-bordered align-middle" id="datatableAbsensi">
+                    <thead class="table-light">
+                        <tr class="text-center">
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>NIP</th>
+                            <th>Jabatan</th>
+                            <th>Lokasi</th>
+                            <th>Status Hari Ini</th>
+                            <th>Jam Masuk</th>
+                            <th>Jam Pulang</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($pegawaiHariIni as $row)
+                            <tr data-status="{{ $row->status_absensi ? 'hadir' : 'belum' }}">
+                                <td class="text-center">{{ $loop->iteration }}</td>
+                                <td>{{ $row->name }}</td>
+                                <td>{{ $row->nip }}</td>
+                                <td>{{ $row->jabatan->nama_jabatan ?? '-' }}</td>
+                                <td>{{ $row->lokasi->nama_lokasi ?? '-' }}</td>
+                                <td class="text-center">
+                                    @if ($row->status_absensi)
+                                        <span class="badge bg-success">Sudah Absen</span>
+                                    @else
+                                        <span class="badge bg-secondary">Belum Absen</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    {{ $row->waktu_masuk ?? '-' }}
+                                </td>
+                                <td class="text-center">
+                                    {{ $row->waktu_pulang ?? '-' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 @endsection
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script>
         // PIE ABSENSI
         new Chart(document.getElementById('chartAbsensi'), {
@@ -172,6 +227,45 @@
                     }
                 }
             }
+        });
+        $(document).ready(function() {
+
+            let table = $('#datatableAbsensi').DataTable({
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100],
+                order: [
+                    [1, 'asc']
+                ],
+                language: {
+                    search: "Cari:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                    paginate: {
+                        next: "Next",
+                        previous: "Prev"
+                    },
+                    zeroRecords: "Data tidak ditemukan"
+                }
+            });
+
+            // FILTER SUDAH / BELUM ABSEN
+            $('#filterAbsensi').on('change', function() {
+                let filter = this.value;
+
+                $.fn.dataTable.ext.search = [];
+
+                if (filter !== 'all') {
+                    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                        let row = table.row(dataIndex).node();
+                        let status = $(row).data('status');
+
+                        return status === filter;
+                    });
+                }
+
+                table.draw();
+            });
+
         });
     </script>
 @endpush

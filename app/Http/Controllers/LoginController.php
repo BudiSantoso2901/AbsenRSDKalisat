@@ -62,6 +62,23 @@ class LoginController extends Controller
         $lokasi = Lokasi::withCount('pegawai')->get();
         $chartLokasiLabel = $lokasi->pluck('nama_lokasi');
         $chartLokasiData  = $lokasi->pluck('pegawai_count');
+        // ================= DATA TABEL ABSENSI HARI INI =================
+        $pegawaiHariIni = Pegawai::with(['jabatan', 'lokasi'])
+            ->leftJoin('absensi', function ($join) use ($hariIni) {
+                $join->on('pegawai.id', '=', 'absensi.id_pegawai')
+                    ->whereDate('absensi.tanggal', $hariIni);
+            })
+            ->select(
+                'pegawai.*',
+                'absensi.status as status_absensi',
+                'absensi.waktu_masuk',
+                'absensi.waktu_pulang'
+            )
+            ->orderBy('pegawai.name')
+            ->get();
+
+        // ================= BELUM ABSEN =================
+        $belumAbsen = $pegawaiHariIni->whereNull('status_absensi')->count();
 
         return view('_layouts.Dashboard', compact(
             'totalPegawai',
@@ -69,6 +86,7 @@ class LoginController extends Controller
             'izin',
             'sakit',
             'belumAbsen',
+            'pegawaiHariIni',
             'chartAbsensiLabel',
             'chartAbsensiData',
             'chartJabatanLabel',

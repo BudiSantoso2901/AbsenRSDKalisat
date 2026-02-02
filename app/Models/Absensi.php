@@ -39,4 +39,8 @@ class Absensi extends Model
     {
         return $this->editor->name ?? '-';
     }
+    public function pegawai()
+    {
+        return $this->belongsTo(Pegawai::class, 'id_pegawai');
+    }
 }
