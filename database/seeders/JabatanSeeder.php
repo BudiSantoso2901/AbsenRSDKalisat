@@ -14,10 +14,11 @@ class JabatanSeeder extends Seeder
     public function run(): void
     {
         DB::table('jabatan')->insert([
-            ['nama_jabatan' => 'Admin'],
-            ['nama_jabatan' => 'Kepala Bagian'],
-            ['nama_jabatan' => 'Staff'],
-            ['nama_jabatan' => 'Petugas Lapangan'],
+            ['nama_jabatan' => 'Perawat'],
+            ['nama_jabatan' => 'Pegawai'],
+            ['nama_jabatan' => 'Farmasi'],
+            ['nama_jabatan' => 'IT'],
+            ['nama_jabatan' => 'Bidan'],
         ]);
     }
 }

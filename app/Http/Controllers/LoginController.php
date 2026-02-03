@@ -224,7 +224,7 @@ class LoginController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        return view('Auth.pegawai-register');
+        return view('Auth.Register');
     }
 
     public function register(Request $request)

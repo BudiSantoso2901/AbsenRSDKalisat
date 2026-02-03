@@ -15,7 +15,7 @@ class JamKerjaSeeder extends Seeder
     {
         DB::table('lokasi')->insert([
             [
-                'nama_lokasi' => 'Kantor Pusat',
+                'nama_lokasi' => 'RSDKalisat',
                 'alamat' => 'Jl. Raya Utama No. 1',
                 'latitude' => -8.219233,
                 'longitude' => 114.369141,
