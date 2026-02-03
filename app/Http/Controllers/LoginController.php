@@ -21,28 +21,25 @@ class LoginController extends Controller
     {
         $bulan = now()->month;
         $tahun = now()->year;
-
+        $hariIni = Carbon::today();
         // ================= TOTAL PEGAWAI =================
         $totalPegawai = Pegawai::count();
 
         // ================= ABSENSI BULAN INI =================
-        $hadir = Absensi::whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
+        $hadir = Absensi::whereDate('tanggal', now())
             ->where('status', 'hadir')
             ->count();
 
-        $izin = Absensi::whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
+        $izin = Absensi::whereDate('tanggal', now())
             ->where('status', 'izin')
             ->count();
 
-        $sakit = Absensi::whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
+        $sakit = Absensi::whereDate('tanggal', now())
             ->where('status', 'sakit')
             ->count();
 
         // ================= BELUM ABSEN HARI INI =================
-        $hariIni = Carbon::today();
+
 
         $sudahAbsen = Absensi::whereDate('tanggal', $hariIni)
             ->pluck('id_pegawai');
@@ -77,8 +74,14 @@ class LoginController extends Controller
             ->orderBy('pegawai.name')
             ->get();
 
-        // ================= BELUM ABSEN =================
-        $belumAbsen = $pegawaiHariIni->whereNull('status_absensi')->count();
+        /*
+|-----------------------------------------
+| HITUNG BELUM ABSEN (status = null ATAU belum_hadir)
+|-----------------------------------------
+*/
+        $belumAbsen = $pegawaiHariIni->filter(function ($row) {
+            return is_null($row->status_absensi) || $row->status_absensi === 'belum_hadir';
+        })->count();
 
         return view('_layouts.Dashboard', compact(
             'totalPegawai',
@@ -86,6 +89,7 @@ class LoginController extends Controller
             'izin',
             'sakit',
             'belumAbsen',
+            'sudahAbsen',
             'pegawaiHariIni',
             'chartAbsensiLabel',
             'chartAbsensiData',
@@ -223,8 +227,14 @@ class LoginController extends Controller
         if (Auth::guard('web')->check()) {
             return redirect()->route('admin.dashboard');
         }
-
-        return view('Auth.Register');
+        $jabatan   = Jabatan::all();
+        $lokasi    = Lokasi::all();
+        $jamKerja  = JamKerja::all();
+        return view('Auth.Register', compact(
+            'jabatan',
+            'lokasi',
+            'jamKerja'
+        ));
     }
 
     public function register(Request $request)
@@ -236,13 +246,14 @@ class LoginController extends Controller
             'name' => 'required|string|max:255',
             'nip' => 'required|string|unique:pegawai,nip',
             'email' => 'required|email|unique:pegawai,email',
-            'password' => 'required|min:6|confirmed',
             'id_jabatan' => 'required|exists:jabatan,id',
             'id_lokasi' => 'required|exists:lokasi,id',
             'id_jam_kerja' => 'required|exists:jam_kerja,id',
             'tanggal_lahir' => 'required|date',
         ]);
 
+        $passwordPlain = \Carbon\Carbon::parse($request->tanggal_lahir)
+            ->format('dmY');
         // ======================
         // UPLOAD FOTO (JIKA ADA)
         // ======================
@@ -260,7 +271,7 @@ class LoginController extends Controller
             'name' => $request->name,
             'nip' => $request->nip,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make($passwordPlain),
             'id_jabatan' => $request->id_jabatan,
             'id_lokasi' => $request->id_lokasi,
             'id_jam_kerja' => $request->id_jam_kerja,
