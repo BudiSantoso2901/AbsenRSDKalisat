@@ -1,7 +1,6 @@
 @extends('_layouts.layouts')
 
 @section('content')
-
     <div class="container-xxl flex-grow-1 container-p-y">
 
         {{-- ================= ROW 1 : WELCOME + STATISTIK ================= --}}
@@ -145,19 +144,29 @@
                     </thead>
                     <tbody>
                         @foreach ($pegawaiHariIni as $row)
-                            <tr data-status="{{ $row->status_absensi ? 'hadir' : 'belum' }}">
+                            <tr data-status="{{ $row->status_absensi ?? 'belum_hadir' }}">
                                 <td class="text-center">{{ $loop->iteration }}</td>
                                 <td>{{ $row->name }}</td>
                                 <td>{{ $row->nip }}</td>
                                 <td>{{ $row->jabatan->nama_jabatan ?? '-' }}</td>
                                 <td>{{ $row->lokasi->nama_lokasi ?? '-' }}</td>
+
                                 <td class="text-center">
-                                    @if ($row->status_absensi)
-                                        <span class="badge bg-success">Sudah Absen</span>
+                                    @php
+                                        $status = $row->status_absensi ?? 'belum_hadir';
+                                    @endphp
+
+                                    @if ($status === 'hadir')
+                                        <span class="badge bg-success">Hadir</span>
+                                    @elseif ($status === 'izin')
+                                        <span class="badge bg-warning text-dark">Izin</span>
+                                    @elseif ($status === 'sakit')
+                                        <span class="badge bg-info">Sakit</span>
                                     @else
                                         <span class="badge bg-secondary">Belum Absen</span>
                                     @endif
                                 </td>
+
                                 <td class="text-center">
                                     {{ $row->waktu_masuk ?? '-' }}
                                 </td>
