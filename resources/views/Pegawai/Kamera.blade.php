@@ -129,12 +129,12 @@
                             <div id="section-izin" style="display:none">
 
                                 <div class="mb-3">
-                                    <label class="form-label">Keterangan</label>
+                                    <label class="form-label">Keterangan <strong>*</strong></label>
                                     <textarea class="form-control" name="keterangan" rows="3"></textarea>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Upload Surat</label>
+                                    <label class="form-label">Upload Surat <strong>*</strong></label>
                                     <input type="file" name="surat" class="form-control">
                                 </div>
 
@@ -339,7 +339,7 @@
                             icon: 'warning',
                             title: '⚠️ Anda Terlambat',
                             html: `
-                        <b>${data.telat_menit} menit</b><br>
+                        <b>${data.menitTelat} menit</b><br>
                         Badge: <b>${data.badge}</b>
                     `
                         }).then(() => {
