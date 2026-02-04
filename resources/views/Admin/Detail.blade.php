@@ -101,15 +101,21 @@
                                     {{ \Carbon\Carbon::parse($row->tanggal)->translatedFormat('l, d F Y') }}
                                 </td>
                                 <td style="min-width:180px">
-                                    @if (auth()->guard('web')->check() && strtolower(trim($row->status)) === 'hadir')
+                                    @php
+                                        $isAdmin = auth()->guard('web')->check();
+                                        $isHadir = strtolower(trim($row->status)) === 'hadir';
+                                        $hasMasuk = !empty($row->waktu_masuk);
+                                    @endphp
+
+                                    @if ($isAdmin && $isHadir && $hasMasuk)
                                         <button class="btn btn-sm btn-outline-primary"
                                             onclick="openEditWaktuModal(
-            {{ $row->id }},
-            '{{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}',
-            '{{ $row->alasan_edit ?? '' }}',
-            '{{ $row->edited_by_name ?? '-' }}',
-            '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}'
-        )">
+                {{ $row->id }},
+                '{{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}',
+                '{{ $row->alasan_edit ?? '' }}',
+                '{{ $row->edited_by_name ?? '-' }}',
+                '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}'
+            )">
                                             {{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}
                                         </button>
                                     @else

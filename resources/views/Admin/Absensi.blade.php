@@ -75,9 +75,9 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5>Data Absensi</h5>
-                <button class="btn btn-primary btn-sm">
+                {{-- <button class="btn btn-primary btn-sm">
                     Ekspor Semua
-                </button>
+                </button> --}}
             </div>
 
             <div class="card-body table-responsive">
