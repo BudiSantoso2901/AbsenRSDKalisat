@@ -45,5 +45,12 @@ class UserSeeder extends Seeder
             'password' => Hash::make('123123'),
             'remember_token' => Str::random(10),
         ]);
+        User::create([
+            'name' => 'Administrator',
+            'email' => 'admin777@example.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('123123'),
+            'remember_token' => Str::random(10),
+        ]);
     }
 }
