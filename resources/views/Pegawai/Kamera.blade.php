@@ -188,16 +188,14 @@
                                         $jamKerja = auth()->guard('pegawai')->user()->jamKerja;
 
                                         if ($row->status === 'hadir' && $row->waktu_masuk && $jamKerja) {
-                                            // waktu masuk sudah datetime → cukup parse biasa
                                             $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
 
-                                            // AMBIL TANGGAL SAJA (tanpa jam)
-                                            $tanggal = \Carbon\Carbon::parse($row->tanggal)->toDateString();
+                                            // tanggal ikut waktu masuk
+                                            $tanggalMasuk = $waktuMasuk->toDateString();
 
-                                            // gabungkan tanggal + jam kerja
                                             $jamMulai = \Carbon\Carbon::createFromFormat(
                                                 'Y-m-d H:i:s',
-                                                $tanggal . ' ' . $jamKerja->jam_mulai,
+                                                $tanggalMasuk . ' ' . $jamKerja->jam_mulai,
                                                 'Asia/Jakarta',
                                             );
 
