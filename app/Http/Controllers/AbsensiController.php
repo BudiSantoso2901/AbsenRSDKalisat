@@ -218,6 +218,7 @@ class AbsensiController extends Controller
             'message' => 'Absensi berhasil diperbarui'
         ]);
     }
+
     public function absen(Request $request)
     {
         $pegawai = auth()->guard('pegawai')->user();
@@ -232,8 +233,9 @@ class AbsensiController extends Controller
             'surat'      => 'nullable|file|mimes:jpg,png,pdf|max:2048',
         ]);
 
-        $now      = Carbon::now('Asia/Jakarta');
-        $hariIni = $now->copy()->startOfDay();
+        $now       = Carbon::now('Asia/Jakarta');
+        $today     = $now->toDateString();
+        $yesterday = Carbon::yesterday()->toDateString();
 
         /** ================= JAM KERJA ================= */
         $jamKerja = $pegawai->jamKerja;
@@ -241,31 +243,51 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Jam kerja belum ditentukan'], 422);
         }
 
-        $jamMulai   = Carbon::parse($hariIni->toDateString() . ' ' . $jamKerja->jam_mulai);
-        $jamSelesai = Carbon::parse($hariIni->toDateString() . ' ' . $jamKerja->jam_selesai);
+        // shift normal / malam
+        $shiftMalam = Carbon::parse($jamKerja->jam_selesai)->lt(Carbon::parse($jamKerja->jam_mulai));
 
-        $isShiftMalam = $jamSelesai->lt($jamMulai);
-        $toleransi    = $jamKerja->toleransi_menit ?? 0;
-        $early        = $jamKerja->early_absen_menit ?? 0;
+        if ($shiftMalam) {
+            // shift malam: mulai kemarin, selesai hari ini
+            $jamMulai   = Carbon::parse($yesterday . ' ' . $jamKerja->jam_mulai);
+            $jamSelesai = Carbon::parse($today . ' ' . $jamKerja->jam_selesai);
+        } else {
+            $jamMulai   = Carbon::parse($today . ' ' . $jamKerja->jam_mulai);
+            $jamSelesai = Carbon::parse($today . ' ' . $jamKerja->jam_selesai);
+        }
 
+        $toleransi   = $jamKerja->toleransi_menit ?? 0;
+        $early       = $jamKerja->early_absen_menit ?? 0;
         $jamBolehMasuk = $jamMulai->copy()->subMinutes($early);
         $jamToleransi  = $jamMulai->copy()->addMinutes($toleransi);
 
+        /** ================= DATA ABSENSI ================= */
+        $absenHariIni = Absensi::where('id_pegawai', $pegawai->id)
+            ->whereDate('tanggal', $today)
+            ->first();
+
+        $absenKemarin = Absensi::where('id_pegawai', $pegawai->id)
+            ->whereDate('tanggal', $yesterday)
+            ->whereNotNull('waktu_masuk')
+            ->whereNull('waktu_pulang')
+            ->first();
+
         /** ================= IZIN / SAKIT ================= */
         if (in_array($request->status, ['izin', 'sakit'])) {
-
-            $absensi = new Absensi();
-            $absensi->id_pegawai = $pegawai->id;
-            $absensi->tanggal    = $hariIni->toDateString();
-            $absensi->status     = $request->status;
-            $absensi->keterangan = $request->keterangan;
-
-            if ($request->hasFile('surat')) {
-                $absensi->surat = $request->file('surat')
-                    ->store('surat_absensi', 'public');
+            if ($absenHariIni) {
+                return response()->json([
+                    'message' => 'Tidak bisa izin/sakit karena sudah absen hadir hari ini'
+                ], 422);
             }
 
-            $absensi->save();
+            $absensi = Absensi::create([
+                'id_pegawai' => $pegawai->id,
+                'tanggal'    => $today,
+                'status'     => $request->status,
+                'keterangan' => $request->keterangan,
+                'surat'      => $request->hasFile('surat')
+                    ? $request->file('surat')->store('surat_absensi', 'public')
+                    : null
+            ]);
 
             return response()->json([
                 'message' => 'Absensi ' . strtoupper($request->status) . ' berhasil'
@@ -289,90 +311,64 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Anda berada di luar area absensi'], 422);
         }
 
-        /** ================= FOTO ================= */
         $fotoPath = $request->file('foto')->store('absensi_foto', 'public');
 
-        /** ================= ABSENSI HARI INI ================= */
-        $absenAktif = Absensi::where('id_pegawai', $pegawai->id)
-            ->whereNotNull('waktu_masuk')
-            ->whereNull('waktu_pulang')
-            ->orderBy('tanggal', 'desc')
-            ->first();
-
-
         /** ================= ABSEN MASUK ================= */
-        if (!$absenAktif) {
-
-            // if ($now->lt($jamBolehMasuk)) {
-            //     return response()->json(['message' => 'Belum waktunya absen'], 422);
-            // }
-
+        if (!$absenHariIni) {
             $telat = $now->gt($jamToleransi);
             $menitTelat = $telat ? $jamToleransi->diffInMinutes($now) : 0;
 
-            $absensi = new Absensi();
-            $absensi->id_pegawai = $pegawai->id;
-            $absensi->tanggal    = $hariIni->toDateString();
-            $absensi->waktu_masuk = $now;
-            $absensi->foto_masuk  = $fotoPath;
-            $absensi->latitude    = $request->latitude;
-            $absensi->longitude   = $request->longitude;
-            $absensi->status      = 'hadir';
-            $absensi->save();
+            Absensi::create([
+                'id_pegawai'  => $pegawai->id,
+                'tanggal'     => $shiftMalam ? $yesterday : $today,
+                'waktu_masuk' => $now,
+                'foto_masuk'  => $fotoPath,
+                'latitude'    => $request->latitude,
+                'longitude'   => $request->longitude,
+                'status'      => 'hadir',
+            ]);
 
             return response()->json([
                 'message' => $telat
                     ? "Anda terlambat {$menitTelat} menit"
                     : 'Absen masuk berhasil',
                 'telat' => $telat,
-                'menitTelat'  => $menitTelat,
+                'menitTelat' => $menitTelat,
                 'badge' => $telat ? $this->badgeTelat($menitTelat) : null
             ]);
         }
 
         /** ================= ABSEN PULANG ================= */
-        if (!$absenAktif->waktu_pulang) {
-
-            // SHIFT MALAM → RECORD BARU
-            if ($isShiftMalam) {
-
-                $absenKemarin = Absensi::where('id_pegawai', $pegawai->id)
-                    ->whereDate('tanggal', $hariIni->copy()->subDay())
-                    ->whereNotNull('waktu_masuk')
-                    ->whereNull('waktu_pulang')
-                    ->first();
-
-                if (!$absenKemarin) {
-                    return response()->json([
-                        'message' => 'Data absen masuk shift malam tidak ditemukan'
-                    ], 422);
-                }
-
-                $absensi = new Absensi();
-                $absensi->id_pegawai = $pegawai->id;
-                $absensi->tanggal = $hariIni->toDateString();
-                $absensi->waktu_pulang = $now;
-                $absensi->foto_pulang = $fotoPath;
-                $absensi->latitude    = $request->latitude;
-                $absensi->longitude   = $request->longitude;
-                $absensi->status = 'hadir';
-                $absensi->save();
-
+        if ($shiftMalam && $absenKemarin) {
+            if ($now->lt($jamSelesai)) {
                 return response()->json([
-                    'message' => 'Absen pulang shift malam berhasil'
-                ]);
+                    'message' => 'Belum waktunya absen pulang shift malam'
+                ], 422);
             }
 
-            // SHIFT NORMAL
-            if ($now->lt($jamSelesai)) {
+            $absenKemarin->update([
+                'waktu_pulang' => $now,
+                'foto_pulang'  => $fotoPath,
+                'latitude'     => $request->latitude,
+                'longitude'    => $request->longitude,
+            ]);
+
+            return response()->json([
+                'message' => 'Absen pulang shift malam berhasil'
+            ]);
+        }
+
+        if ($absenHariIni && !$absenHariIni->waktu_pulang) {
+            if (!$shiftMalam && $now->lt($jamSelesai)) {
                 return response()->json([
                     'message' => 'Belum waktunya absen pulang'
                 ], 422);
             }
 
-            $absenAktif->waktu_pulang = $now;
-            $absenAktif->foto_pulang = $fotoPath;
-            $absenAktif->save();
+            $absenHariIni->update([
+                'waktu_pulang' => $now,
+                'foto_pulang'  => $fotoPath,
+            ]);
 
             return response()->json([
                 'message' => 'Absen pulang berhasil'
