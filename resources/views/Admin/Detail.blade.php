@@ -230,7 +230,7 @@
 
                         <div class="mb-2">
                             <label class="form-label">Waktu Masuk</label>
-                            <input type="time" class="form-control" id="edit-waktu">
+                            <input type="datetime-local" class="form-control" id="edit-waktu" name="waktu">
                         </div>
 
                         <div class="mb-2">
@@ -410,7 +410,7 @@
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({
-                                waktu: waktu,
+                                waktu: waktu, // ⬅️ kirim RAW datetime-local
                                 alasan_edit: alasan
                             })
                         })

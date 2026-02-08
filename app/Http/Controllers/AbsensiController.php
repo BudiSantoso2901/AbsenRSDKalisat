@@ -799,40 +799,48 @@ class AbsensiController extends Controller
     }
     public function update(Request $request, $id)
     {
-        // ✅ Validasi
+        /** ================= VALIDASI ================= */
         $request->validate([
-            'waktu'       => 'required|date_format:H:i',
+            'waktu'       => 'required|date_format:Y-m-d\TH:i',
             'alasan_edit' => 'required|string|min:5',
         ]);
 
-        // ✅ Pastikan admin / web guard
+        /** ================= AUTH ADMIN ================= */
         if (!auth()->guard('web')->check()) {
             return response()->json([
                 'message' => 'Unauthorized'
             ], 403);
         }
 
-        // ✅ Ambil absensi + relasi editor
+        /** ================= AMBIL DATA ================= */
         $absensi = Absensi::with('editor')->findOrFail($id);
 
-        // ✅ Update data
+        /** ================= KONVERSI DATETIME ================= */
+        $waktuMasuk = Carbon::createFromFormat(
+            'Y-m-d\TH:i',
+            $request->waktu,
+            'Asia/Jakarta'
+        )->format('Y-m-d H:i:s');
+
+        /** ================= UPDATE ================= */
         $absensi->update([
-            'waktu_masuk' => $request->waktu,
+            'waktu_masuk' => $waktuMasuk,
             'alasan_edit' => $request->alasan_edit,
             'edited_by'   => auth()->id(),
             'edited_at'   => now(),
         ]);
 
-        // 🔄 Refresh relasi editor (penting!)
+        /** ================= REFRESH RELASI ================= */
         $absensi->load('editor');
 
-        // ✅ Response lengkap (UNTUK MODAL & SWEETALERT)
+        /** ================= RESPONSE ================= */
         return response()->json([
-            'success'        => true,
-            'waktu_masuk'    => Carbon::parse($absensi->waktu_masuk)->format('H:i'),
-            'alasan_edit'    => $absensi->alasan_edit,
-            'edited_by'      => $absensi->editor->name ?? '-',
-            'edited_at'      => $absensi->edited_at
+            'success'     => true,
+            'message'     => 'Waktu masuk berhasil diperbarui',
+            'waktu_masuk' => Carbon::parse($absensi->waktu_masuk)->format('H:i'),
+            'alasan_edit' => $absensi->alasan_edit,
+            'edited_by'   => $absensi->editor->name ?? '-',
+            'edited_at'   => $absensi->edited_at
                 ? Carbon::parse($absensi->edited_at)->format('d-m-Y H:i')
                 : '-',
         ]);
