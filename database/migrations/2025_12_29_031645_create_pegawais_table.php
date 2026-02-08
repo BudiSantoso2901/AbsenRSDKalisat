@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->char('nip')->unique();
-            $table->date('tanggal_lahir')->unique();
+            $table->date('tanggal_lahir');
             $table->string('email')->unique();
             $table->string('password');
             $table->foreignId('id_jabatan')
