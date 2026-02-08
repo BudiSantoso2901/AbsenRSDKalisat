@@ -218,12 +218,13 @@ class AbsensiController extends Controller
             'message' => 'Absensi berhasil diperbarui'
         ]);
     }
-
     public function absen(Request $request)
     {
+        /** ================= AUTH ================= */
         $pegawai = auth()->guard('pegawai')->user();
         if (!$pegawai) abort(401);
 
+        /** ================= VALIDASI ================= */
         $request->validate([
             'status'     => 'required|in:hadir,izin,sakit',
             'latitude'   => 'required_if:status,hadir',
@@ -235,7 +236,7 @@ class AbsensiController extends Controller
 
         $now       = Carbon::now('Asia/Jakarta');
         $today     = $now->toDateString();
-        $yesterday = Carbon::yesterday()->toDateString();
+        $yesterday = Carbon::yesterday('Asia/Jakarta')->toDateString();
 
         /** ================= JAM KERJA ================= */
         $jamKerja = $pegawai->jamKerja;
@@ -243,45 +244,65 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Jam kerja belum ditentukan'], 422);
         }
 
-        // shift normal / malam
-        $shiftMalam = Carbon::parse($jamKerja->jam_selesai)->lt(Carbon::parse($jamKerja->jam_mulai));
+        $jamMulaiJam   = Carbon::parse($jamKerja->jam_mulai);
+        $jamSelesaiJam = Carbon::parse($jamKerja->jam_selesai);
 
-        if ($shiftMalam) {
-            // shift malam: mulai kemarin, selesai hari ini
-            $jamMulai   = Carbon::parse($yesterday . ' ' . $jamKerja->jam_mulai);
-            $jamSelesai = Carbon::parse($today . ' ' . $jamKerja->jam_selesai);
+        // SHIFT MALAM
+        $isShiftMalam = $jamSelesaiJam->lt($jamMulaiJam);
+
+        /** ================= DATA ABSENSI ================= */
+        $absenAktif = Absensi::where('id_pegawai', $pegawai->id)
+            ->whereNotNull('waktu_masuk')
+            ->whereNull('waktu_pulang')
+            ->orderBy('tanggal', 'desc')
+            ->first();
+
+        /** ================= TANGGAL EFEKTIF (FIX UTAMA) ================= */
+        if ($absenAktif) {
+            $tanggal = $absenAktif->tanggal;
         } else {
-            $jamMulai   = Carbon::parse($today . ' ' . $jamKerja->jam_mulai);
-            $jamSelesai = Carbon::parse($today . ' ' . $jamKerja->jam_selesai);
+            if ($isShiftMalam && $now->format('H:i:s') < $jamKerja->jam_selesai) {
+                $tanggal = Carbon::yesterday('Asia/Jakarta')->toDateString();
+            } else {
+                $tanggal = Carbon::today('Asia/Jakarta')->toDateString();
+            }
         }
 
-        $toleransi   = $jamKerja->toleransi_menit ?? 0;
-        $early       = $jamKerja->early_absen_menit ?? 0;
+        $jamMulai = Carbon::parse($tanggal, 'Asia/Jakarta')
+            ->setTimeFromTimeString($jamKerja->jam_mulai);
+
+        $jamSelesai = Carbon::parse($tanggal, 'Asia/Jakarta')
+            ->setTimeFromTimeString($jamKerja->jam_selesai);
+
+        if ($isShiftMalam) {
+            $jamSelesai->addDay();
+        }
+        if ($isShiftMalam && $jamSelesai->lt($jamMulai)) {
+            $jamSelesai->addDay();
+        }
+
+        $early     = $jamKerja->early_absen_menit ?? 30;
+        $toleransi = $jamKerja->toleransi_menit ?? 0;
+
         $jamBolehMasuk = $jamMulai->copy()->subMinutes($early);
         $jamToleransi  = $jamMulai->copy()->addMinutes($toleransi);
 
-        /** ================= DATA ABSENSI ================= */
         $absenHariIni = Absensi::where('id_pegawai', $pegawai->id)
-            ->whereDate('tanggal', $today)
-            ->first();
-
-        $absenKemarin = Absensi::where('id_pegawai', $pegawai->id)
-            ->whereDate('tanggal', $yesterday)
-            ->whereNotNull('waktu_masuk')
-            ->whereNull('waktu_pulang')
+            ->whereDate('tanggal', $tanggal)
             ->first();
 
         /** ================= IZIN / SAKIT ================= */
         if (in_array($request->status, ['izin', 'sakit'])) {
+
             if ($absenHariIni) {
                 return response()->json([
-                    'message' => 'Tidak bisa izin/sakit karena sudah absen hadir hari ini'
+                    'message' => 'Absensi hari ini sudah tercatat Hadir'
                 ], 422);
             }
 
-            $absensi = Absensi::create([
+            Absensi::create([
                 'id_pegawai' => $pegawai->id,
-                'tanggal'    => $today,
+                'tanggal'    => $tanggal,
                 'status'     => $request->status,
                 'keterangan' => $request->keterangan,
                 'surat'      => $request->hasFile('surat')
@@ -314,13 +335,18 @@ class AbsensiController extends Controller
         $fotoPath = $request->file('foto')->store('absensi_foto', 'public');
 
         /** ================= ABSEN MASUK ================= */
-        if (!$absenHariIni) {
+        if (!$absenHariIni && !$absenAktif) {
+
+            if (!$isShiftMalam && $now->lt($jamBolehMasuk)) {
+                return response()->json(['message' => 'Belum waktunya absen masuk'], 422);
+            }
+
             $telat = $now->gt($jamToleransi);
             $menitTelat = $telat ? $jamToleransi->diffInMinutes($now) : 0;
 
             Absensi::create([
                 'id_pegawai'  => $pegawai->id,
-                'tanggal'     => $shiftMalam ? $yesterday : $today,
+                'tanggal'     => $tanggal,
                 'waktu_masuk' => $now,
                 'foto_masuk'  => $fotoPath,
                 'latitude'    => $request->latitude,
@@ -339,47 +365,31 @@ class AbsensiController extends Controller
         }
 
         /** ================= ABSEN PULANG ================= */
-        if ($shiftMalam && $absenKemarin) {
+        if ($absenAktif) {
+
             if ($now->lt($jamSelesai)) {
-                return response()->json([
-                    'message' => 'Belum waktunya absen pulang shift malam'
-                ], 422);
-            }
-
-            $absenKemarin->update([
-                'waktu_pulang' => $now,
-                'foto_pulang'  => $fotoPath,
-                'latitude'     => $request->latitude,
-                'longitude'    => $request->longitude,
-            ]);
-
-            return response()->json([
-                'message' => 'Absen pulang shift malam berhasil'
-            ]);
-        }
-
-        if ($absenHariIni && !$absenHariIni->waktu_pulang) {
-            if (!$shiftMalam && $now->lt($jamSelesai)) {
                 return response()->json([
                     'message' => 'Belum waktunya absen pulang'
                 ], 422);
             }
 
-            $absenHariIni->update([
-                'waktu_pulang' => $now,
-                'foto_pulang'  => $fotoPath,
-            ]);
+            $absenAktif->waktu_pulang = $now;
+            $absenAktif->foto_pulang = $fotoPath;
+            $absenAktif->latitude    = $request->latitude;
+            $absenAktif->longitude   = $request->longitude;
+            $absenAktif->save();
 
             return response()->json([
-                'message' => 'Absen pulang berhasil'
+                'message' => $isShiftMalam
+                    ? 'Absen pulang shift malam berhasil'
+                    : 'Absen pulang berhasil'
             ]);
         }
 
         return response()->json([
             'message' => 'Absensi hari ini sudah lengkap'
-        ], 422);
+        ], 409);
     }
-
     // public function absen(Request $request)
     // {
     //     /** ======================================
