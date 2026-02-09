@@ -340,6 +340,10 @@ class AbsensiController extends Controller
             if (!$isShiftMalam && $now->lt($jamBolehMasuk)) {
                 return response()->json(['message' => 'Belum waktunya absen masuk'], 422);
             }
+            $jamBolehMasuk = $jamMulai->copy()->subMinutes($early);
+            if ($now->lt($jamBolehMasuk)) {
+                return response()->json(['message' => 'Belum waktunya absen masuk'], 422);
+            }
 
             $telat = $now->gt($jamToleransi);
             $menitTelat = $telat ? $jamToleransi->diffInMinutes($now) : 0;
