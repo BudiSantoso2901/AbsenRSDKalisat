@@ -300,4 +300,8 @@ class PegawaiController extends Controller
             ]
         ]);
     }
+    public function panduan()
+    {
+        return view('Pegawai.Panduan');
+    }
 }

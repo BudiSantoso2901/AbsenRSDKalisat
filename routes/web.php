@@ -81,4 +81,5 @@ Route::prefix('pegawai')
         Route::get('/dashboard', [PegawaiController::class, 'dashboard_pegawai'])->name('pegawai.dashboard');
         Route::post('/update-shift', [PegawaiController::class, 'updateShift'])
             ->name('pegawai.updateShift');
+        Route::get('/panduan', [PegawaiController::class, 'panduan'])->name('pegawai.panduan');
     });

@@ -61,6 +61,12 @@
                     <div>Absensi</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('pegawai.panduan') ? 'active' : '' }}">
+                <a href="{{ route('pegawai.panduan') }}" class="menu-link">
+                    <i class="menu-icon bx bx-book"></i>
+                    <div>Panduan</div>
+                </a>
+            </li>
         @endauth
 
         {{-- ================= LOGOUT ================= --}}
