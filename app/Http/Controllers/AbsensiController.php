@@ -281,7 +281,7 @@ class AbsensiController extends Controller
             $jamSelesai->addDay();
         }
 
-        $early     = $jamKerja->early_absen_menit ?? 30;
+        $early     = $jamKerja->early_absen_menit ?? 120;
         $toleransi = $jamKerja->toleransi_menit ?? 0;
 
         $jamBolehMasuk = $jamMulai->copy()->subMinutes($early);

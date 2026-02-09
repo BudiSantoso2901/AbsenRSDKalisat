@@ -189,21 +189,21 @@
                                             'jam_mulai' => '07:00:00',
                                             'jam_selesai' => '14:00:00',
                                             'toleransi' => 10, // TL mulai dihitung setelah jam mulai + 10 menit
-                                            'early_allowed' => 30, // datang maksimal 30 menit lebih awal
+                                            'early_allowed' => 120, // datang maksimal 30 menit lebih awal
                                         ],
                                         [
                                             'nama' => 'Shift Siang',
                                             'jam_mulai' => '14:00:00',
                                             'jam_selesai' => '20:00:00',
                                             'toleransi' => 10,
-                                            'early_allowed' => 30,
+                                            'early_allowed' => 120,
                                         ],
                                         [
                                             'nama' => 'Shift Malam',
                                             'jam_mulai' => '20:00:00',
                                             'jam_selesai' => '07:00:00',
                                             'toleransi' => 10,
-                                            'early_allowed' => 30,
+                                            'early_allowed' => 120,
                                         ],
                                     ];
                                 @endphp
