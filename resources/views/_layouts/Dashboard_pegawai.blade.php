@@ -174,11 +174,20 @@
                             </div>
                         </div>
 
-                        <div class="info-item">
-                            <i class="bx bx-time-five"></i>
+                        <div class="info-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bx bx-time-five fs-3"></i>
+                                <div>
+                                    <small>Jam Kerja</small>
+                                    <p class="mb-0" id="jamKerjaDisplay">{{ $pegawai->jamKerja->nama_jam_kerja ?? '-' }}
+                                    </p>
+                                </div>
+                            </div>
                             <div>
-                                <small>Jam Kerja</small>
-                                <p>{{ $pegawai->jamKerja->nama_jam_kerja ?? '-' }}</p>
+                                <button class="btn btn-absen btn-success mt-2 mt-md-0" data-bs-toggle="modal"
+                                    data-bs-target="#modalUbahShift">
+                                    Ubah Shift
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -197,6 +206,35 @@
 
         </div>
 
+    </div>
+    <div class="modal fade" id="modalUbahShift" tabindex="-1" aria-labelledby="modalUbahShiftLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formUbahShift">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalUbahShiftLabel">Ubah Shift</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="id_jam_kerja" class="form-label">Pilih Shift Baru</label>
+                            <select class="form-select" name="id_jam_kerja" id="id_jam_kerja" required>
+                                <option value="">-- Pilih Shift --</option>
+                                @foreach ($jamKerja as $jam)
+                                    <option value="{{ $jam->id }}">{{ $jam->nama_jam_kerja }} ({{ $jam->jam_mulai }}
+                                        - {{ $jam->jam_selesai }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div id="shiftMessage" class="text-danger"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-absen">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 @endsection
 @push('scripts')
@@ -237,6 +275,57 @@
                     }
                 }
             }
+        });
+        $(document).ready(function() {
+            $('#formUbahShift').on('submit', function(e) {
+                e.preventDefault();
+
+                let formData = $(this).serialize();
+
+                $.ajax({
+                    url: "{{ route('pegawai.updateShift') }}",
+                    type: "POST",
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            // update tampilan shift
+                            $('#jamKerjaDisplay').text(response.shift_baru.nama);
+
+                            // tutup modal
+                            var modalEl = document.getElementById('modalUbahShift');
+                            var modal = bootstrap.Modal.getInstance(
+                                modalEl); // ambil instance modal
+                            if (modal) modal.hide();
+
+                            // hapus backdrop manual kalau masih ada
+                            $('.modal-backdrop').remove();
+
+                            // reset form
+                            $('#formUbahShift')[0].reset();
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: response.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function(xhr) {
+                        let msg = 'Terjadi kesalahan';
+                        if (xhr.status === 422) {
+                            msg = xhr.responseJSON.message || 'Validasi gagal';
+                        } else if (xhr.status === 401) {
+                            msg = 'Anda tidak memiliki akses';
+                        }
+                        $('#shiftMessage').text(msg);
+                    }
+                });
+            });
         });
     </script>
 @endpush

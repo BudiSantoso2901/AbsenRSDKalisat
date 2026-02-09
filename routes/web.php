@@ -79,4 +79,6 @@ Route::prefix('pegawai')
             ->name('absensi.store');
         Route::get('/kamera', [AbsensiController::class, 'kamera'])->name('pegawai.kamera');
         Route::get('/dashboard', [PegawaiController::class, 'dashboard_pegawai'])->name('pegawai.dashboard');
+        Route::post('/update-shift', [PegawaiController::class, 'updateShift'])
+            ->name('pegawai.updateShift');
     });

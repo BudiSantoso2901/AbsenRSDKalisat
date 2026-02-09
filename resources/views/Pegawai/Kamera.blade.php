@@ -182,52 +182,109 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $shifts = [
+                                        [
+                                            'nama' => 'Shift Pagi',
+                                            'jam_mulai' => '07:00:00',
+                                            'jam_selesai' => '14:00:00',
+                                            'toleransi' => 10, // TL mulai dihitung setelah jam mulai + 10 menit
+                                            'early_allowed' => 30, // datang maksimal 30 menit lebih awal
+                                        ],
+                                        [
+                                            'nama' => 'Shift Siang',
+                                            'jam_mulai' => '14:00:00',
+                                            'jam_selesai' => '20:00:00',
+                                            'toleransi' => 10,
+                                            'early_allowed' => 30,
+                                        ],
+                                        [
+                                            'nama' => 'Shift Malam',
+                                            'jam_mulai' => '20:00:00',
+                                            'jam_selesai' => '07:00:00',
+                                            'toleransi' => 10,
+                                            'early_allowed' => 30,
+                                        ],
+                                    ];
+                                @endphp
+
                                 @foreach ($absensi as $row)
                                     @php
                                         $badge = null;
-                                        $jamKerja = auth()->guard('pegawai')->user()->jamKerja;
 
-                                        if ($row->status === 'hadir' && $row->waktu_masuk && $jamKerja) {
+                                        if ($row->status === 'hadir' && $row->waktu_masuk) {
                                             $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
-
-                                            // tanggal ikut waktu masuk
                                             $tanggalMasuk = $waktuMasuk->toDateString();
 
-                                            $jamMulai = \Carbon\Carbon::createFromFormat(
-                                                'Y-m-d H:i:s',
-                                                $tanggalMasuk . ' ' . $jamKerja->jam_mulai,
-                                                'Asia/Jakarta',
-                                            );
+                                            foreach ($shifts as $shift) {
+                                                $jamMulai = \Carbon\Carbon::createFromFormat(
+                                                    'Y-m-d H:i:s',
+                                                    $tanggalMasuk . ' ' . $shift['jam_mulai'],
+                                                    'Asia/Jakarta',
+                                                );
 
-                                            $jamMulaiToleransi = $jamMulai
-                                                ->copy()
-                                                ->addMinutes($jamKerja->toleransi_menit ?? 0);
+                                                // hitung jam selesai shift
+                                                if ($shift['jam_selesai'] < $shift['jam_mulai']) {
+                                                    $jamSelesai = \Carbon\Carbon::createFromFormat(
+                                                        'Y-m-d H:i:s',
+                                                        $tanggalMasuk . ' ' . $shift['jam_selesai'],
+                                                        'Asia/Jakarta',
+                                                    )->addDay();
+                                                } else {
+                                                    $jamSelesai = \Carbon\Carbon::createFromFormat(
+                                                        'Y-m-d H:i:s',
+                                                        $tanggalMasuk . ' ' . $shift['jam_selesai'],
+                                                        'Asia/Jakarta',
+                                                    );
+                                                }
 
-                                            if ($waktuMasuk->gt($jamMulaiToleransi)) {
-                                                $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+                                                // batas hadir lebih awal
+                                                $jamMulaiEarly = $jamMulai->copy()->subMinutes($shift['early_allowed']);
+                                                // batas telat
+                                                $jamMulaiToleransi = $jamMulai->copy()->addMinutes($shift['toleransi']);
 
-                                                $badge = match (true) {
-                                                    $menitTelat <= 30 => 'TL1',
-                                                    $menitTelat <= 60 => 'TL2',
-                                                    $menitTelat <= 90 => 'TL3',
-                                                    default => 'TL4',
-                                                };
+                                                if ($waktuMasuk->between($jamMulaiEarly, $jamMulaiToleransi)) {
+                                                    // hadir on time / early diperbolehkan → TL0
+                                                    $badge = null; // atau bisa isi 'TL0'
+                                                } elseif ($waktuMasuk->gt($jamMulaiToleransi)) {
+                                                    // hadir telat → hitung TL1–TL4
+                                                    $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+                                                    $badge = match (true) {
+                                                        $menitTelat <= 30 => 'TL1',
+                                                        $menitTelat <= 60 => 'TL2',
+                                                        $menitTelat <= 90 => 'TL3',
+                                                        default => 'TL4',
+                                                    };
+                                                }
+
+                                                // cek apakah masuk di shift ini
+                                                if ($waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
+                                                    break;
+                                                }
                                             }
                                         }
                                     @endphp
 
                                     <tr>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
+                                        <td>{{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
                                         </td>
-                                        <td>
-                                            {{ $row->waktu_masuk ?? '-' }}
 
+                                        {{-- Waktu hadir --}}
+                                        <td>
+                                            {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
                                             @if ($badge)
                                                 <span class="badge bg-warning ms-1">{{ $badge }}</span>
                                             @endif
                                         </td>
-                                        <td>{{ $row->waktu_pulang ?? '-' }}</td>
+
+                                        {{-- Waktu pulang --}}
+                                        <td>
+                                            {{ $row->waktu_pulang
+                                                ? \Carbon\Carbon::parse($row->waktu_pulang)->locale('id')->translatedFormat('l, j F Y h.i A')
+                                                : '-' }}
+                                        </td>
+
+                                        {{-- Status --}}
                                         <td>
                                             <span class="badge bg-success">{{ strtoupper($row->status) }}</span>
                                         </td>
