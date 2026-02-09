@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Absensi;
 use App\Models\Jabatan;
 use App\Models\Lokasi;
 use App\Models\JamKerja;
@@ -226,6 +227,8 @@ class PegawaiController extends Controller
                 $chartSakit[$index] = $row->total;
             }
         }
+        $jamKerja = JamKerja::orderBy('jam_mulai')->get();
+
 
         return view('_layouts.Dashboard_pegawai', compact(
             'pegawai',
@@ -234,7 +237,67 @@ class PegawaiController extends Controller
             'sakit',
             'chartHadir',
             'chartIzin',
-            'chartSakit'
+            'chartSakit',
+            'jamKerja'
         ));
+    }
+    public function updateShift(Request $request)
+    {
+        /** ================= AUTH ================= */
+        $pegawai = Auth::guard('pegawai')->user();
+
+        if (!$pegawai instanceof Pegawai) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        /** ================= VALIDASI ================= */
+        $request->validate([
+            'id_jam_kerja' => 'required|exists:jam_kerja,id',
+        ]);
+
+        /** ================= CEK ABSENSI AKTIF ================= */
+        $absenAktif = Absensi::where('id_pegawai', $pegawai->id)
+            ->whereNotNull('waktu_masuk')
+            ->whereNull('waktu_pulang')
+            ->first();
+
+        if ($absenAktif) {
+            return response()->json([
+                'message' => 'Tidak bisa ganti shift saat absensi masih aktif'
+            ], 422);
+        }
+
+        /** ================= SHIFT LAMA ================= */
+        $shiftLama = $pegawai->jamKerja;
+
+        /** ================= SHIFT BARU ================= */
+        $jamKerja = JamKerja::find($request->id_jam_kerja);
+
+        if (!$jamKerja) {
+            return response()->json([
+                'message' => 'Jam kerja tidak ditemukan'
+            ], 422);
+        }
+
+        /** ================= UPDATE ================= */
+        $pegawai->id_jam_kerja = $jamKerja->id;
+        $pegawai->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Shift berhasil diperbarui',
+            'shift_lama' => $shiftLama ? [
+                'nama' => $shiftLama->nama_jam_kerja,
+                'jam_mulai' => $shiftLama->jam_mulai,
+                'jam_selesai' => $shiftLama->jam_selesai,
+            ] : null,
+            'shift_baru' => [
+                'nama' => $jamKerja->nama_jam_kerja,
+                'jam_mulai' => $jamKerja->jam_mulai,
+                'jam_selesai' => $jamKerja->jam_selesai,
+            ]
+        ]);
     }
 }
