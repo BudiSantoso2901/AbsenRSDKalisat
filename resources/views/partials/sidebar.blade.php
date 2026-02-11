@@ -39,11 +39,25 @@
                 </ul>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('absensi.index') ? 'active' : '' }}">
-                <a href="{{ route('absensi.index') }}" class="menu-link">
+            <li class="menu-item {{ request()->is('absensi*', 'admin/absensi*') ? 'open active' : '' }}">
+                <a href="javascript:void(0)" class="menu-link menu-toggle">
                     <i class="menu-icon bx bx-clipboard"></i>
                     <div>Data Absensi</div>
                 </a>
+
+                <ul class="menu-sub">
+                    <li class="menu-item {{ request()->routeIs('absensi.index') ? 'active' : '' }}">
+                        <a href="{{ route('absensi.index') }}" class="menu-link">
+                            Master Absensi
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('admin.absensi.index') ? 'active' : '' }}">
+                        <a href="{{ route('admin.absensi.index') }}" class="menu-link">
+                            Cek Absensi
+                        </a>
+                    </li>
+                </ul>
             </li>
         @endauth
 
