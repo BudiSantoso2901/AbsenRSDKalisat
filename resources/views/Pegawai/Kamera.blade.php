@@ -185,23 +185,23 @@
                                 @php
                                     $shifts = [
                                         [
-                                            'nama' => 'Shift Pagi',
-                                            'jam_mulai' => '07:00:00',
-                                            'jam_selesai' => '14:00:00',
-                                            'toleransi' => 10, // TL mulai dihitung setelah jam mulai + 10 menit
-                                            'early_allowed' => 120, // datang maksimal 30 menit lebih awal
-                                        ],
-                                        [
-                                            'nama' => 'Shift Siang',
-                                            'jam_mulai' => '14:00:00',
-                                            'jam_selesai' => '20:00:00',
+                                            'nama' => 'Shift Malam',
+                                            'jam_mulai' => '20:00:00',
+                                            'jam_selesai' => '06:00:00',
                                             'toleransi' => 10,
                                             'early_allowed' => 120,
                                         ],
                                         [
-                                            'nama' => 'Shift Malam',
-                                            'jam_mulai' => '20:00:00',
-                                            'jam_selesai' => '07:00:00',
+                                            'nama' => 'Shift Siang',
+                                            'jam_mulai' => '14:00:00',
+                                            'jam_selesai' => '19:00:00',
+                                            'toleransi' => 10,
+                                            'early_allowed' => 120,
+                                        ],
+                                        [
+                                            'nama' => 'Shift Pagi',
+                                            'jam_mulai' => '07:00:00',
+                                            'jam_selesai' => '13:00:00',
                                             'toleransi' => 10,
                                             'early_allowed' => 120,
                                         ],
@@ -217,37 +217,57 @@
                                             $tanggalMasuk = $waktuMasuk->toDateString();
 
                                             foreach ($shifts as $shift) {
+                                                // =============================
+                                                // 1. Tentukan JAM MULAI SHIFT
+                                                // =============================
                                                 $jamMulai = \Carbon\Carbon::createFromFormat(
                                                     'Y-m-d H:i:s',
                                                     $tanggalMasuk . ' ' . $shift['jam_mulai'],
                                                     'Asia/Jakarta',
                                                 );
 
-                                                // hitung jam selesai shift
-                                                if ($shift['jam_selesai'] < $shift['jam_mulai']) {
-                                                    $jamSelesai = \Carbon\Carbon::createFromFormat(
-                                                        'Y-m-d H:i:s',
-                                                        $tanggalMasuk . ' ' . $shift['jam_selesai'],
-                                                        'Asia/Jakarta',
-                                                    )->addDay();
-                                                } else {
-                                                    $jamSelesai = \Carbon\Carbon::createFromFormat(
-                                                        'Y-m-d H:i:s',
-                                                        $tanggalMasuk . ' ' . $shift['jam_selesai'],
-                                                        'Asia/Jakarta',
-                                                    );
+                                                // ⛔ SHIFT MALAM
+                                                // Jika jam selesai < jam mulai & waktu masuk < jam mulai
+                                                // berarti shift dimulai HARI SEBELUMNYA
+                                                if (
+                                                    $shift['jam_selesai'] < $shift['jam_mulai'] &&
+                                                    $waktuMasuk->lt($jamMulai)
+                                                ) {
+                                                    $jamMulai->subDay();
                                                 }
 
-                                                // batas hadir lebih awal
+                                                // =============================
+                                                // 2. Tentukan JAM SELESAI SHIFT
+                                                // =============================
+                                                $jamSelesai = \Carbon\Carbon::createFromFormat(
+                                                    'Y-m-d H:i:s',
+                                                    $jamMulai->toDateString() . ' ' . $shift['jam_selesai'],
+                                                    'Asia/Jakarta',
+                                                );
+
+                                                if ($shift['jam_selesai'] < $shift['jam_mulai']) {
+                                                    $jamSelesai->addDay();
+                                                }
+
+                                                // =============================
+                                                // 3. BATAS WAKTU
+                                                // =============================
                                                 $jamMulaiEarly = $jamMulai->copy()->subMinutes($shift['early_allowed']);
-                                                // batas telat
                                                 $jamMulaiToleransi = $jamMulai->copy()->addMinutes($shift['toleransi']);
 
-                                                if ($waktuMasuk->between($jamMulaiEarly, $jamMulaiToleransi)) {
-                                                    // hadir on time / early diperbolehkan → TL0
-                                                    $badge = null; // atau bisa isi 'TL0'
-                                                } elseif ($waktuMasuk->gt($jamMulaiToleransi)) {
-                                                    // hadir telat → hitung TL1–TL4
+                                                // =============================
+                                                // 4. PASTIKAN MASUK SHIFT INI
+                                                // =============================
+                                                if (!$waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
+                                                    continue; // bukan shift ini
+                                                }
+
+                                                // =============================
+                                                // 5. HITUNG TL (SETELAH SHIFT VALID)
+                                                // =============================
+                                                if ($waktuMasuk->lte($jamMulaiToleransi)) {
+                                                    $badge = null; // tepat waktu / early
+                                                } else {
                                                     $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
                                                     $badge = match (true) {
                                                         $menitTelat <= 30 => 'TL1',
@@ -257,16 +277,14 @@
                                                     };
                                                 }
 
-                                                // cek apakah masuk di shift ini
-                                                if ($waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
-                                                    break;
-                                                }
+                                                break; // stop di shift yang cocok
                                             }
                                         }
                                     @endphp
 
                                     <tr>
-                                        <td>{{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
                                         </td>
 
                                         {{-- Waktu hadir --}}
