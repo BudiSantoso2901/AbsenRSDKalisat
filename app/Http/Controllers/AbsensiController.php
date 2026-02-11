@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
+use Yajra\DataTables\DataTables;
 
 class AbsensiController extends Controller
 {
@@ -58,6 +59,120 @@ class AbsensiController extends Controller
 
         return view('Admin.Absensi');
     }
+    public function absen_get(Request $request)
+    {
+        // ===============================
+        // AJAX (DATATABLES)
+        // ===============================
+        if ($request->ajax()) {
+
+            $query = Absensi::with(['pegawai', 'editor']);
+
+            // RANGE TANGGAL
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $query->whereBetween('tanggal', [
+                    Carbon::parse($request->start_date)->startOfDay(),
+                    Carbon::parse($request->end_date)->endOfDay(),
+                ]);
+            }
+            // BULAN + TAHUN
+            elseif ($request->filled('bulan') && $request->filled('tahun')) {
+                $query->whereMonth('tanggal', $request->bulan)
+                    ->whereYear('tanggal', $request->tahun);
+            }
+            // BULAN SAJA
+            elseif ($request->filled('bulan')) {
+                $query->whereMonth('tanggal', $request->bulan);
+            }
+            // TAHUN SAJA
+            elseif ($request->filled('tahun')) {
+                $query->whereYear('tanggal', $request->tahun);
+            }
+
+            // HARI
+            if ($request->filled('hari')) {
+                $query->whereRaw('DAYNAME(tanggal) = ?', [$request->hari]);
+            }
+
+            // PEGAWAI
+            if ($request->filled('pegawai_id')) {
+                $query->where('id_pegawai', $request->pegawai_id);
+            }
+
+            return datatables()->eloquent($query->orderBy('tanggal', 'desc'))
+                ->addIndexColumn()
+                ->addColumn('nip', fn($row) => $row->pegawai->nip ?? '-')
+                ->addColumn('nama_pegawai', fn($row) => $row->pegawai->name ?? '-')
+                ->addColumn('tanggal', fn($row) => Carbon::parse($row->tanggal)->format('d-m-Y'))
+                ->addColumn(
+                    'jam_masuk',
+                    fn($row) =>
+                    $row->waktu_masuk ? Carbon::parse($row->waktu_masuk)->format('H:i') : '-'
+                )
+                ->addColumn(
+                    'jam_pulang',
+                    fn($row) =>
+                    $row->waktu_pulang ? Carbon::parse($row->waktu_pulang)->format('H:i') : '-'
+                )
+                ->addColumn('status', fn($row) => ucfirst($row->status))
+                ->addColumn('edited_by', fn($row) => $row->editor->name ?? '-')
+                ->make(true);
+        }
+
+        // ===============================
+        // VIEW (HALAMAN)
+        // ===============================
+        $pegawai = Pegawai::orderBy('name')->get();
+
+        return view('Admin.Absen', compact('pegawai'));
+    }
+
+    public function export_Pdf(Request $request)
+    {
+        $query = Absensi::with('pegawai');
+
+        // RANGE TANGGAL
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal', [
+                $request->start_date,
+                $request->end_date
+            ]);
+        }
+
+        // BULAN
+        if ($request->filled('bulan')) {
+            $query->whereMonth('tanggal', $request->bulan);
+        }
+
+        // TAHUN
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun);
+        }
+
+        // HARI
+        if ($request->filled('hari')) {
+            $query->whereRaw('DAYNAME(tanggal) = ?', [$request->hari]);
+        }
+
+        /**
+         * =========================
+         * FILTER PEGAWAI (SAMA!)
+         * =========================
+         */
+        if ($request->filled('pegawai_id')) {
+            $query->where('id_pegawai', $request->pegawai_id);
+        }
+
+        $data = $query->orderBy('tanggal', 'asc')->get();
+
+        $pdf = Pdf::loadView('PDF.laporan', [
+            'data'   => $data,
+            'filter' => $request->all()
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Absensi_Pegawai.pdf');
+    }
+
     public function detail(Request $request, $pegawaiId)
     {
         /** ======================================
