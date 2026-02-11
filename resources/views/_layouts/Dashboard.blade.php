@@ -143,19 +143,99 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php
+                            use Carbon\Carbon;
+
+                            $shifts = [
+                                [
+                                    'nama' => 'Shift Malam',
+                                    'jam_mulai' => '20:00:00',
+                                    'jam_selesai' => '06:00:00',
+                                    'toleransi' => 10,
+                                    'early_allowed' => 120,
+                                ],
+                                [
+                                    'nama' => 'Shift Siang',
+                                    'jam_mulai' => '14:00:00',
+                                    'jam_selesai' => '19:00:00',
+                                    'toleransi' => 10,
+                                    'early_allowed' => 120,
+                                ],
+                                [
+                                    'nama' => 'Shift Pagi',
+                                    'jam_mulai' => '07:00:00',
+                                    'jam_selesai' => '13:00:00',
+                                    'toleransi' => 10,
+                                    'early_allowed' => 120,
+                                ],
+                            ];
+                        @endphp
+
                         @foreach ($pegawaiHariIni as $row)
-                            <tr data-status="{{ $row->status_absensi ?? 'belum_hadir' }}">
+                            @php
+                                $badge = null;
+                                $status = $row->status_absensi ?? 'belum_hadir';
+
+                                if ($status === 'hadir' && $row->waktu_masuk) {
+                                    $waktuMasuk = Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
+                                    $tanggalMasuk = $waktuMasuk->toDateString();
+
+                                    foreach ($shifts as $shift) {
+                                        $jamMulai = Carbon::createFromFormat(
+                                            'Y-m-d H:i:s',
+                                            $tanggalMasuk . ' ' . $shift['jam_mulai'],
+                                            'Asia/Jakarta',
+                                        );
+
+                                        // 🔥 HANDLE SHIFT MALAM
+                                        if ($shift['jam_selesai'] < $shift['jam_mulai'] && $waktuMasuk->lt($jamMulai)) {
+                                            $jamMulai->subDay();
+                                        }
+
+                                        $jamSelesai = Carbon::createFromFormat(
+                                            'Y-m-d H:i:s',
+                                            $jamMulai->toDateString() . ' ' . $shift['jam_selesai'],
+                                            'Asia/Jakarta',
+                                        );
+
+                                        if ($shift['jam_selesai'] < $shift['jam_mulai']) {
+                                            $jamSelesai->addDay();
+                                        }
+
+                                        $jamMulaiEarly = $jamMulai->copy()->subMinutes($shift['early_allowed']);
+                                        $jamMulaiToleransi = $jamMulai->copy()->addMinutes($shift['toleransi']);
+
+                                        // Pastikan masuk shift ini
+                                        if (!$waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
+                                            continue;
+                                        }
+
+                                        // Hitung TL
+                                        if ($waktuMasuk->gt($jamMulaiToleransi)) {
+                                            $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+
+                                            $badge = match (true) {
+                                                $menitTelat <= 30 => 'TL1',
+                                                $menitTelat <= 60 => 'TL2',
+                                                $menitTelat <= 90 => 'TL3',
+                                                default => 'TL4',
+                                            };
+                                        }
+
+                                        break;
+                                    }
+                                }
+                            @endphp
+
+                            <tr data-status="{{ $status }}">
                                 <td class="text-center">{{ $loop->iteration }}</td>
                                 <td>{{ $row->name }}</td>
                                 <td>{{ $row->nip }}</td>
                                 <td>{{ $row->jabatan->nama_jabatan ?? '-' }}</td>
                                 <td>{{ $row->lokasi->nama_lokasi ?? '-' }}</td>
 
+                                {{-- STATUS --}}
                                 <td class="text-center">
-                                    @php
-                                        $status = $row->status_absensi ?? 'belum_hadir';
-                                    @endphp
-
                                     @if ($status === 'hadir')
                                         <span class="badge bg-success">Hadir</span>
                                     @elseif ($status === 'izin')
@@ -167,11 +247,34 @@
                                     @endif
                                 </td>
 
+                                {{-- WAKTU MASUK + TL --}}
                                 <td class="text-center">
-                                    {{ $row->waktu_masuk ?? '-' }}
+                                    @if ($row->waktu_masuk)
+                                        {{ Carbon::parse($row->waktu_masuk)->format('H:i') }}
+
+                                        @if ($badge)
+                                            @php
+                                                $warnaTL = match ($badge) {
+                                                    'TL1' => 'bg-warning',
+                                                    'TL2' => 'bg-danger',
+                                                    'TL3' => 'bg-danger',
+                                                    'TL4' => 'bg-dark',
+                                                    default => 'bg-warning',
+                                                };
+                                            @endphp
+
+                                            <span class="badge {{ $warnaTL }} ms-1">
+                                                {{ $badge }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
                                 </td>
+
+                                {{-- WAKTU PULANG --}}
                                 <td class="text-center">
-                                    {{ $row->waktu_pulang ?? '-' }}
+                                    {{ $row->waktu_pulang ? Carbon::parse($row->waktu_pulang)->format('H:i') : '-' }}
                                 </td>
                             </tr>
                         @endforeach

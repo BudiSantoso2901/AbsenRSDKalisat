@@ -103,12 +103,104 @@ class AbsensiController extends Controller
                 ->addIndexColumn()
                 ->addColumn('nip', fn($row) => $row->pegawai->nip ?? '-')
                 ->addColumn('nama_pegawai', fn($row) => $row->pegawai->name ?? '-')
-                ->addColumn('tanggal', fn($row) => Carbon::parse($row->tanggal)->format('d-m-Y'))
-                ->addColumn(
-                    'jam_masuk',
-                    fn($row) =>
-                    $row->waktu_masuk ? Carbon::parse($row->waktu_masuk)->format('H:i') : '-'
-                )
+                ->addColumn('tanggal', fn($row) => $row->tanggal)
+                ->addColumn('jam_masuk', function ($row) {
+
+                    if (!$row->waktu_masuk || $row->status !== 'hadir') {
+                        return '-';
+                    }
+
+                    $shifts = [
+                        [
+                            'nama' => 'Shift Malam',
+                            'jam_mulai' => '20:00:00',
+                            'jam_selesai' => '06:00:00',
+                            'toleransi' => 10,
+                            'early_allowed' => 120,
+                        ],
+                        [
+                            'nama' => 'Shift Siang',
+                            'jam_mulai' => '14:00:00',
+                            'jam_selesai' => '19:00:00',
+                            'toleransi' => 10,
+                            'early_allowed' => 120,
+                        ],
+                        [
+                            'nama' => 'Shift Pagi',
+                            'jam_mulai' => '07:00:00',
+                            'jam_selesai' => '13:00:00',
+                            'toleransi' => 10,
+                            'early_allowed' => 120,
+                        ],
+                    ];
+
+                    $badge = null;
+
+                    $waktuMasuk = Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
+                    $tanggalMasuk = $waktuMasuk->toDateString();
+
+                    foreach ($shifts as $shift) {
+
+                        $jamMulai = Carbon::createFromFormat(
+                            'Y-m-d H:i:s',
+                            $tanggalMasuk . ' ' . $shift['jam_mulai'],
+                            'Asia/Jakarta'
+                        );
+
+                        // 🔥 Handle shift malam
+                        if ($shift['jam_selesai'] < $shift['jam_mulai'] && $waktuMasuk->lt($jamMulai)) {
+                            $jamMulai->subDay();
+                        }
+
+                        $jamSelesai = Carbon::createFromFormat(
+                            'Y-m-d H:i:s',
+                            $jamMulai->toDateString() . ' ' . $shift['jam_selesai'],
+                            'Asia/Jakarta'
+                        );
+
+                        if ($shift['jam_selesai'] < $shift['jam_mulai']) {
+                            $jamSelesai->addDay();
+                        }
+
+                        $jamMulaiEarly = $jamMulai->copy()->subMinutes($shift['early_allowed']);
+                        $jamMulaiToleransi = $jamMulai->copy()->addMinutes($shift['toleransi']);
+
+                        if (!$waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
+                            continue;
+                        }
+
+                        if ($waktuMasuk->gt($jamMulaiToleransi)) {
+                            $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+
+                            $badge = match (true) {
+                                $menitTelat <= 30 => 'TL1',
+                                $menitTelat <= 60 => 'TL2',
+                                $menitTelat <= 90 => 'TL3',
+                                default => 'TL4',
+                            };
+                        }
+
+                        break;
+                    }
+
+                    $jam = $waktuMasuk->format('H:i');
+
+                    if ($badge) {
+
+                        $warna = match ($badge) {
+                            'TL1' => 'bg-label-warning',
+                            'TL2' => 'bg-label-danger',
+                            'TL3' => 'bg-label-danger',
+                            'TL4' => 'bg-label-dark',
+                            default => 'bg-label-warning',
+                        };
+
+                        return $jam . ' <span class="badge ' . $warna . ' ms-1">' . $badge . '</span>';
+                    }
+
+                    return $jam;
+                })
+                ->rawColumns(['jam_masuk']) // 🔥 WAJIB supaya HTML tidak di-escape
                 ->addColumn(
                     'jam_pulang',
                     fn($row) =>

@@ -176,6 +176,7 @@
             let table = $('#absensiTable').DataTable({
                 processing: true,
                 serverSide: true,
+                searching: false,
                 order: [
                     [3, 'desc']
                 ], // kolom TANGGAL
@@ -206,7 +207,12 @@
                         render: function(data) {
                             if (!data) return '-';
 
-                            const tanggal = new Date(data);
+                            // Ambil hanya bagian tanggal saja (buang jamnya)
+                            const onlyDate = data.split(' ')[0]; // 2026-02-09
+
+                            const [year, month, day] = onlyDate.split('-');
+                            const tanggal = new Date(year, month - 1, day);
+
                             return tanggal.toLocaleDateString('id-ID', {
                                 weekday: 'long',
                                 day: 'numeric',
@@ -216,19 +222,62 @@
                         }
                     },
                     {
-                        data: 'jam_masuk'
+                        data: 'jam_masuk',
+                        name: 'jam_masuk'
                     },
                     {
                         data: 'jam_pulang'
                     },
                     {
-                        data: 'status'
+                        data: 'status',
+                        render: function(data) {
+                            if (!data) return '-';
+
+                            let status = data.toLowerCase(); // 🔥 penting
+                            let badgeClass = '';
+                            let icon = '';
+                            let text = data.replace('_', ' ').toUpperCase();
+
+                            switch (status) {
+                                case 'hadir':
+                                    badgeClass = 'bg-label-success';
+                                    icon = 'bx bx-check-circle';
+                                    break;
+
+                                case 'izin':
+                                    badgeClass = 'bg-label-warning';
+                                    icon = 'bx bx-time-five';
+                                    break;
+
+                                case 'sakit':
+                                    badgeClass = 'bg-label-danger';
+                                    icon = 'bx bx-plus-medical';
+                                    break;
+
+                                case 'belum_hadir':
+                                    badgeClass = 'bg-label-secondary';
+                                    icon = 'bx bx-x-circle';
+                                    text = 'BELUM HADIR';
+                                    break;
+
+                                default:
+                                    badgeClass = 'bg-label-dark';
+                            }
+
+                            return `
+            <span class="badge ${badgeClass} rounded-pill">
+                <i class="${icon} me-1"></i>
+                ${text}
+            </span>
+        `;
+                        }
                     },
                     {
                         data: 'edited_by'
                     },
                 ]
             });
+
 
             // reload saat filter berubah
             $('.filter-box input, .filter-box select').on('change', function() {
