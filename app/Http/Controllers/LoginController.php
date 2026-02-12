@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $bulan = now()->month;
         $tahun = now()->year;
@@ -60,10 +60,13 @@ class LoginController extends Controller
         $chartLokasiLabel = $lokasi->pluck('nama_lokasi');
         $chartLokasiData  = $lokasi->pluck('pegawai_count');
         // ================= DATA TABEL ABSENSI HARI INI =================
+        $tanggal = $request->tanggal
+            ? Carbon::parse($request->tanggal)->toDateString()
+            : now()->toDateString();
         $pegawaiHariIni = Pegawai::with(['jabatan', 'lokasi'])
-            ->leftJoin('absensi', function ($join) use ($hariIni) {
+            ->leftJoin('absensi', function ($join) use ($tanggal) {
                 $join->on('pegawai.id', '=', 'absensi.id_pegawai')
-                    ->whereDate('absensi.tanggal', $hariIni);
+                    ->whereDate('absensi.tanggal', $tanggal);
             })
             ->select(
                 'pegawai.*',
@@ -74,11 +77,6 @@ class LoginController extends Controller
             ->orderBy('pegawai.name')
             ->get();
 
-        /*
-|-----------------------------------------
-| HITUNG BELUM ABSEN (status = null ATAU belum_hadir)
-|-----------------------------------------
-*/
         $belumAbsen = $pegawaiHariIni->filter(function ($row) {
             return is_null($row->status_absensi) || $row->status_absensi === 'belum_hadir';
         })->count();
@@ -96,7 +94,8 @@ class LoginController extends Controller
             'chartJabatanLabel',
             'chartJabatanData',
             'chartLokasiLabel',
-            'chartLokasiData'
+            'chartLokasiData',
+            'tanggal'
         ));
     }
     public function showLogin()

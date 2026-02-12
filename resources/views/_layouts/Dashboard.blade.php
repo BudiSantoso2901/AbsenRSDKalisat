@@ -119,13 +119,27 @@
         {{-- card pegawai absensi hari ini  --}}
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Absensi Pegawai Hari Ini</h5>
+                <h5 class="mb-0">
+                    Absensi Pegawai
+                    ({{ \Carbon\Carbon::parse($tanggal)->translatedFormat('d F Y') }})
+                </h5>
 
-                <select id="filterAbsensi" class="form-select w-auto">
-                    <option value="all">Semua</option>
-                    <option value="hadir">Sudah Absen</option>
-                    <option value="belum">Belum Absen</option>
-                </select>
+                <div class="d-flex gap-2">
+
+                    {{-- INPUT PILIH TANGGAL --}}
+                    <form method="GET">
+                        <input type="date" name="tanggal" value="{{ $tanggal }}" class="form-control"
+                            onchange="this.form.submit()">
+                    </form>
+
+                    {{-- FILTER STATUS --}}
+                    <select id="filterAbsensi" class="form-select">
+                        <option value="all">Semua</option>
+                        <option value="hadir">Sudah Absen</option>
+                        <option value="belum">Belum Absen</option>
+                    </select>
+
+                </div>
             </div>
 
             <div class="card-body table-responsive">
@@ -359,25 +373,22 @@
                     zeroRecords: "Data tidak ditemukan"
                 }
             });
+        });
+        document.getElementById('filterAbsensi').addEventListener('change', function() {
+            let value = this.value;
+            let rows = document.querySelectorAll('#datatableAbsensi tbody tr');
 
-            // FILTER SUDAH / BELUM ABSEN
-            $('#filterAbsensi').on('change', function() {
-                let filter = this.value;
+            rows.forEach(row => {
+                let status = row.getAttribute('data-status');
 
-                $.fn.dataTable.ext.search = [];
-
-                if (filter !== 'all') {
-                    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-                        let row = table.row(dataIndex).node();
-                        let status = $(row).data('status');
-
-                        return status === filter;
-                    });
+                if (value === 'all') {
+                    row.style.display = '';
+                } else if (value === 'hadir') {
+                    row.style.display = (status === 'hadir') ? '' : 'none';
+                } else if (value === 'belum') {
+                    row.style.display = (status === 'belum_hadir' || !status) ? '' : 'none';
                 }
-
-                table.draw();
             });
-
         });
     </script>
 @endpush

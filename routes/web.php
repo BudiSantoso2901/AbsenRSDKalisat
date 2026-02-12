@@ -71,6 +71,7 @@ Route::prefix('/')
             Route::put('edit/{id}', [AbsensiController::class, 'update'])->name('absensi.inline-update');
             Route::get('export/pdf/{pegawai}', [AbsensiController::class, 'exportPdf'])->name('absensi.export.pdf');
             Route::get('export-filter/pdf', [AbsensiController::class, 'export_Pdf'])->name('absensi.exportAll.pdf');
+            Route::get('/histori-absensi', [LoginController::class, 'histori'])->name('absensi.histori');
         });
     });
 Route::prefix('pegawai')
