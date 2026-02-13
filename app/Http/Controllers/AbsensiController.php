@@ -1012,8 +1012,9 @@ class AbsensiController extends Controller
     {
         /** ================= VALIDASI ================= */
         $request->validate([
-            'waktu'       => 'required|date_format:Y-m-d\TH:i',
-            'alasan_edit' => 'required|string|min:5',
+            'waktu_masuk'  => 'nullable|date_format:Y-m-d\TH:i',
+            'waktu_pulang' => 'nullable|date_format:Y-m-d\TH:i',
+            'alasan_edit'  => 'required|string|min:5',
         ]);
 
         /** ================= AUTH ADMIN ================= */
@@ -1026,32 +1027,50 @@ class AbsensiController extends Controller
         /** ================= AMBIL DATA ================= */
         $absensi = Absensi::with('editor')->findOrFail($id);
 
-        /** ================= KONVERSI DATETIME ================= */
-        $waktuMasuk = Carbon::createFromFormat(
-            'Y-m-d\TH:i',
-            $request->waktu,
-            'Asia/Jakarta'
-        )->format('Y-m-d H:i:s');
-
-        /** ================= UPDATE ================= */
-        $absensi->update([
-            'waktu_masuk' => $waktuMasuk,
+        /** ================= PREPARE DATA UPDATE ================= */
+        $dataUpdate = [
             'alasan_edit' => $request->alasan_edit,
             'edited_by'   => auth()->id(),
             'edited_at'   => now(),
-        ]);
+        ];
+
+        /** ================= KONVERSI WAKTU MASUK ================= */
+        if ($request->filled('waktu_masuk')) {
+            $dataUpdate['waktu_masuk'] = Carbon::createFromFormat(
+                'Y-m-d\TH:i',
+                $request->waktu_masuk,
+                'Asia/Jakarta'
+            )->format('Y-m-d H:i:s');
+        }
+
+        /** ================= KONVERSI WAKTU PULANG ================= */
+        if ($request->filled('waktu_pulang')) {
+            $dataUpdate['waktu_pulang'] = Carbon::createFromFormat(
+                'Y-m-d\TH:i',
+                $request->waktu_pulang,
+                'Asia/Jakarta'
+            )->format('Y-m-d H:i:s');
+        }
+
+        /** ================= UPDATE ================= */
+        $absensi->update($dataUpdate);
 
         /** ================= REFRESH RELASI ================= */
         $absensi->load('editor');
 
         /** ================= RESPONSE ================= */
         return response()->json([
-            'success'     => true,
-            'message'     => 'Waktu masuk berhasil diperbarui',
-            'waktu_masuk' => Carbon::parse($absensi->waktu_masuk)->format('H:i'),
-            'alasan_edit' => $absensi->alasan_edit,
-            'edited_by'   => $absensi->editor->name ?? '-',
-            'edited_at'   => $absensi->edited_at
+            'success'       => true,
+            'message'       => 'Data absensi berhasil diperbarui',
+            'waktu_masuk'   => $absensi->waktu_masuk
+                ? Carbon::parse($absensi->waktu_masuk)->format('H:i')
+                : '-',
+            'waktu_pulang'  => $absensi->waktu_pulang
+                ? Carbon::parse($absensi->waktu_pulang)->format('H:i')
+                : '-',
+            'alasan_edit'   => $absensi->alasan_edit,
+            'edited_by'     => $absensi->editor->name ?? '-',
+            'edited_at'     => $absensi->edited_at
                 ? Carbon::parse($absensi->edited_at)->format('d-m-Y H:i')
                 : '-',
         ]);

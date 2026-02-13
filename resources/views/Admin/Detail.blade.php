@@ -110,13 +110,14 @@
                                     @if ($isAdmin && $isHadir && $hasMasuk)
                                         <button class="btn btn-sm btn-outline-primary"
                                             onclick="openEditWaktuModal(
-                {{ $row->id }},
-                '{{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}',
-                '{{ $row->alasan_edit ?? '' }}',
-                '{{ $row->edited_by_name ?? '-' }}',
-                '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}'
-            )">
-                                            {{ \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') }}
+        {{ $row->id }},
+        '{{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('Y-m-d\TH:i') : '' }}',
+        '{{ $row->waktu_pulang ? \Carbon\Carbon::parse($row->waktu_pulang)->format('Y-m-d\TH:i') : '' }}',
+        '{{ $row->alasan_edit ?? '' }}',
+        '{{ $row->edited_by_name ?? '-' }}',
+        '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}'
+    )">
+                                            {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
                                         </button>
                                     @else
                                         <span class="text-muted">
@@ -230,9 +231,15 @@
 
                         <div class="mb-2">
                             <label class="form-label">Waktu Masuk</label>
-                            <input type="datetime-local" class="form-control" id="edit-waktu" name="waktu">
-                        </div>
+                            <input type="datetime-local" class="form-control" id="edit-waktu-masuk" name="waktu_masuk"
+                                step="60">
 
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Waktu Masuk</label>
+                            <input type="datetime-local" class="form-control" id="edit-waktu-pulang" name="waktu_pulang"
+                                step="60">
+                        </div>
                         <div class="mb-2">
                             <label class="form-label">Alasan Edit <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="edit-alasan" rows="2"></textarea>
@@ -343,20 +350,30 @@
                 }
             });
         // ====== EDIT WAKTU MASUK ======
-        function openEditWaktuModal(id, waktu, alasan, editedBy, editedAt) {
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-waktu').value = waktu;
-            document.getElementById('edit-alasan').value = alasan ?? '';
+        function formatDateTimeLocal(datetime) {
+            if (!datetime) return '';
 
+            // Jika formatnya: 2026-02-13 08:00:00
+            return datetime.replace(' ', 'T').slice(0, 16);
+        }
+
+        function openEditWaktuModal(id, waktuMasuk, waktuPulang, alasan, editedBy, editedAt) {
+
+            document.getElementById('edit-id').value = id;
+
+            document.getElementById('edit-waktu-masuk').value = formatDateTimeLocal(waktuMasuk);
+            document.getElementById('edit-waktu-pulang').value = formatDateTimeLocal(waktuPulang);
+            document.getElementById('edit-alasan').value = alasan ?? '';
             document.getElementById('edit-by').innerText = editedBy || '-';
             document.getElementById('edit-at').innerText = editedAt || '-';
-
-            new bootstrap.Modal(document.getElementById('modalEditWaktu')).show();
+            const modal = new bootstrap.Modal(document.getElementById('modalEditWaktu'));
+            modal.show();
         }
 
         function simpanEditWaktu() {
             const id = document.getElementById('edit-id').value;
-            const waktu = document.getElementById('edit-waktu').value;
+            const waktuMasuk = document.getElementById('edit-waktu-masuk').value;
+            const waktuPulang = document.getElementById('edit-waktu-pulang').value;
             const alasan = document.getElementById('edit-alasan').value.trim();
 
             if (!alasan || alasan.length < 5) {
@@ -410,7 +427,8 @@
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({
-                                waktu: waktu, // ⬅️ kirim RAW datetime-local
+                                waktu_masuk: waktuMasuk || null,
+                                waktu_pulang: waktuPulang || null,
                                 alasan_edit: alasan
                             })
                         })
