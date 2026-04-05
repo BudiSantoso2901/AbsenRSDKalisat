@@ -66,8 +66,8 @@ Route::prefix('/')
 
         Route::prefix('absensi')->group(function () {
             Route::get('/', [AbsensiController::class, 'index'])->name('absensi.index');
-            Route::get('/detail/{pegawai}', [AbsensiController::class, 'detail'])->name('absensi.detail');
             Route::get('/data-absen', [AbsensiController::class, 'absen_get'])->name('admin.absensi.index');
+            Route::get('/detail/{pegawai}', [AbsensiController::class, 'detail'])->name('absensi.detail');
             Route::put('edit/{id}', [AbsensiController::class, 'update'])->name('absensi.inline-update');
             Route::get('export/pdf/{pegawai}', [AbsensiController::class, 'exportPdf'])->name('absensi.export.pdf');
             Route::get('export-filter/pdf', [AbsensiController::class, 'export_Pdf'])->name('absensi.exportAll.pdf');
@@ -85,4 +85,7 @@ Route::prefix('pegawai')
         Route::post('/update-shift', [PegawaiController::class, 'updateShift'])
             ->name('pegawai.updateShift');
         Route::get('/panduan', [PegawaiController::class, 'panduan'])->name('pegawai.panduan');
+        Route::post('/absensi-kegiatan', [AbsensiController::class, 'absenKegiatan'])
+            ->name('absensi.kegiatan');
+
     });
