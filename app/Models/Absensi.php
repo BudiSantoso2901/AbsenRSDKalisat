@@ -25,6 +25,7 @@ class Absensi extends Model
         'alasan_edit',
         'edited_by',
         'edited_at',
+        'shift_id',
     ];
     protected $casts = [
         'tanggal' => 'date',
@@ -42,5 +43,9 @@ class Absensi extends Model
     public function pegawai()
     {
         return $this->belongsTo(Pegawai::class, 'id_pegawai');
+    }
+    public function shift()
+    {
+        return $this->belongsTo(JamKerja::class, 'shift_id');
     }
 }
