@@ -104,7 +104,13 @@
                         </div>
                         <form id="form-absensi" enctype="multipart/form-data">
                             @csrf
-
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mode Absensi</label>
+                                <select class="form-select" id="mode_absen">
+                                    <option value="normal">Absen Kerja</option>
+                                    <option value="kegiatan">Apel / Jumat Sehat</option>
+                                </select>
+                            </div>
                             {{-- STATUS --}}
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Jenis Absensi</label>
@@ -139,8 +145,8 @@
                                 </div>
 
                             </div>
-                            <button class="btn btn-absen w-100 mt-2" type="submit">
-                                <i class="bx bx-camera"></i> Absen
+                            <button class="btn btn-absen w-100 mt-2" type="submit" id="btnSubmit">
+                                <i class="bx bx-camera"></i> Absen Kerja
                             </button>
                         </form>
                     </div>
@@ -182,93 +188,60 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php
-                                    $shifts = [
-                                        [
-                                            'nama' => 'Shift Malam',
-                                            'jam_mulai' => '20:00:00',
-                                            'jam_selesai' => '06:00:00',
-                                            'toleransi' => 10,
-                                            'early_allowed' => 120,
-                                        ],
-                                        [
-                                            'nama' => 'Shift Siang',
-                                            'jam_mulai' => '14:00:00',
-                                            'jam_selesai' => '19:00:00',
-                                            'toleransi' => 10,
-                                            'early_allowed' => 120,
-                                        ],
-                                        [
-                                            'nama' => 'Shift Pagi',
-                                            'jam_mulai' => '07:00:00',
-                                            'jam_selesai' => '13:00:00',
-                                            'toleransi' => 10,
-                                            'early_allowed' => 120,
-                                        ],
-                                    ];
-                                @endphp
-
                                 @foreach ($absensi as $row)
                                     @php
                                         $badge = null;
+                                        $earlyAccess = 120; // 2 jam sebelum shift
 
-                                        if ($row->status === 'hadir' && $row->waktu_masuk) {
+                                        if ($row->status === 'hadir' && $row->waktu_masuk && $row->shift) {
+                                            $tanggalOnly = \Carbon\Carbon::parse($row->tanggal)->toDateString();
                                             $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
-                                            $tanggalMasuk = $waktuMasuk->toDateString();
 
-                                            foreach ($shifts as $shift) {
-                                                // =============================
-                                                // 1. Tentukan JAM MULAI SHIFT
-                                                // =============================
-                                                $jamMulai = \Carbon\Carbon::createFromFormat(
-                                                    'Y-m-d H:i:s',
-                                                    $tanggalMasuk . ' ' . $shift['jam_mulai'],
-                                                    'Asia/Jakarta',
-                                                );
+                                            $jamMulai = \Carbon\Carbon::parse(
+                                                $tanggalOnly . ' ' . $row->shift->jam_mulai,
+                                                'Asia/Jakarta',
+                                            );
 
-                                                // ⛔ SHIFT MALAM
-                                                // Jika jam selesai < jam mulai & waktu masuk < jam mulai
-                                                // berarti shift dimulai HARI SEBELUMNYA
-                                                if (
-                                                    $shift['jam_selesai'] < $shift['jam_mulai'] &&
-                                                    $waktuMasuk->lt($jamMulai)
-                                                ) {
+                                            $jamSelesai = \Carbon\Carbon::parse(
+                                                $tanggalOnly . ' ' . $row->shift->jam_selesai,
+                                                'Asia/Jakarta',
+                                            );
+
+                                            /*
+        ========================================
+        HANDLE SHIFT MALAM (Lintas Hari)
+        ========================================
+        */
+                                            if ($row->shift->jam_selesai < $row->shift->jam_mulai) {
+                                                $jamSelesai->addDay();
+
+                                                if ($waktuMasuk->lt($jamMulai)) {
                                                     $jamMulai->subDay();
+                                                    $jamSelesai->subDay();
+                                                }
+                                            }
+
+                                            $toleransi = $row->shift->toleransi_menit ?? 0;
+                                            $jamMulaiToleransi = $jamMulai->copy()->addMinutes($toleransi);
+
+                                            /*
+        ========================================
+        WINDOW SHIFT VALID
+        ========================================
+        */
+                                            $windowStart = $jamMulai->copy()->subMinutes($earlyAccess);
+                                            $windowEnd = $jamSelesai->copy();
+
+                                            if ($waktuMasuk->between($windowStart, $windowEnd)) {
+                                                // Jika datang sebelum jam mulai → tidak TL
+                                                if ($waktuMasuk->lt($jamMulai)) {
+                                                    $badge = null;
                                                 }
 
-                                                // =============================
-                                                // 2. Tentukan JAM SELESAI SHIFT
-                                                // =============================
-                                                $jamSelesai = \Carbon\Carbon::createFromFormat(
-                                                    'Y-m-d H:i:s',
-                                                    $jamMulai->toDateString() . ' ' . $shift['jam_selesai'],
-                                                    'Asia/Jakarta',
-                                                );
-
-                                                if ($shift['jam_selesai'] < $shift['jam_mulai']) {
-                                                    $jamSelesai->addDay();
-                                                }
-
-                                                // =============================
-                                                // 3. BATAS WAKTU
-                                                // =============================
-                                                $jamMulaiEarly = $jamMulai->copy()->subMinutes($shift['early_allowed']);
-                                                $jamMulaiToleransi = $jamMulai->copy()->addMinutes($shift['toleransi']);
-
-                                                // =============================
-                                                // 4. PASTIKAN MASUK SHIFT INI
-                                                // =============================
-                                                if (!$waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
-                                                    continue; // bukan shift ini
-                                                }
-
-                                                // =============================
-                                                // 5. HITUNG TL (SETELAH SHIFT VALID)
-                                                // =============================
-                                                if ($waktuMasuk->lte($jamMulaiToleransi)) {
-                                                    $badge = null; // tepat waktu / early
-                                                } else {
+                                                // Jika lewat toleransi → hitung TL
+                                                elseif ($waktuMasuk->gt($jamMulaiToleransi)) {
                                                     $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+
                                                     $badge = match (true) {
                                                         $menitTelat <= 30 => 'TL1',
                                                         $menitTelat <= 60 => 'TL2',
@@ -276,8 +249,6 @@
                                                         default => 'TL4',
                                                     };
                                                 }
-
-                                                break; // stop di shift yang cocok
                                             }
                                         }
                                     @endphp
@@ -287,7 +258,6 @@
                                             {{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
                                         </td>
 
-                                        {{-- Waktu hadir --}}
                                         <td>
                                             {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
                                             @if ($badge)
@@ -295,16 +265,16 @@
                                             @endif
                                         </td>
 
-                                        {{-- Waktu pulang --}}
                                         <td>
                                             {{ $row->waktu_pulang
-                                                ? \Carbon\Carbon::parse($row->waktu_pulang)->locale('id')->translatedFormat('l, j F Y h.i A')
+                                                ? \Carbon\Carbon::parse($row->waktu_pulang)->locale('id')->translatedFormat('l, j F Y H.i')
                                                 : '-' }}
                                         </td>
 
-                                        {{-- Status --}}
                                         <td>
-                                            <span class="badge bg-success">{{ strtoupper($row->status) }}</span>
+                                            <span class="badge bg-success">
+                                                {{ strtoupper($row->status) }}
+                                            </span>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -322,6 +292,19 @@
         const statusSelect = document.getElementById('status_absen');
         const sectionHadir = document.getElementById('section-hadir');
         const sectionIzin = document.getElementById('section-izin');
+        const modeSelect = document.getElementById('mode_absen');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        modeSelect.addEventListener('change', function() {
+            if (this.value === 'kegiatan') {
+                btnSubmit.innerHTML = '<i class="bx bx-flag"></i> Absen Kegiatan';
+                btnSubmit.classList.remove('btn-success');
+                btnSubmit.style.backgroundColor = '#ff9800';
+            } else {
+                btnSubmit.innerHTML = '<i class="bx bx-camera"></i> Absen Kerja';
+                btnSubmit.style.backgroundColor = '#28a745';
+            }
+        });
 
         statusSelect.addEventListener('change', function() {
             if (this.value === 'hadir') {
@@ -378,7 +361,15 @@
 
         /* ================= AJAX ================= */
         function kirim(formData) {
-            fetch("{{ route('absensi.store') }}", {
+            const mode = document.getElementById('mode_absen').value;
+
+            let url = "{{ route('absensi.store') }}"; // default normal
+
+            if (mode === 'kegiatan') {
+                url = "{{ route('absensi.kegiatan') }}";
+            }
+
+            fetch(url, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -398,6 +389,7 @@
                     data
                 }) => {
 
+                    // ================= ERROR =================
                     if (status === 422) {
                         Swal.fire({
                             icon: 'warning',
@@ -407,29 +399,47 @@
                         return;
                     }
 
-                    if (data.telat === true) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: '⚠️ Anda Terlambat',
-                            html: `
-                        <b>${data.menitTelat} menit</b><br>
-                        Badge: <b>${data.badge}</b>
-                    `
-                        }).then(() => {
+                    // ================= MODE NORMAL =================
+                    if (mode === 'normal') {
+
+                        if (data.telat === true) {
                             Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil',
-                                text: 'Absen masuk berhasil (terlambat)'
-                            }).then(() => location.reload());
-                        });
+                                icon: 'warning',
+                                title: '⚠️ Anda Terlambat',
+                                html: `
+                            <b>${data.menitTelat} menit</b><br>
+                            Badge: <b>${data.badge}</b>
+                        `
+                            }).then(() => {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: data.message || 'Absen berhasil'
+                                }).then(() => location.reload());
+                            });
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: data.message || 'Absen berhasil'
+                        }).then(() => location.reload());
+
                         return;
                     }
 
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: data.message
-                    }).then(() => location.reload());
+                    // ================= MODE KEGIATAN =================
+                    if (mode === 'kegiatan') {
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: data.message || 'Absen kegiatan berhasil'
+                        }).then(() => location.reload());
+
+                        return;
+                    }
                 })
                 .catch(() => {
                     Swal.fire({
