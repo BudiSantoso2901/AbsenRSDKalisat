@@ -66,52 +66,37 @@
 
                     {{-- TANGGAL MULAI --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Tanggal Mulai</label>
-                        <input type="date" id="start_date" class="form-control">
+                        <label class="form-label fw-semibold">Range Tanggal</label>
+                        <input type="text" id="tanggal_range" class="form-control" placeholder="Pilih range tanggal">
                     </div>
 
-                    {{-- TANGGAL AKHIR --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Tanggal Akhir</label>
-                        <input type="date" id="end_date" class="form-control">
-                    </div>
-
-                    {{-- HARI --}}
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Hari</label>
-                        <select id="hari" class="form-select">
-                            <option value="">Semua Hari</option>
-                            <option value="Monday">Senin</option>
-                            <option value="Tuesday">Selasa</option>
-                            <option value="Wednesday">Rabu</option>
-                            <option value="Thursday">Kamis</option>
-                            <option value="Friday">Jumat</option>
-                            <option value="Saturday">Sabtu</option>
-                            <option value="Sunday">Minggu</option>
+                        <label class="form-label fw-semibold">Jabatan</label>
+                        <select id="jabatan_id" class="form-select">
+                            <option value="">Semua Jabatan</option>
+                            @foreach ($jabatan as $j)
+                                <option value="{{ $j->id }}">{{ $j->nama_jabatan }}</option>
+                            @endforeach
                         </select>
                     </div>
 
-                    {{-- BULAN --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Bulan</label>
-                        <select id="bulan" class="form-select">
-                            <option value="">Semua Bulan</option>
-                            @for ($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}">
-                                    {{ DateTime::createFromFormat('!m', $i)->format('F') }}
-                                </option>
-                            @endfor
+                        <label class="form-label fw-semibold">Lokasi</label>
+                        <select id="lokasi_id" class="form-select">
+                            <option value="">Semua Lokasi</option>
+                            @foreach ($lokasi as $l)
+                                <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
+                            @endforeach
                         </select>
                     </div>
 
-                    {{-- TAHUN --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Tahun</label>
-                        <select id="tahun" class="form-select">
-                            <option value="">Semua Tahun</option>
-                            @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
-                                <option value="{{ $y }}">{{ $y }}</option>
-                            @endfor
+                        <label class="form-label fw-semibold">Jam Kerja</label>
+                        <select id="jam_kerja_id" class="form-select">
+                            <option value="">Semua Jam Kerja</option>
+                            @foreach ($jamKerja as $jk)
+                                <option value="{{ $jk->id }}">{{ $jk->nama_jam_kerja }}</option>
+                            @endforeach
                         </select>
                     </div>
                     {{-- PEGAWAI --}}
@@ -125,6 +110,15 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-6"><label class="form-label fw-semibold">Jenis Absensi</label>
+                        <select id="jenis_absen" class="form-control">
+                            <option value="">Semua</option>
+                            <option value="apel">Apel</option>
+                            <option value="jumat_sehat">Jumat Sehat</option>
+                            <option value="normal">Normal</option>
+                        </select>
+                    </div>
+
                     {{-- RESET BUTTON --}}
                     <div class="col-md-12 d-flex align-items-end">
                         <button id="btnResetFilter" class="btn btn-secondary w-100">
@@ -157,6 +151,7 @@
                             <th>Jam Masuk</th>
                             <th>Jam Pulang</th>
                             <th>Status</th>
+                            <th>Ketarangan</th>
                             <th>Diedit Oleh</th>
                         </tr>
                     </thead>
@@ -166,29 +161,79 @@
 
     </div>
 @endsection
-
 @push('scripts')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(function() {
 
-            let table = $('#absensiTable').DataTable({
+    <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        // 🔥 GLOBAL VARIABLE
+        var table;
+        let start_date = '';
+        let end_date = '';
+
+        $(document).ready(function() {
+
+            // =========================
+            // INIT SELECT2
+            // =========================
+            $('.select-pegawai').select2({
+                placeholder: 'Pilih atau cari pegawai...',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // =========================
+            // INIT DATE RANGE
+            // =========================
+            $('#tanggal_range').daterangepicker({
+                locale: {
+                    format: 'YYYY-MM-DD'
+                },
+                autoUpdateInput: false
+            });
+
+            $('#tanggal_range').on('apply.daterangepicker', function(ev, picker) {
+                start_date = picker.startDate.format('YYYY-MM-DD');
+                end_date = picker.endDate.format('YYYY-MM-DD');
+
+                $(this).val(start_date + ' s/d ' + end_date);
+
+                table.ajax.reload();
+            });
+
+            $('#tanggal_range').on('cancel.daterangepicker', function() {
+                $(this).val('');
+                start_date = '';
+                end_date = '';
+
+                table.ajax.reload();
+            });
+
+            // =========================
+            // INIT DATATABLE
+            // =========================
+            table = $('#absensiTable').DataTable({
                 processing: true,
                 serverSide: true,
                 searching: false,
                 order: [
                     [3, 'desc']
-                ], // kolom TANGGAL
+                ],
                 ajax: {
                     url: "{{ route('admin.absensi.index') }}",
                     data: function(d) {
-                        d.start_date = $('#start_date').val();
-                        d.end_date = $('#end_date').val();
-                        d.hari = $('#hari').val();
-                        d.bulan = $('#bulan').val();
-                        d.tahun = $('#tahun').val();
+                        d.start_date = start_date;
+                        d.end_date = end_date;
                         d.pegawai_id = $('#pegawai_id').val();
+                        d.jabatan_id = $('#jabatan_id').val();
+                        d.lokasi_id = $('#lokasi_id').val();
+                        d.jam_kerja_id = $('#jam_kerja_id').val();
+                        d.jenis_absen = $('#jenis_absen').val();
+
                     }
                 },
                 columns: [{
@@ -207,9 +252,7 @@
                         render: function(data) {
                             if (!data) return '-';
 
-                            // Ambil hanya bagian tanggal saja (buang jamnya)
-                            const onlyDate = data.split(' ')[0]; // 2026-02-09
-
+                            const onlyDate = data.split(' ')[0];
                             const [year, month, day] = onlyDate.split('-');
                             const tanggal = new Date(year, month - 1, day);
 
@@ -222,8 +265,7 @@
                         }
                     },
                     {
-                        data: 'jam_masuk',
-                        name: 'jam_masuk'
+                        data: 'jam_masuk'
                     },
                     {
                         data: 'jam_pulang'
@@ -233,7 +275,7 @@
                         render: function(data) {
                             if (!data) return '-';
 
-                            let status = data.toLowerCase(); // 🔥 penting
+                            let status = data.toLowerCase();
                             let badgeClass = '';
                             let icon = '';
                             let text = data.replace('_', ' ').toUpperCase();
@@ -243,102 +285,94 @@
                                     badgeClass = 'bg-label-success';
                                     icon = 'bx bx-check-circle';
                                     break;
-
                                 case 'izin':
                                     badgeClass = 'bg-label-warning';
                                     icon = 'bx bx-time-five';
                                     break;
-
                                 case 'sakit':
                                     badgeClass = 'bg-label-danger';
                                     icon = 'bx bx-plus-medical';
                                     break;
-
                                 case 'belum_hadir':
                                     badgeClass = 'bg-label-secondary';
                                     icon = 'bx bx-x-circle';
                                     text = 'BELUM HADIR';
                                     break;
-
                                 default:
                                     badgeClass = 'bg-label-dark';
                             }
 
                             return `
-            <span class="badge ${badgeClass} rounded-pill">
-                <i class="${icon} me-1"></i>
-                ${text}
-            </span>
-        `;
+                        <span class="badge ${badgeClass} rounded-pill">
+                            <i class="${icon} me-1"></i>
+                            ${text}
+                        </span>`;
+                        }
+                    },
+                    {
+                        data: 'keterangan',
+                        render: function(data) {
+                            if (!data) return 'Normal';
+
+                            if (data === 'apel') {
+                                return '<span class="badge bg-primary">APEL</span>';
+                            }
+
+                            if (data === 'jumat_sehat') {
+                                return '<span class="badge bg-success">JUMAT SEHAT</span>';
+                            }
+
+                            return data;
                         }
                     },
                     {
                         data: 'edited_by'
-                    },
+                    }
                 ]
             });
 
-
-            // reload saat filter berubah
-            $('.filter-box input, .filter-box select').on('change', function() {
+            // =========================
+            // FILTER CHANGE
+            // =========================
+            $('.filter-box select').on('change', function() {
                 table.ajax.reload();
             });
 
-            // EXPORT PDF (PAKAI FILTER AKTIF)
+            // =========================
+            // EXPORT PDF
+            // =========================
             $('#btnExportPdf').on('click', function() {
 
                 let params = $.param({
-                    start_date: $('#start_date').val(),
-                    end_date: $('#end_date').val(),
-                    hari: $('#hari').val(),
-                    bulan: $('#bulan').val(),
-                    tahun: $('#tahun').val(),
-                    pegawai_id: $('#pegawai_id').val() // ✅ WAJIB
+                    start_date: start_date,
+                    end_date: end_date,
+                    pegawai_id: $('#pegawai_id').val(),
+                    jabatan_id: $('#jabatan_id').val(),
+                    lokasi_id: $('#lokasi_id').val(),
+                    jam_kerja_id: $('#jam_kerja_id').val(),
+                    jenis_absen: $('#jenis_absen').val()
                 });
 
-                window.open(
-                    "{{ route('absensi.exportAll.pdf') }}?" + params,
-                    '_blank'
-                );
+                window.open("{{ route('absensi.exportAll.pdf') }}?" + params, '_blank');
             });
 
-        });
-        const startDate = document.getElementById('start_date');
-        const endDate = document.getElementById('end_date');
+            // =========================
+            // RESET FILTER
+            // =========================
+            $('#btnResetFilter').on('click', function() {
 
-        startDate.addEventListener('change', function() {
-            const startValue = this.value;
+                start_date = '';
+                end_date = '';
 
-            if (!startValue) return;
+                $('#tanggal_range').val('');
+                $('#pegawai_id').val(null).trigger('change');
+                $('#jabatan_id').val('');
+                $('#lokasi_id').val('');
+                $('#jam_kerja_id').val('');
 
-            // Kunci minimal tanggal akhir
-            endDate.min = startValue;
+                table.ajax.reload();
+            });
 
-            // Jika tanggal akhir kosong → isi otomatis
-            if (!endDate.value) {
-                endDate.value = startValue;
-            }
-
-            // Jika tanggal akhir < tanggal mulai → perbaiki otomatis
-            if (endDate.value < startValue) {
-                endDate.value = startValue;
-            }
-        });
-        $('#btnResetFilter').on('click', function() {
-            $('#start_date').val('');
-            $('#end_date').val('');
-            $('#hari').val('');
-            $('#bulan').val('');
-            $('#tahun').val('');
-            $('#pegawai_id').val(null).trigger('change');
-            $('#end_date').attr('min', '');
-
-            table.ajax.reload();
-        });
-        $('.select-pegawai').select2({
-            placeholder: 'Pilih atau cari pegawai...',
-            allowClear: true,
-            width: '100%'
         });
     </script>
 @endpush

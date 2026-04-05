@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
+use App\Models\Jabatan;
 use App\Models\JamKerja;
+use App\Models\Lokasi;
 use App\Models\Pegawai;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -77,162 +79,149 @@ class AbsensiController extends Controller
     }
     public function absen_get(Request $request)
     {
-        // ===============================
-        // AJAX (DATATABLES)
-        // ===============================
         if ($request->ajax()) {
 
-            $query = Absensi::with(['pegawai', 'editor']);
+            $query = Absensi::with([
+                'pegawai.jabatan',
+                'pegawai.lokasi',
+                'pegawai.jamKerja',
+                'editor'
+            ]);
 
-            // RANGE TANGGAL
+            /** ===============================
+             * FILTER RANGE TANGGAL (WAJIB ADA)
+             * =============================== */
             if ($request->filled('start_date') && $request->filled('end_date')) {
                 $query->whereBetween('tanggal', [
                     Carbon::parse($request->start_date)->startOfDay(),
                     Carbon::parse($request->end_date)->endOfDay(),
                 ]);
             }
-            // BULAN + TAHUN
-            elseif ($request->filled('bulan') && $request->filled('tahun')) {
-                $query->whereMonth('tanggal', $request->bulan)
-                    ->whereYear('tanggal', $request->tahun);
-            }
-            // BULAN SAJA
-            elseif ($request->filled('bulan')) {
-                $query->whereMonth('tanggal', $request->bulan);
-            }
-            // TAHUN SAJA
-            elseif ($request->filled('tahun')) {
-                $query->whereYear('tanggal', $request->tahun);
-            }
 
-            // HARI
-            if ($request->filled('hari')) {
-                $query->whereRaw('DAYNAME(tanggal) = ?', [$request->hari]);
-            }
-
-            // PEGAWAI
+            /** ===============================
+             * FILTER PEGAWAI
+             * =============================== */
             if ($request->filled('pegawai_id')) {
                 $query->where('id_pegawai', $request->pegawai_id);
             }
 
+            /** ===============================
+             * FILTER JABATAN
+             * =============================== */
+            if ($request->filled('jabatan_id')) {
+                $query->whereHas('pegawai', function ($q) use ($request) {
+                    $q->where('id_jabatan', $request->jabatan_id);
+                });
+            }
+
+            /** ===============================
+             * FILTER LOKASI
+             * =============================== */
+            if ($request->filled('lokasi_id')) {
+                $query->whereHas('pegawai', function ($q) use ($request) {
+                    $q->where('id_lokasi', $request->lokasi_id);
+                });
+            }
+
+            /** ===============================
+             * FILTER JAM KERJA
+             * =============================== */
+            if ($request->filled('jam_kerja_id')) {
+                $query->whereHas('pegawai', function ($q) use ($request) {
+                    $q->where('id_jam_kerja', $request->jam_kerja_id);
+                });
+            }
+
+            if ($request->jenis_absen) {
+
+                if ($request->jenis_absen == 'apel') {
+                    $query->where('keterangan', 'apel');
+                } elseif ($request->jenis_absen == 'jumat_sehat') {
+                    $query->where('keterangan', 'jumat_sehat');
+                } elseif ($request->jenis_absen == 'normal') {
+                    $query->where(function ($q) {
+                        $q->whereNull('keterangan')
+                            ->orWhere('keterangan', '');
+                    });
+                }
+            }
+
             return datatables()->eloquent($query->orderBy('tanggal', 'desc'))
                 ->addIndexColumn()
+
                 ->addColumn('nip', fn($row) => $row->pegawai->nip ?? '-')
                 ->addColumn('nama_pegawai', fn($row) => $row->pegawai->name ?? '-')
+
+                ->addColumn('jabatan', fn($row) => $row->pegawai->jabatan->nama_jabatan ?? '-')
+                ->addColumn('lokasi', fn($row) => $row->pegawai->lokasi->nama_lokasi ?? '-')
+                ->addColumn('jam_kerja', fn($row) => $row->pegawai->jamKerja->nama_jam_kerja ?? '-')
+
                 ->addColumn('tanggal', fn($row) => $row->tanggal)
+
+                /** ===============================
+                 * JAM MASUK + TL BADGE (TETAP)
+                 * =============================== */
                 ->addColumn('jam_masuk', function ($row) {
 
                     if (!$row->waktu_masuk || $row->status !== 'hadir') {
                         return '-';
                     }
 
-                    $shifts = [
-                        [
-                            'nama' => 'Shift Malam',
-                            'jam_mulai' => '20:00:00',
-                            'jam_selesai' => '06:00:00',
-                            'toleransi' => 10,
-                            'early_allowed' => 120,
-                        ],
-                        [
-                            'nama' => 'Shift Siang',
-                            'jam_mulai' => '14:00:00',
-                            'jam_selesai' => '19:00:00',
-                            'toleransi' => 10,
-                            'early_allowed' => 120,
-                        ],
-                        [
-                            'nama' => 'Shift Pagi',
-                            'jam_mulai' => '07:00:00',
-                            'jam_selesai' => '13:00:00',
-                            'toleransi' => 10,
-                            'early_allowed' => 120,
-                        ],
-                    ];
-
-                    $badge = null;
-
                     $waktuMasuk = Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
-                    $tanggalMasuk = $waktuMasuk->toDateString();
-
-                    foreach ($shifts as $shift) {
-
-                        $jamMulai = Carbon::createFromFormat(
-                            'Y-m-d H:i:s',
-                            $tanggalMasuk . ' ' . $shift['jam_mulai'],
-                            'Asia/Jakarta'
-                        );
-
-                        // 🔥 Handle shift malam
-                        if ($shift['jam_selesai'] < $shift['jam_mulai'] && $waktuMasuk->lt($jamMulai)) {
-                            $jamMulai->subDay();
-                        }
-
-                        $jamSelesai = Carbon::createFromFormat(
-                            'Y-m-d H:i:s',
-                            $jamMulai->toDateString() . ' ' . $shift['jam_selesai'],
-                            'Asia/Jakarta'
-                        );
-
-                        if ($shift['jam_selesai'] < $shift['jam_mulai']) {
-                            $jamSelesai->addDay();
-                        }
-
-                        $jamMulaiEarly = $jamMulai->copy()->subMinutes($shift['early_allowed']);
-                        $jamMulaiToleransi = $jamMulai->copy()->addMinutes($shift['toleransi']);
-
-                        if (!$waktuMasuk->between($jamMulaiEarly, $jamSelesai)) {
-                            continue;
-                        }
-
-                        if ($waktuMasuk->gt($jamMulaiToleransi)) {
-                            $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
-
-                            $badge = match (true) {
-                                $menitTelat <= 30 => 'TL1',
-                                $menitTelat <= 60 => 'TL2',
-                                $menitTelat <= 90 => 'TL3',
-                                default => 'TL4',
-                            };
-                        }
-
-                        break;
-                    }
-
                     $jam = $waktuMasuk->format('H:i');
-
-                    if ($badge) {
-
-                        $warna = match ($badge) {
-                            'TL1' => 'bg-label-warning',
-                            'TL2' => 'bg-label-danger',
-                            'TL3' => 'bg-label-danger',
-                            'TL4' => 'bg-label-dark',
-                            default => 'bg-label-warning',
-                        };
-
-                        return $jam . ' <span class="badge ' . $warna . ' ms-1">' . $badge . '</span>';
-                    }
 
                     return $jam;
                 })
-                ->rawColumns(['jam_masuk']) // 🔥 WAJIB supaya HTML tidak di-escape
+
+                ->rawColumns(['jam_masuk'])
+
                 ->addColumn(
                     'jam_pulang',
                     fn($row) =>
-                    $row->waktu_pulang ? Carbon::parse($row->waktu_pulang)->format('H:i') : '-'
+                    $row->waktu_pulang
+                        ? Carbon::parse($row->waktu_pulang)->format('H:i')
+                        : '-'
                 )
+
                 ->addColumn('status', fn($row) => ucfirst($row->status))
+
+                /** 🔥 TAMBAHAN: JENIS ABSEN */
+                ->addColumn('jenis_absen', function ($row) {
+
+                    if (!$row->keterangan) {
+                        return '<span class="badge bg-label-primary">Normal</span>';
+                    }
+
+                    return match ($row->keterangan) {
+                        'apel' => '<span class="badge bg-label-info">Apel</span>',
+                        'jumat_sehat' => '<span class="badge bg-label-success">Jumat Sehat</span>',
+                        default => '<span class="badge bg-label-secondary">' .
+                            ucwords(str_replace('_', ' ', $row->keterangan)) .
+                            '</span>',
+                    };
+                })
+
                 ->addColumn('edited_by', fn($row) => $row->editor->name ?? '-')
+
+                ->rawColumns(['jam_masuk', 'jenis_absen'])
+
                 ->make(true);
         }
 
-        // ===============================
-        // VIEW (HALAMAN)
-        // ===============================
-        $pegawai = Pegawai::orderBy('name')->get();
+        /** ===============================
+         * VIEW
+         * =============================== */
+        $pegawai   = Pegawai::orderBy('name')->get();
+        $jabatan   = Jabatan::orderBy('nama_jabatan')->get();
+        $lokasi    = Lokasi::orderBy('nama_lokasi')->get();
+        $jamKerja  = JamKerja::orderBy('nama_jam_kerja')->get();
 
-        return view('Admin.Absen', compact('pegawai'));
+        return view('Admin.Absen', compact(
+            'pegawai',
+            'jabatan',
+            'lokasi',
+            'jamKerja'
+        ));
     }
 
     public function export_Pdf(Request $request)
