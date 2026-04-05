@@ -88,6 +88,7 @@
                             <th>Foto Pulang</th>
                             <th>Surat</th>
                             <th>Lokasi</th>
+                            <th>Keterangan</th>
                             <th>Status</th>
                             <th width="8%">Aksi</th>
                         </tr>
@@ -110,12 +111,14 @@
                                     @if ($isAdmin && $isHadir && $hasMasuk)
                                         <button class="btn btn-sm btn-outline-primary"
                                             onclick="openEditWaktuModal(
-        {{ $row->id }},
-        '{{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('Y-m-d\TH:i') : '' }}',
-        '{{ $row->waktu_pulang ? \Carbon\Carbon::parse($row->waktu_pulang)->format('Y-m-d\TH:i') : '' }}',
-        '{{ $row->alasan_edit ?? '' }}',
-        '{{ $row->edited_by_name ?? '-' }}',
-        '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}'
+       {{ $row->id }},
+    '{{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('Y-m-d\TH:i') : '' }}',
+    '{{ $row->waktu_pulang ? \Carbon\Carbon::parse($row->waktu_pulang)->format('Y-m-d\TH:i') : '' }}',
+    '{{ $row->alasan_edit ?? '' }}',
+    '{{ $row->edited_by_name ?? '-' }}',
+    '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}',
+    {{ $row->shift_id ?? 'null' }}
+
     )">
                                             {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
                                         </button>
@@ -162,6 +165,9 @@
                                 <td>
                                     Lat: {{ $row->latitude ?? '-' }} <br>
                                     Long: {{ $row->longitude ?? '-' }}
+                                </td>
+                                <td>
+                                    {{ $row->keterangan ?? '-' }}
                                 </td>
 
                                 <td>
@@ -236,7 +242,7 @@
 
                         </div>
                         <div class="mb-2">
-                            <label class="form-label">Waktu Masuk</label>
+                            <label class="form-label">Waktu Pulang</label>
                             <input type="datetime-local" class="form-control" id="edit-waktu-pulang" name="waktu_pulang"
                                 step="60">
                         </div>
@@ -244,7 +250,15 @@
                             <label class="form-label">Alasan Edit <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="edit-alasan" rows="2"></textarea>
                         </div>
-
+                        <div class="mb-2">
+                            <label class="form-label">Shift</label>
+                            <select class="form-control" id="edit-shift" name="shift_id">
+                                <option value="">Pilih Shift</option>
+                                 @foreach ($shifts as $shift)
+                                    <option value="{{ $shift['id'] }}">{{ $shift['nama'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <hr class="my-2">
 
                         <small class="text-muted d-block">
@@ -357,7 +371,7 @@
             return datetime.replace(' ', 'T').slice(0, 16);
         }
 
-        function openEditWaktuModal(id, waktuMasuk, waktuPulang, alasan, editedBy, editedAt) {
+        function openEditWaktuModal(id, waktuMasuk, waktuPulang, alasan, editedBy, editedAt, shift_id) {
 
             document.getElementById('edit-id').value = id;
 
@@ -366,6 +380,7 @@
             document.getElementById('edit-alasan').value = alasan ?? '';
             document.getElementById('edit-by').innerText = editedBy || '-';
             document.getElementById('edit-at').innerText = editedAt || '-';
+            document.getElementById('edit-shift').value = String(shift_id || '');
             const modal = new bootstrap.Modal(document.getElementById('modalEditWaktu'));
             modal.show();
         }
@@ -375,7 +390,7 @@
             const waktuMasuk = document.getElementById('edit-waktu-masuk').value;
             const waktuPulang = document.getElementById('edit-waktu-pulang').value;
             const alasan = document.getElementById('edit-alasan').value.trim();
-
+            const shift_id = document.getElementById('edit-shift').value;
             if (!alasan || alasan.length < 5) {
                 const modalEl = document.getElementById('modalEditWaktu');
                 const modalInstance = bootstrap.Modal.getInstance(modalEl);
@@ -429,7 +444,8 @@
                             body: JSON.stringify({
                                 waktu_masuk: waktuMasuk || null,
                                 waktu_pulang: waktuPulang || null,
-                                alasan_edit: alasan
+                                alasan_edit: alasan,
+                                shift_id: shift_id || null
                             })
                         })
                         .then(res => res.json())
