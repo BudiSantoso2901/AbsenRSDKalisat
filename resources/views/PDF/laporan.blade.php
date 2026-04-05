@@ -150,11 +150,11 @@
                         @if ($row->waktu_masuk)
                             {{ Carbon::parse($row->waktu_masuk)->format('H:i') }}
 
-                            @if ($badge)
+                            {{-- @if ($badge)
                                 <span style="color:red; font-weight:bold; margin-left:5px;">
                                     {{ $badge }}
                                 </span>
-                            @endif
+                            @endif --}}
                         @else
                             -
                         @endif
