@@ -259,6 +259,7 @@ class PegawaiController extends Controller
 
         /** ================= CEK ABSENSI AKTIF ================= */
         $absenAktif = Absensi::where('id_pegawai', $pegawai->id)
+            ->where('shift_id', $pegawai->id_jam_kerja)
             ->whereNotNull('waktu_masuk')
             ->whereNull('waktu_pulang')
             ->first();
