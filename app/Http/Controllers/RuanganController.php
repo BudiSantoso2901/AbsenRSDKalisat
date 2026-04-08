@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Ruangan;
+use App\Models\ruangan;
+
 class RuanganController extends Controller
 {
     public function index(Request $request)
@@ -11,7 +12,7 @@ class RuanganController extends Controller
         // AJAX (DataTables)
         if ($request->ajax()) {
             return response()->json([
-                'data' => Ruangan::select('id', 'nama_ruangan')->get()
+                'data' => ruangan::select('id', 'nama_ruangan')->get()
             ]);
         }
 
@@ -26,7 +27,7 @@ class RuanganController extends Controller
             'nama_ruangan' => 'required|string|max:255|unique:ruangans,nama_ruangan',
         ]);
 
-        Ruangan::create([
+        ruangan::create([
             'nama_ruangan' => $request->nama_ruangan,
         ]);
 
@@ -40,7 +41,7 @@ class RuanganController extends Controller
             'nama_ruangan' => 'required|string|max:255|unique:ruangans,nama_ruangan,' . $id,
         ]);
 
-        $ruangan = Ruangan::findOrFail($id);
+        $ruangan = ruangan::findOrFail($id);
 
         $ruangan->update([
             'nama_ruangan' => $request->nama_ruangan,
@@ -54,12 +55,11 @@ class RuanganController extends Controller
     // 🔥 DELETE
     public function destroy($id)
     {
-        $ruangan = Ruangan::findOrFail($id);
+        $ruangan = ruangan::findOrFail($id);
         $ruangan->delete();
 
         return response()->json([
             'success' => 'Data berhasil dihapus'
         ]);
     }
-
 }
