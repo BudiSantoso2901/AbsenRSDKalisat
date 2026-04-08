@@ -36,6 +36,9 @@
                     <li class="menu-item {{ request()->routeIs('lokasi.index') ? 'active' : '' }}">
                         <a href="{{ route('lokasi.index') }}" class="menu-link">Lokasi</a>
                     </li>
+                    <li class="menu-item {{ request()->routeIs('ruangan.index') ? 'active' : '' }}">
+                        <a href="{{ route('ruangan.index') }}" class="menu-link">Ruangan</a>
+                    </li>
                 </ul>
             </li>
 
@@ -57,6 +60,13 @@
                             Cek Absensi
                         </a>
                     </li>
+
+                     <li class="menu-item {{ request()->routeIs('admin.konten') ? 'active' : '' }}">
+                        <a href="{{ route('admin.konten') }}" class="menu-link">
+                            Verifikasi Konten
+                        </a>
+                    </li>
+
                 </ul>
             </li>
         @endauth
@@ -73,6 +83,12 @@
                 <a href="{{ route('pegawai.kamera') }}" class="menu-link">
                     <i class="menu-icon bx bx-camera"></i>
                     <div>Absensi</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('pegawai.konten.index') ? 'active' : '' }}">
+                <a href="{{ route('pegawai.konten.index') }}" class="menu-link">
+                    <i class="menu-icon bx bx-upload"></i>
+                    <div>Absen Konten</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('pegawai.panduan') ? 'active' : '' }}">
