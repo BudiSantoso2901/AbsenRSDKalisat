@@ -3,10 +3,12 @@
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\JamKerjaController;
+use App\Http\Controllers\KontenAbsenController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\RuanganController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +44,17 @@ Route::prefix('/')
             Route::put('/edit/{id}', [PegawaiController::class, 'update'])->name('pegawai.update');
             Route::delete('/hapus/{id}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
         });
-
+        Route::prefix('ruangan')->group(function () {
+            Route::get('/', [RuanganController::class, 'index'])->name('ruangan.index');
+            Route::post('/store', [RuanganController::class, 'store'])->name('ruangan.store');
+            Route::put('/update/{id}', [RuanganController::class, 'update']);
+            Route::delete('/delete/{id}', [RuanganController::class, 'destroy']);
+        });
+        Route::prefix('konten')->group(function () {
+            Route::get('/', [KontenAbsenController::class, 'view_konten_admin'])->name('admin.konten');
+            Route::post('/admin/konten/valid', [KontenAbsenController::class, 'valid'])->name('admin.konten.valid');
+            Route::post('/admin/konten/tolak', [KontenAbsenController::class, 'tolak'])->name('admin.konten.tolak');
+        });
         Route::prefix('jabatan')->group(function () {
             Route::get('/list', [JabatanController::class, 'index'])->name('jabatan.index');
             Route::post('/tambah', [JabatanController::class, 'store'])->name('jabatan.store');
@@ -87,5 +99,14 @@ Route::prefix('pegawai')
         Route::get('/panduan', [PegawaiController::class, 'panduan'])->name('pegawai.panduan');
         Route::post('/absensi-kegiatan', [AbsensiController::class, 'absenKegiatan'])
             ->name('absensi.kegiatan');
+        Route::get('/absen-konten', [KontenAbsenController::class, 'view_konten_absen'])
+            ->name('pegawai.konten.index');
 
+        Route::get('/absen-konten/create', [KontenAbsenController::class, 'create_konten_absen'])
+            ->name('pegawai.konten.create');
+
+        Route::post('/absen-konten/store', [KontenAbsenController::class, 'store_konten_absen'])
+            ->name('pegawai.konten.store');
+        Route::post('/pegawai/konten/update', [KontenAbsenController::class, 'update_konten'])
+            ->name('pegawai.konten.update');
     });
