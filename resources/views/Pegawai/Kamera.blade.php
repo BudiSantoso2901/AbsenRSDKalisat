@@ -294,7 +294,7 @@
         const sectionIzin = document.getElementById('section-izin');
         const modeSelect = document.getElementById('mode_absen');
         const btnSubmit = document.getElementById('btnSubmit');
-
+        let isSubmitting = false;
         modeSelect.addEventListener('change', function() {
             if (this.value === 'kegiatan') {
                 btnSubmit.innerHTML = '<i class="bx bx-flag"></i> Absen Kegiatan';
@@ -319,6 +319,12 @@
         /* ================= FORM SUBMIT ================= */
         document.getElementById('form-absensi').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Memproses...';
 
             const status = statusSelect.value;
             const formData = new FormData(this);
@@ -391,6 +397,13 @@
 
                     // ================= ERROR =================
                     if (status === 422) {
+                        isSubmitting = false;
+                        btnSubmit.disabled = false;
+
+                        btnSubmit.innerHTML = (mode === 'kegiatan') ?
+                            '<i class="bx bx-flag"></i> Absen Kegiatan' :
+                            '<i class="bx bx-camera"></i> Absen Kerja';
+
                         Swal.fire({
                             icon: 'warning',
                             title: 'Perhatian',
@@ -442,6 +455,11 @@
                     }
                 })
                 .catch(() => {
+                    isSubmitting = false;
+                    btnSubmit.disabled = false;
+
+                    btnSubmit.innerHTML = '<i class="bx bx-camera"></i> Absen';
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
@@ -599,7 +617,7 @@
                     alert('Gagal mengambil lokasi. Aktifkan GPS.');
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 30000,
                     maximumAge: 0
                 }
             );
