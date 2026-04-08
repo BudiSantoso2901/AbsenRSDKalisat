@@ -36,4 +36,8 @@ class Pegawai extends Authenticatable
     {
         return $this->belongsTo(JamKerja::class, 'id_jam_kerja');
     }
+    public function absenkontens()
+    {
+        return $this->hasMany(absenkonten::class, 'id_pegawai');
+    }
 }

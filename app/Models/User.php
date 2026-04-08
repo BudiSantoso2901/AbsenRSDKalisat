@@ -45,4 +45,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Absensi::class, 'edited_by');
     }
+    public function absenkontens()
+    {
+        return $this->hasMany(absenkonten::class, 'verified_by');
+    }
 }
