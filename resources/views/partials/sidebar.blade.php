@@ -24,6 +24,9 @@
                 </a>
 
                 <ul class="menu-sub">
+                    <li class="menu-item {{ request()->routeIs('user.index') ? 'active' : '' }}">
+                        <a href="{{ route('user.index') }}" class="menu-link">Akun Admin</a>
+                    </li>
                     <li class="menu-item {{ request()->routeIs('pegawai.index') ? 'active' : '' }}">
                         <a href="{{ route('pegawai.index') }}" class="menu-link">Data Pegawai</a>
                     </li>
