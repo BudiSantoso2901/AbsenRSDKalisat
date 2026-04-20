@@ -350,7 +350,7 @@
                     jabatan_id: $('#jabatan_id').val(),
                     lokasi_id: $('#lokasi_id').val(),
                     jam_kerja_id: $('#jam_kerja_id').val(),
-                    jenis_absen: $('#jenis_absen').val()
+                    jenis_absen: $('#jenis_absen').val(),
                 });
 
                 window.open("{{ route('absensi.exportAll.pdf') }}?" + params, '_blank');
