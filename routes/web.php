@@ -4,6 +4,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\JamKerjaController;
 use App\Http\Controllers\KontenAbsenController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LokasiController;
@@ -25,7 +26,6 @@ use App\Http\Controllers\RuanganController;
 //     return view(view: 'Auth.login');
 // });
 
-Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::get('/register', [LoginController::class, 'showRegister'])->name('register');
 Route::get('/', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login-prosess', [LoginController::class, 'login'])->name('login.process');
@@ -84,6 +84,13 @@ Route::prefix('/')
             Route::get('export/pdf/{pegawai}', [AbsensiController::class, 'exportPdf'])->name('absensi.export.pdf');
             Route::get('export-filter/pdf', [AbsensiController::class, 'export_Pdf'])->name('absensi.exportAll.pdf');
             Route::get('/histori-absensi', [LoginController::class, 'histori'])->name('absensi.histori');
+        });
+        Route::prefix('adm')->group(function () {
+            Route::get('/', [UserController::class, 'index'])->name('user.index');
+            Route::post('/store', [UserController::class, 'store'])->name('user.store');
+            Route::get('/{id}', [UserController::class, 'show'])->name('user.show');
+            Route::put('/update/{id}', [UserController::class, 'update'])->name('user.update');
+            Route::delete('/delete/{id}', [UserController::class, 'destroy'])->name('user.destroy');
         });
     });
 Route::prefix('pegawai')
