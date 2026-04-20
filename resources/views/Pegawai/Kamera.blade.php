@@ -68,6 +68,35 @@
         .alert-lokasi i {
             font-size: 1.1rem;
         }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #fb01ff, rgb(155, 3, 135));
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 12px;
+            box-shadow: 0 6px 16px rgba(255, 91, 217, 0.4);
+            transition: all 0.25s ease;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgb(255, 0, 225);
+        }
+
+        .btn-reset:active {
+            transform: scale(0.97);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 576px) {
+
+            .btn-reset,
+            .btn-absen {
+                width: 100%;
+            }
+        }
     </style>
     <div class="container-xxl flex-grow-1 container-p-y">
 
@@ -105,7 +134,7 @@
                         <form id="form-absensi" enctype="multipart/form-data">
                             @csrf
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Mode Absensi</label>
+                                <label class="form-label fw-bold">Pilih Absensi</label>
                                 <select class="form-select" id="mode_absen">
                                     <option value="normal">Absen Kerja</option>
                                     <option value="kegiatan">Apel / Jumat Sehat</option>
@@ -145,9 +174,15 @@
                                 </div>
 
                             </div>
-                            <button class="btn btn-absen w-100 mt-2" type="submit" id="btnSubmit">
-                                <i class="bx bx-camera"></i> Absen Kerja
-                            </button>
+                            <div class="d-flex gap-2 mt-2 flex-wrap">
+                                <button type="button" class="btn btn-reset flex-fill" id="btnReset">
+                                    <i class="bx bx-refresh"></i> Reset Lokasi & Refresh
+                                </button>
+
+                                <button class="btn btn-absen flex-fill" type="submit" id="btnSubmit">
+                                    <i class="bx bx-camera"></i> Absen Kerja
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -189,79 +224,15 @@
                             </thead>
                             <tbody>
                                 @foreach ($absensi as $row)
-                                    @php
-                                        $badge = null;
-                                        $earlyAccess = 120; // 2 jam sebelum shift
-
-                                        if ($row->status === 'hadir' && $row->waktu_masuk && $row->shift) {
-                                            $tanggalOnly = \Carbon\Carbon::parse($row->tanggal)->toDateString();
-                                            $waktuMasuk = \Carbon\Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
-
-                                            $jamMulai = \Carbon\Carbon::parse(
-                                                $tanggalOnly . ' ' . $row->shift->jam_mulai,
-                                                'Asia/Jakarta',
-                                            );
-
-                                            $jamSelesai = \Carbon\Carbon::parse(
-                                                $tanggalOnly . ' ' . $row->shift->jam_selesai,
-                                                'Asia/Jakarta',
-                                            );
-
-                                            /*
-        ========================================
-        HANDLE SHIFT MALAM (Lintas Hari)
-        ========================================
-        */
-                                            if ($row->shift->jam_selesai < $row->shift->jam_mulai) {
-                                                $jamSelesai->addDay();
-
-                                                if ($waktuMasuk->lt($jamMulai)) {
-                                                    $jamMulai->subDay();
-                                                    $jamSelesai->subDay();
-                                                }
-                                            }
-
-                                            $toleransi = $row->shift->toleransi_menit ?? 0;
-                                            $jamMulaiToleransi = $jamMulai->copy()->addMinutes($toleransi);
-
-                                            /*
-        ========================================
-        WINDOW SHIFT VALID
-        ========================================
-        */
-                                            $windowStart = $jamMulai->copy()->subMinutes($earlyAccess);
-                                            $windowEnd = $jamSelesai->copy();
-
-                                            if ($waktuMasuk->between($windowStart, $windowEnd)) {
-                                                // Jika datang sebelum jam mulai → tidak TL
-                                                if ($waktuMasuk->lt($jamMulai)) {
-                                                    $badge = null;
-                                                }
-
-                                                // Jika lewat toleransi → hitung TL
-                                                elseif ($waktuMasuk->gt($jamMulaiToleransi)) {
-                                                    $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
-
-                                                    $badge = match (true) {
-                                                        $menitTelat <= 30 => 'TL1',
-                                                        $menitTelat <= 60 => 'TL2',
-                                                        $menitTelat <= 90 => 'TL3',
-                                                        default => 'TL4',
-                                                    };
-                                                }
-                                            }
-                                        }
-                                    @endphp
-
                                     <tr>
                                         <td>
                                             {{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
                                         </td>
-
                                         <td>
                                             {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
-                                            @if ($badge)
-                                                <span class="badge bg-warning ms-1">{{ $badge }}</span>
+
+                                            @if ($row->tl_badge)
+                                                <span class="badge bg-warning ms-1">{{ $row->tl_badge }}</span>
                                             @endif
                                         </td>
 
@@ -304,6 +275,7 @@
                 btnSubmit.innerHTML = '<i class="bx bx-camera"></i> Absen Kerja';
                 btnSubmit.style.backgroundColor = '#28a745';
             }
+            renderLokasi(this.value);
         });
 
         statusSelect.addEventListener('change', function() {
@@ -549,25 +521,38 @@
         }
 
         /* ================= MAP ================= */
+
+        // ====== DATA LOKASI ======
         const lokasiPegawai = {
             lat: {{ $lokasi->latitude }},
             lng: {{ $lokasi->longitude }},
             radius: {{ $lokasi->radius_meter }},
             nama: "{{ $lokasi->nama_lokasi }}"
         };
-        const osm = L.tileLayer(
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }
-        );
+
+        const lokasiKegiatan = {
+            lat: -8.13484147,
+            lng: 113.82144392,
+            radius: 25,
+            nama: "Lokasi Apel / Jumat Sehat"
+        };
+
+        // ====== GET LOKASI ======
+        function getLokasi(mode) {
+            return mode === 'kegiatan' ? lokasiKegiatan : lokasiPegawai;
+        }
+
+        // ====== TILE ======
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        });
 
         const esri = L.tileLayer(
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: 'Tiles © Esri'
-            }
-        );
+            });
 
-        // ================= MAP INIT =================
+        // ====== INIT MAP ======
         const map = L.map('map', {
             center: [lokasiPegawai.lat, lokasiPegawai.lng],
             zoom: 17,
@@ -579,24 +564,41 @@
             "Satelit": esri
         }).addTo(map);
 
-        // ================= MARKER LOKASI ABSENSI =================
-        const lokasiMarker = L.marker([lokasiPegawai.lat, lokasiPegawai.lng])
-            .addTo(map)
-            .bindPopup(`Lokasi Absensi<br><b>${lokasiPegawai.nama}</b>`)
-            .openPopup();
+        // ====== STATE ======
+        let lokasiMarker = null;
+        let radiusCircle = null;
+        let markerUser = null;
 
-        // ================= RADIUS ABSENSI =================
-        const radiusCircle = L.circle(
-            [lokasiPegawai.lat, lokasiPegawai.lng], {
-                radius: lokasiPegawai.radius,
-                color: 'green',
-                fillColor: '#4CAF50',
+        // ====== RENDER LOKASI ======
+        function renderLokasi(mode = 'normal') {
+            const lokasi = getLokasi(mode);
+
+            // Hapus marker lama
+            if (lokasiMarker) map.removeLayer(lokasiMarker);
+            if (radiusCircle) map.removeLayer(radiusCircle);
+
+            // Set view ke lokasi tujuan
+            map.setView([lokasi.lat, lokasi.lng], 17);
+
+            // Marker lokasi
+            lokasiMarker = L.marker([lokasi.lat, lokasi.lng])
+                .addTo(map)
+                .bindPopup(`
+            <b>${lokasi.nama}</b><br>
+            Mode: ${mode === 'kegiatan' ? 'Kegiatan' : 'Kerja'}
+        `)
+                .openPopup();
+
+            // Circle radius
+            radiusCircle = L.circle([lokasi.lat, lokasi.lng], {
+                radius: lokasi.radius,
+                color: mode === 'kegiatan' ? 'orange' : 'green',
+                fillColor: mode === 'kegiatan' ? '#ff9800' : '#4CAF50',
                 fillOpacity: 0.2
-            }
-        ).addTo(map);
+            }).addTo(map);
+        }
 
-        let marker;
-
+        // ====== GEOLOCATION ======
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 function(position) {
@@ -607,14 +609,21 @@
                     document.getElementById('lng').innerText = lng.toFixed(6);
                     document.getElementById('inputLat').value = lat;
                     document.getElementById('inputLng').value = lng;
-                    map.setView([lat, lng], 17);
 
-                    marker = L.marker([lat, lng]).addTo(map)
-                        .bindPopup('Lokasi Anda Saat Ini')
+                    // Hapus marker lama user
+                    if (markerUser) map.removeLayer(markerUser);
+
+                    markerUser = L.marker([lat, lng])
+                        .addTo(map)
+                        .bindPopup('Lokasi Anda')
                         .openPopup();
                 },
-                function(error) {
-                    alert('Gagal mengambil lokasi. Aktifkan GPS.');
+                function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'GPS Error',
+                        text: 'Aktifkan lokasi / GPS'
+                    });
                 }, {
                     enableHighAccuracy: true,
                     timeout: 30000,
@@ -622,5 +631,48 @@
                 }
             );
         }
+
+        // ====== LOAD AWAL ======
+        renderLokasi('normal');
+
+        document.getElementById('btnReset').addEventListener('click', function() {
+            const btn = this;
+
+            // animasi loading
+            btn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Resetting...';
+            btn.disabled = true;
+
+            // reset value lokasi
+            document.getElementById('inputLat').value = '';
+            document.getElementById('inputLng').value = '';
+
+            // reset tampilan koordinat
+            document.getElementById('lat').innerText = '-';
+            document.getElementById('lng').innerText = '-';
+
+            // optional: hapus marker map (kalau pakai leaflet)
+            if (typeof marker !== 'undefined') {
+                map.removeLayer(marker);
+            }
+
+            // ambil ulang lokasi
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('inputLat').value = position.coords.latitude;
+                    document.getElementById('inputLng').value = position.coords.longitude;
+
+                    // reload biar clean
+                    setTimeout(() => {
+                        location.reload();
+                    }, 800);
+                }, function() {
+                    alert('Gagal mengambil lokasi, coba aktifkan GPS');
+                    location.reload();
+                });
+            } else {
+                alert('Browser tidak mendukung GPS');
+                location.reload();
+            }
+        });
     </script>
 @endpush

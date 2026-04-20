@@ -48,4 +48,42 @@ class Absensi extends Model
     {
         return $this->belongsTo(JamKerja::class, 'shift_id');
     }
+    public function getTlBadgeAttribute()
+    {
+        $shift = $this->shift ?? $this->pegawai->jamKerja ?? null;
+
+        if ($this->status !== 'hadir' || !$this->waktu_masuk || !$shift) {
+            return null;
+        }
+
+        $tanggal = \Carbon\Carbon::parse($this->tanggal)->toDateString();
+        $waktuMasuk = \Carbon\Carbon::parse($this->waktu_masuk);
+
+        $jamMulai = \Carbon\Carbon::parse($tanggal . ' ' . $shift->jam_mulai);
+        $jamSelesai = \Carbon\Carbon::parse($tanggal . ' ' . $shift->jam_selesai);
+
+        // SHIFT MALAM
+        if ($shift->jam_selesai < $shift->jam_mulai) {
+            $jamSelesai->addDay();
+
+            if ($waktuMasuk->lt($jamMulai)) {
+                $jamMulai->subDay();
+                $jamSelesai->subDay();
+            }
+        }
+
+        $toleransi = $shift->toleransi_menit ?? 0;
+        $jamMulaiToleransi = $jamMulai->copy()->addMinutes($toleransi);
+
+        if ($waktuMasuk->gt($jamMulaiToleransi)) {
+            $menitTelat = $jamMulaiToleransi->diffInMinutes($waktuMasuk);
+
+            if ($menitTelat <= 30) return 'TL1';
+            if ($menitTelat <= 60) return 'TL2';
+            if ($menitTelat <= 90) return 'TL3';
+            return 'TL4';
+        }
+
+        return null;
+    }
 }
