@@ -19,8 +19,8 @@ class AbsensiController extends Controller
     public function kamera()
     {
         $pegawai = auth('pegawai')->user();
-
-        $absensi = Absensi::where('id_pegawai', $pegawai->id)
+        $absensi = Absensi::with('shift')
+            ->where('id_pegawai', $pegawai->id)
             ->whereMonth('tanggal', now()->month)
             ->whereYear('tanggal', now()->year)
             ->orderBy('tanggal')
@@ -85,7 +85,8 @@ class AbsensiController extends Controller
                 'pegawai.jabatan',
                 'pegawai.lokasi',
                 'pegawai.jamKerja',
-                'editor'
+                'editor',
+                'shift'
             ]);
 
             /** ===============================
@@ -170,7 +171,11 @@ class AbsensiController extends Controller
                     $waktuMasuk = Carbon::parse($row->waktu_masuk, 'Asia/Jakarta');
                     $jam = $waktuMasuk->format('H:i');
 
-                    return $jam;
+                    $badge = $row->tl_badge
+                        ? '<span class="badge bg-warning ms-1">' . $row->tl_badge . '</span>'
+                        : '';
+
+                    return $jam . ' ' . $badge;
                 })
 
                 ->rawColumns(['jam_masuk'])
@@ -685,7 +690,7 @@ class AbsensiController extends Controller
                 'selesai' => '10:00',
                 'lat'     => -8.13484147,
                 'lng'     => 113.82144392,
-                'radius'  => 25,
+                'radius'  => 30,
             ],
             'Friday' => [
                 'label'   => 'Jumat Sehat',
@@ -693,7 +698,7 @@ class AbsensiController extends Controller
                 'selesai' => '10:00',
                 'lat'     => -8.13484147,
                 'lng'     => 113.82144392,
-                'radius'  => 25,
+                'radius'  => 30,
             ]
         ];
 
