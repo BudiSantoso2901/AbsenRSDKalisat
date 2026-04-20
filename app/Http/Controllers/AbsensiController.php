@@ -226,40 +226,76 @@ class AbsensiController extends Controller
 
     public function export_Pdf(Request $request)
     {
-        $query = Absensi::with('pegawai');
+        $query = Absensi::with([
+            'pegawai.jabatan',
+            'pegawai.lokasi',
+            'pegawai.jamKerja'
+        ]);
 
-        // RANGE TANGGAL
+        /** ===============================
+         * FILTER RANGE TANGGAL
+         * =============================== */
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal', [
-                $request->start_date,
-                $request->end_date
+                Carbon::parse($request->start_date)->startOfDay(),
+                Carbon::parse($request->end_date)->endOfDay(),
             ]);
         }
 
-        // BULAN
-        if ($request->filled('bulan')) {
-            $query->whereMonth('tanggal', $request->bulan);
-        }
-
-        // TAHUN
-        if ($request->filled('tahun')) {
-            $query->whereYear('tanggal', $request->tahun);
-        }
-
-        // HARI
-        if ($request->filled('hari')) {
-            $query->whereRaw('DAYNAME(tanggal) = ?', [$request->hari]);
-        }
-
-        /**
-         * =========================
-         * FILTER PEGAWAI (SAMA!)
-         * =========================
-         */
+        /** ===============================
+         * FILTER PEGAWAI
+         * =============================== */
         if ($request->filled('pegawai_id')) {
             $query->where('id_pegawai', $request->pegawai_id);
         }
 
+        /** ===============================
+         * FILTER JABATAN
+         * =============================== */
+        if ($request->filled('jabatan_id')) {
+            $query->whereHas('pegawai', function ($q) use ($request) {
+                $q->where('id_jabatan', $request->jabatan_id);
+            });
+        }
+
+        /** ===============================
+         * FILTER LOKASI
+         * =============================== */
+        if ($request->filled('lokasi_id')) {
+            $query->whereHas('pegawai', function ($q) use ($request) {
+                $q->where('id_lokasi', $request->lokasi_id);
+            });
+        }
+
+        /** ===============================
+         * FILTER JAM KERJA
+         * =============================== */
+        if ($request->filled('jam_kerja_id')) {
+            $query->whereHas('pegawai', function ($q) use ($request) {
+                $q->where('id_jam_kerja', $request->jam_kerja_id);
+            });
+        }
+
+        /** ===============================
+         * FILTER JENIS ABSEN
+         * =============================== */
+        if ($request->filled('jenis_absen')) {
+
+            if ($request->jenis_absen == 'apel') {
+                $query->where('keterangan', 'apel');
+            } elseif ($request->jenis_absen == 'jumat_sehat') {
+                $query->where('keterangan', 'jumat_sehat');
+            } elseif ($request->jenis_absen == 'normal') {
+                $query->where(function ($q) {
+                    $q->whereNull('keterangan')
+                        ->orWhere('keterangan', '');
+                });
+            }
+        }
+
+        /** ===============================
+         * EXECUTE
+         * =============================== */
         $data = $query->orderBy('tanggal', 'asc')->get();
 
         $pdf = Pdf::loadView('PDF.laporan', [
@@ -625,7 +661,9 @@ class AbsensiController extends Controller
     {
         /** ================= AUTH ================= */
         $pegawai = auth()->guard('pegawai')->user();
-        if (!$pegawai) abort(401);
+        if (!$pegawai) {
+            abort(401, 'Unauthorized');
+        }
 
         /** ================= VALIDASI ================= */
         $request->validate([
@@ -634,38 +672,45 @@ class AbsensiController extends Controller
             'foto'      => 'required|image',
         ]);
 
+        /** ================= WAKTU ================= */
         $now   = Carbon::now('Asia/Jakarta');
         $today = $now->toDateString();
         $hari  = $now->format('l');
 
-        /** ================= SETTING KEGIATAN ================= */
+        /** ================= CONFIG KEGIATAN ================= */
         $configKegiatan = [
             'Monday' => [
-                'label' => 'Apel',
-                'mulai' => '07:00',
+                'label'   => 'Apel',
+                'mulai'   => '06:30',
                 'selesai' => '10:00',
+                'lat'     => -8.13484147,
+                'lng'     => 113.82144392,
+                'radius'  => 25,
             ],
             'Friday' => [
-                'label' => 'Jumat Sehat',
-                'mulai' => '06:30',
+                'label'   => 'Jumat Sehat',
+                'mulai'   => '06:30',
                 'selesai' => '10:00',
+                'lat'     => -8.13484147,
+                'lng'     => 113.82144392,
+                'radius'  => 25,
             ]
         ];
 
-        // cek apakah hari ini ada kegiatan
+        /** ================= CEK HARI ================= */
         if (!isset($configKegiatan[$hari])) {
             return response()->json([
-                'message' => 'Hari ini tidak ada kegiatan absensi khusus'
+                'message' => 'Hari ini tidak ada kegiatan absensi'
             ], 422);
         }
 
         $kegiatan = $configKegiatan[$hari];
-        $label = $kegiatan['label'];
+        $label    = $kegiatan['label'];
 
+        /** ================= VALIDASI JAM ================= */
         $jamMulai   = Carbon::parse("$today {$kegiatan['mulai']}");
         $jamSelesai = Carbon::parse("$today {$kegiatan['selesai']}");
 
-        /** ================= VALIDASI JAM ================= */
         if ($now->lt($jamMulai) || $now->gt($jamSelesai)) {
             return response()->json([
                 'message' => "Di luar jam $label"
@@ -673,9 +718,11 @@ class AbsensiController extends Controller
         }
 
         /** ================= CEK SUDAH ABSEN ================= */
+        $keterangan = strtolower(str_replace(' ', '_', $label));
+
         $sudah = Absensi::where('id_pegawai', $pegawai->id)
             ->whereDate('tanggal', $today)
-            ->where('keterangan', strtolower(str_replace(' ', '_', $label)))
+            ->where('keterangan', $keterangan)
             ->exists();
 
         if ($sudah) {
@@ -685,31 +732,23 @@ class AbsensiController extends Controller
         }
 
         /** ================= VALIDASI LOKASI ================= */
-        $lokasi = $pegawai->lokasi;
-        if (!$lokasi) {
-            return response()->json([
-                'message' => 'Lokasi kerja belum ditentukan'
-            ], 422);
-        }
-
         $jarak = $this->hitungJarak(
-            $lokasi->latitude,
-            $lokasi->longitude,
+            $kegiatan['lat'],
+            $kegiatan['lng'],
             $request->latitude,
             $request->longitude
         );
 
-        if ($jarak > $lokasi->radius_meter) {
+        if ($jarak > $kegiatan['radius']) {
             return response()->json([
-                'message' => 'Anda berada di luar area absensi'
+                'message' => 'Anda berada di luar area kegiatan'
             ], 422);
         }
 
-        /** ================= SIMPAN ================= */
+        /** ================= SIMPAN FOTO ================= */
         $fotoPath = $request->file('foto')->store('absensi_foto', 'public');
 
-        $keterangan = strtolower(str_replace(' ', '_', $label));
-
+        /** ================= SIMPAN DATA ================= */
         Absensi::create([
             'id_pegawai'  => $pegawai->id,
             'tanggal'     => $today,
