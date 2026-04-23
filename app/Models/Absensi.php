@@ -62,13 +62,25 @@ class Absensi extends Model
         $jamMulai = \Carbon\Carbon::parse($tanggal . ' ' . $shift->jam_mulai);
         $jamSelesai = \Carbon\Carbon::parse($tanggal . ' ' . $shift->jam_selesai);
 
-        // SHIFT MALAM
         if ($shift->jam_selesai < $shift->jam_mulai) {
             $jamSelesai->addDay();
 
-            if ($waktuMasuk->lt($jamMulai)) {
-                $jamMulai->subDay();
-                $jamSelesai->subDay();
+
+            $startWindow = $jamMulai->copy()->subHours(4);
+            $endWindow = $jamSelesai->copy();
+
+            if (!$waktuMasuk->between($startWindow, $endWindow)) {
+                return null;
+            }
+        }
+
+        // HANDLE SHIFT NORMAL
+        else {
+            $startWindow = $jamMulai->copy()->subHours(2);
+            $endWindow = $jamSelesai->copy();
+
+            if (!$waktuMasuk->between($startWindow, $endWindow)) {
+                return null;
             }
         }
 
