@@ -533,7 +533,7 @@
         const lokasiKegiatan = {
             lat: -8.13484147,
             lng: 113.82144392,
-            radius: 25,
+            radius: 50,
             nama: "Lokasi Apel / Jumat Sehat"
         };
 

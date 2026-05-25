@@ -690,7 +690,7 @@ class AbsensiController extends Controller
                 'selesai' => '10:00',
                 'lat'     => -8.13484147,
                 'lng'     => 113.82144392,
-                'radius'  => 30,
+                'radius'  => 50,
             ],
             'Friday' => [
                 'label'   => 'Jumat Sehat',
@@ -698,7 +698,7 @@ class AbsensiController extends Controller
                 'selesai' => '10:00',
                 'lat'     => -8.13484147,
                 'lng'     => 113.82144392,
-                'radius'  => 30,
+                'radius'  => 50,
             ]
         ];
 
