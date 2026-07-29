@@ -12,7 +12,7 @@ class UserController extends Controller
     {
         if ($request->ajax()) {
             return response()->json([
-                'data' => User::get()
+                'data' => User::with('ruangans')->get()
             ]);
         }
         return view('Admin.User');
@@ -23,7 +23,9 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email:rfc,dns|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'kode_akses' => 'required'
+            'kode_akses' => 'required',
+            'ruangan_ids' => 'nullable|array',
+            'ruangan_ids.*' => 'exists:ruangans,id'
         ]);
 
         // 🔥 VALIDASI KODE
@@ -33,19 +35,21 @@ class UserController extends Controller
             ], 403);
         }
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
         ]);
-
+        if ($request->has('ruangan_ids')) {
+            $user->ruangans()->sync($request->ruangan_ids);
+        }
         return response()->json([
             'message' => 'User berhasil ditambahkan'
         ]);
     }
     public function show($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with('ruangans')->findOrFail($id);
         return response()->json($user);
     }
     public function update(Request $request, $id)
@@ -54,7 +58,9 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email:rfc,dns|max:255|unique:users,email,' . $id,
             'password' => 'nullable|string|min:6|confirmed',
-            'kode_akses' => 'required'
+            'kode_akses' => 'required',
+            'ruangan_ids' => 'nullable|array',
+            'ruangan_ids.*' => 'exists:ruangans,id'
         ]);
 
         if ($request->kode_akses !== 'up666') {
@@ -63,13 +69,17 @@ class UserController extends Controller
             ], 403);
         }
 
-        $user = User::findOrFail($id);
+        $user = User::with('ruangans')->findOrFail($id);
 
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'password' => $request->password ? bcrypt($request->password) : $user->password,
         ]);
+
+        if ($request->has('ruangan_ids')) {
+            $user->ruangans()->sync($request->ruangan_ids);
+        }
 
         return response()->json([
             'message' => 'User berhasil diperbarui'
@@ -83,7 +93,7 @@ class UserController extends Controller
             ], 403);
         }
 
-        $user = User::findOrFail($id);
+       $user = User::findOrFail($id);
         $user->delete();
 
         return response()->json([
