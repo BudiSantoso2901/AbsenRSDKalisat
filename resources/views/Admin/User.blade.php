@@ -1,11 +1,19 @@
 @extends('_layouts.layouts')
 
-@section('content')
+@push('styles')
     <style>
         .swal2-container {
             z-index: 2000 !important;
         }
+
+        /* Penyesuaian Z-Index Select2 di dalam Bootstrap Modal */
+        .select2-container--bootstrap-5 {
+            z-index: 1060 !important;
+        }
     </style>
+@endpush
+
+@section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
 
         <h4 class="fw-bold py-3 mb-4">
@@ -27,6 +35,7 @@
                             <th width="5%">NO</th>
                             <th>NAMA</th>
                             <th>EMAIL</th>
+                            <th>RUANGAN HAK AKSES</th>
                             <th width="20%">AKSI</th>
                         </tr>
                     </thead>
@@ -53,16 +62,29 @@
                     <div class="modal-body">
 
                         <label class="form-label">Nama</label>
-                        <input type="text" class="form-control mb-2" id="name" required placeholder="Isikan Nama Admin">
+                        <input type="text" class="form-control mb-2" id="name" required
+                            placeholder="Isikan Nama Admin">
 
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control mb-2" id="email" required placeholder="Isikan Email Admin">
+                        <input type="email" class="form-control mb-2" id="email" required
+                            placeholder="Isikan Email Admin">
+
+                        <!-- 🔥 MULTIPLE SELECT2 UNTUK RUANGAN -->
+                        <div class="mb-2">
+                            <label class="form-label">Akses Ruangan Verifikasi</label>
+                            <select class="form-select" id="ruangan_ids" name="ruangan_ids[]" multiple="multiple"
+                                data-placeholder="Cari dan pilih ruangan...">
+                            </select>
+                            <div class="form-text">Bisa memilih lebih dari satu ruangan. Ketik untuk mencari.</div>
+                        </div>
 
                         <label class="form-label">Password</label>
-                        <input type="password" class="form-control mb-2" id="password" placeholder="Kosongkan jika tidak ingin mengubah password">
+                        <input type="password" class="form-control mb-2" id="password"
+                            placeholder="Kosongkan jika tidak ingin mengubah password">
 
                         <label class="form-label">Konfirmasi Password</label>
-                        <input type="password" class="form-control mb-2" id="password_confirmation" placeholder="Kosongkan jika tidak ingin mengubah password">
+                        <input type="password" class="form-control mb-2" id="password_confirmation"
+                            placeholder="Kosongkan jika tidak ingin mengubah password">
 
                     </div>
 
@@ -89,10 +111,46 @@
             const routes = {
                 index: "{{ route('user.index') }}",
                 store: "{{ route('user.store') }}",
+                show: "{{ route('user.show', ':id') }}",
                 update: "{{ route('user.update', ':id') }}",
-                delete: "{{ route('user.destroy', ':id') }}"
+                delete: "{{ route('user.destroy', ':id') }}",
+                ruanganList: "{{ route('ruangan.index') }}" // Route penyedia data master ruangan
             };
 
+            // 1. Inisialisasi Select2
+            $('#ruangan_ids').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalUser'),
+                width: '100%',
+                allowClear: true
+            });
+
+            // 2. Fetch Master Ruangan ke Dropdown Select2
+            function loadMasterRuangan() {
+                $.ajax({
+                    url: routes.ruanganList,
+                    type: 'GET',
+                    success: function(res) {
+                        let data = res.data || res;
+                        let select = $('#ruangan_ids');
+                        select.empty();
+
+                        data.forEach(function(item) {
+                            let option = new Option(item.nama_ruangan, item.id, false, false);
+                            select.append(option);
+                        });
+
+                        select.trigger('change');
+                    },
+                    error: function() {
+                        console.error('Gagal memuat master ruangan');
+                    }
+                });
+            }
+
+            loadMasterRuangan();
+
+            // 3. Setup DataTables
             let table = $('#userTable').DataTable({
                 processing: true,
                 serverSide: false,
@@ -110,50 +168,75 @@
                         data: 'email'
                     },
                     {
+                        data: 'ruangans',
+                        render: function(ruangans) {
+                            if (!ruangans || ruangans.length === 0) {
+                                return '<span class="badge bg-label-secondary">Tidak ada akses</span>';
+                            }
+                            return ruangans.map(r =>
+                                `<span class="badge bg-label-primary me-1 mb-1">${r.nama_ruangan}</span>`
+                                ).join('');
+                        }
+                    },
+                    {
                         data: 'id',
-                        render: function(id, type, row) {
+                        render: function(id) {
                             return `
-                        <button class="btn btn-warning btn-sm btnEdit"
-                            data-id="${id}"
-                            data-name="${row.name}"
-                            data-email="${row.email}">
-                            Edit
-                        </button>
-                        <button class="btn btn-danger btn-sm btnDelete"
-                            data-id="${id}">
-                            Hapus
-                        </button>
-                    `;
+                                <button class="btn btn-warning btn-sm btnEdit" data-id="${id}">
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm btnDelete" data-id="${id}">
+                                    Hapus
+                                </button>
+                            `;
                         }
                     }
                 ]
             });
 
-            // 🔥 TAMBAH
+            // 4. Tambah User
             $('#btnTambah').click(function() {
                 $('#formUser')[0].reset();
                 $('#user_id').val('');
+                $('#ruangan_ids').val(null).trigger('change'); // Reset Select2
                 $('#modalTitle').text('Tambah User');
                 $('#modalUser').modal('show');
             });
 
-            // 🔥 EDIT
+            // 5. Edit User
             $(document).on('click', '.btnEdit', function() {
-                $('#user_id').val($(this).data('id'));
-                $('#name').val($(this).data('name'));
-                $('#email').val($(this).data('email'));
-                $('#password').val('');
-                $('#password_confirmation').val('');
-                $('#modalTitle').text('Edit User');
-                $('#modalUser').modal('show');
+                let id = $(this).data('id');
+                let urlShow = routes.show.replace(':id', id);
+
+                $.ajax({
+                    url: urlShow,
+                    type: 'GET',
+                    success: function(user) {
+                        $('#user_id').val(user.id);
+                        $('#name').val(user.name);
+                        $('#email').val(user.email);
+                        $('#password').val('');
+                        $('#password_confirmation').val('');
+
+                        // Set nilai Terpilih pada Multiple Select2
+                        let selectedIds = user.ruangans ? user.ruangans.map(r => r.id) : [];
+                        $('#ruangan_ids').val(selectedIds).trigger('change');
+
+                        $('#modalTitle').text('Edit User');
+                        $('#modalUser').modal('show');
+                    },
+                    error: function() {
+                        Swal.fire('Gagal', 'Tidak dapat mengambil data user', 'error');
+                    }
+                });
             });
 
-            // 🔥 SIMPAN
+            // 6. Simpan (Create / Update)
             $('#formUser').submit(function(e) {
                 e.preventDefault();
 
                 let id = $('#user_id').val();
-                let isEdit = id ? true : false;
+                let isEdit = !!id;
 
                 $('#modalUser').modal('hide');
 
@@ -185,27 +268,27 @@
 
                         let method = isEdit ? 'PUT' : 'POST';
 
-                        let data = {
+                        let payload = {
                             _token: "{{ csrf_token() }}",
                             name: $('#name').val(),
                             email: $('#email').val(),
-                            kode_akses: result.value
+                            kode_akses: result.value,
+                            ruangan_ids: $('#ruangan_ids').val() ||
+                            [] // Array ID ruangan dari Select2
                         };
 
-                        // 🔥 hanya kirim password jika diisi
                         let password = $('#password').val();
-
                         if (password) {
-                            data.password = password;
-                            data.password_confirmation = $('#password_confirmation').val();
+                            payload.password = password;
+                            payload.password_confirmation = $('#password_confirmation')
+                            .val();
                         }
 
                         $.ajax({
                             url: url,
                             type: method,
-                            data: data,
+                            data: payload,
                             success: function() {
-
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil',
@@ -232,7 +315,7 @@
                 }, 300);
             });
 
-            // 🔥 HAPUS
+            // 7. Hapus
             $(document).on('click', '.btnDelete', function() {
                 let id = $(this).data('id');
 
