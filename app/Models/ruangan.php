@@ -16,4 +16,13 @@ class ruangan extends Model
     {
         return $this->hasMany(absenkonten::class, 'id_ruangan');
     }
+    public function users()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_ruangan',
+            'id_ruangan',
+            'id_user'
+        )->withTimestamps();
+    }
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -48,5 +49,17 @@ class User extends Authenticatable
     public function absenkontens()
     {
         return $this->hasMany(absenkonten::class, 'verified_by');
+    }
+    /**
+     * Relasi pivot ke tabel ruangan
+     */
+    public function ruangans(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Ruangan::class,
+            'user_ruangan',
+            'id_user',
+            'id_ruangan'
+        )->withTimestamps();
     }
 }
