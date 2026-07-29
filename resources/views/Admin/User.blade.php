@@ -155,17 +155,28 @@
                 processing: true,
                 serverSide: false,
                 ajax: {
-                    url: routes.index
+                    url: routes.index,
+                    dataSrc: '', // 👈 Membaca array JSON langsung dari respon controller
+                    error: function(xhr, error, code) {
+                        console.error("DataTables Error Details:", xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Memuat Data',
+                            text: 'Terjadi kesalahan saat mengambil data dari server. Cek console browser untuk detailnya.'
+                        });
+                    }
                 },
                 columns: [{
                         data: null,
                         render: (data, type, row, meta) => meta.row + 1
                     },
                     {
-                        data: 'name'
+                        data: 'name',
+                        defaultContent: '-'
                     },
                     {
-                        data: 'email'
+                        data: 'email',
+                        defaultContent: '-'
                     },
                     {
                         data: 'ruangans',
@@ -175,25 +186,24 @@
                             }
                             return ruangans.map(r =>
                                 `<span class="badge bg-label-primary me-1 mb-1">${r.nama_ruangan}</span>`
-                                ).join('');
+                            ).join('');
                         }
                     },
                     {
                         data: 'id',
                         render: function(id) {
                             return `
-                                <button class="btn btn-warning btn-sm btnEdit" data-id="${id}">
-                                    Edit
-                                </button>
-                                <button class="btn btn-danger btn-sm btnDelete" data-id="${id}">
-                                    Hapus
-                                </button>
-                            `;
+                    <button class="btn btn-warning btn-sm btnEdit" data-id="${id}">
+                        Edit
+                    </button>
+                    <button class="btn btn-danger btn-sm btnDelete" data-id="${id}">
+                        Hapus
+                    </button>
+                `;
                         }
                     }
                 ]
             });
-
             // 4. Tambah User
             $('#btnTambah').click(function() {
                 $('#formUser')[0].reset();
@@ -281,7 +291,7 @@
                         if (password) {
                             payload.password = password;
                             payload.password_confirmation = $('#password_confirmation')
-                            .val();
+                                .val();
                         }
 
                         $.ajax({

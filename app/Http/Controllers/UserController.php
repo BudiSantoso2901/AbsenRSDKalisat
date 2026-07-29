@@ -11,9 +11,10 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            return response()->json([
-                'data' => User::with('ruangans')->get()
-            ]);
+            // Mengembalikan array objek secara langsung
+            return response()->json(
+                User::with('ruangans')->get()
+            );
         }
         return view('Admin.User');
     }
@@ -93,7 +94,7 @@ class UserController extends Controller
             ], 403);
         }
 
-       $user = User::findOrFail($id);
+        $user = User::findOrFail($id);
         $user->delete();
 
         return response()->json([
