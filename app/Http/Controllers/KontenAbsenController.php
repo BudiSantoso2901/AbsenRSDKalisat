@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\absenkonten;
 use App\Models\ruangan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\DataTables;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class KontenAbsenController extends Controller
 {
@@ -95,17 +98,17 @@ class KontenAbsenController extends Controller
                     };
                 })
                 ->addColumn('aksi', function ($row) {
-
-                    // hanya bisa edit kalau ditolak
-                    if ($row->status_verifikasi == 'ditolak') {
+                    if (in_array($row->status_verifikasi, ['ditolak', 'pending'])) {
                         return '
             <button class="btn btn-warning btn-sm btnEdit"
                 data-id="' . $row->id . '"
-                data-ig="' . $row->link_ig . '"
-                data-fb="' . $row->link_fb . '"
-                data-tiktok="' . $row->link_tiktok . '"
+                data-ig="' . ($row->link_ig ?? '') . '"
+                data-fb="' . ($row->link_fb ?? '') . '"
+                data-tiktok="' . ($row->link_tiktok ?? '') . '"
+                data-status="' . $row->status_verifikasi . '"
+                data-keterangan="' . htmlspecialchars($row->keterangan ?? '', ENT_QUOTES) . '"
             >
-                ✏️ Perbaiki
+                ✏️ EDIT
             </button>
         ';
                     }
@@ -144,12 +147,30 @@ class KontenAbsenController extends Controller
             'id_ruangan' => 'nullable|exists:ruangans,id',
         ]);
 
-        // Upload file
         $path = null;
         if ($request->hasFile('bukti_foto')) {
             $file = $request->file('bukti_foto');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('absen_konten', $filename, 'public');
+            $extension = strtolower($file->getClientOriginalExtension());
+            $filename = time() . '_' . uniqid() . '.' . $extension;
+            $destinationPath = storage_path('app/public/absen_konten/' . $filename);
+
+            if (!file_exists(storage_path('app/public/absen_konten'))) {
+                mkdir(storage_path('app/public/absen_konten'), 0755, true);
+            }
+
+            // Cek ekstensi untuk kompresi gambar
+            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                // 🔥 Kompres menggunakan ImageManager (Aman dari error linter)
+                $manager = new ImageManager(new Driver());
+                $img = $manager->read($file->getRealPath());
+
+                $img->scale(width: 1200);
+                $img->save($destinationPath, quality: 75);
+
+                $path = 'absen_konten/' . $filename;
+            } else {
+                $path = $file->storeAs('absen_konten', $filename, 'public');
+            }
         }
 
         absenkonten::create([
@@ -166,13 +187,13 @@ class KontenAbsenController extends Controller
         return redirect()->route('pegawai.konten.index')
             ->with('success', 'Konten absen berhasil ditambahkan!');
     }
+
     public function update_konten(Request $request)
     {
         $data = absenkonten::findOrFail($request->id);
 
-        // hanya boleh edit kalau ditolak
-        if ($data->status_verifikasi != 'ditolak') {
-            return response()->json(['error' => 'Tidak bisa diedit'], 403);
+        if ($data->status_verifikasi === 'valid') {
+            return response()->json(['message' => 'Konten yang sudah VALID tidak dapat diedit.'], 403);
         }
 
         $request->validate([
@@ -182,22 +203,34 @@ class KontenAbsenController extends Controller
             'link_tiktok' => 'nullable|url',
         ]);
 
-        // upload ulang jika ada file baru
         if ($request->hasFile('bukti_foto')) {
-            $file = $request->file('bukti_foto');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('absen_konten', $filename, 'public');
+            if ($data->bukti_foto && Storage::disk('public')->exists($data->bukti_foto)) {
+                Storage::disk('public')->delete($data->bukti_foto);
+            }
 
-            $data->bukti_foto = $path;
+            $file = $request->file('bukti_foto');
+            $extension = strtolower($file->getClientOriginalExtension());
+            $filename = time() . '_' . uniqid() . '.' . $extension;
+            $destinationPath = storage_path('app/public/absen_konten/' . $filename);
+
+            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                // 🔥 Kompres menggunakan ImageManager
+                $manager = new ImageManager(new Driver());
+                $img = $manager->read($file->getRealPath());
+
+                $img->scale(width: 1200);
+                $img->save($destinationPath, quality: 75);
+
+                $data->bukti_foto = 'absen_konten/' . $filename;
+            } else {
+                $data->bukti_foto = $file->storeAs('absen_konten', $filename, 'public');
+            }
         }
 
-        // update data
         $data->update([
             'link_fb' => $request->link_fb,
             'link_ig' => $request->link_ig,
             'link_tiktok' => $request->link_tiktok,
-
-            // 🔥 reset ke pending lagi
             'status_verifikasi' => 'pending',
             'keterangan' => 'sudah diperbaiki, menunggu verifikasi ulang',
             'verified_by' => null,
@@ -207,16 +240,15 @@ class KontenAbsenController extends Controller
     }
     public function view_konten_admin(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $userRuanganIds = $user->ruangans()->pluck('ruangans.id')->toArray();
+
         if ($request->ajax()) {
 
-            $data = absenkonten::with(['pegawai', 'ruangan', 'verifier']);
+            $data = absenkonten::with(['pegawai', 'ruangan', 'verifier'])
+                ->whereIn('id_ruangan', $userRuanganIds);
 
-            // 🔥 FILTER RUANGAN
-            if ($request->ruangan_id) {
-                $data->where('id_ruangan', $request->ruangan_id);
-            }
-
-            // 🔥 FILTER TANGGAL
             if ($request->start_date && $request->end_date) {
                 $data->whereBetween('tanggal', [
                     $request->start_date,
@@ -229,7 +261,7 @@ class KontenAbsenController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
 
-                // 🔥 NAMA PEGAWAI
+                // 🔥 NAMA PEGAWAI (Gunakan optional / null safe operator)
                 ->addColumn('nama_pegawai', function ($row) {
                     return $row->pegawai->name ?? '-';
                 })
@@ -241,45 +273,33 @@ class KontenAbsenController extends Controller
 
                 // 🔥 TANGGAL
                 ->editColumn('tanggal', function ($row) {
-                    return \Carbon\Carbon::parse($row->tanggal)
-                        ->translatedFormat('d M Y');
+                    return \Carbon\Carbon::parse($row->tanggal)->translatedFormat('d M Y');
                 })
 
                 // 🔥 BUKTI FOTO
                 ->addColumn('bukti', function ($row) {
                     $url = asset('storage/' . $row->bukti_foto);
-
-                    return '<a href="' . $url . '" target="_blank" class="btn btn-sm btn-outline-primary">
-                    Lihat
-                </a>';
+                    return '<a href="' . $url . '" target="_blank" class="btn btn-sm btn-outline-primary">Lihat</a>';
                 })
 
-                // 🔥 LINK INSTAGRAM
+                // 🔥 LINK SOSMED
                 ->addColumn('link_ig', function ($row) {
                     return $row->link_ig
-                        ? '<a href="' . $row->link_ig . '" target="_blank" class="fw-semibold text-danger">
-                        <i class="bx bxl-instagram"></i>
-                   </a>'
+                        ? '<a href="' . $row->link_ig . '" target="_blank" class="fw-semibold text-danger"><i class="bx bxl-instagram"></i></a>'
                         : '<span class="text-muted">-</span>';
                 })
-
                 ->addColumn('link_fb', function ($row) {
                     return $row->link_fb
-                        ? '<a href="' . $row->link_fb . '" target="_blank" class="fw-semibold text-primary">
-                        <i class="bx bxl-facebook"></i>
-                   </a>'
+                        ? '<a href="' . $row->link_fb . '" target="_blank" class="fw-semibold text-primary"><i class="bx bxl-facebook"></i></a>'
                         : '<span class="text-muted">-</span>';
                 })
-
                 ->addColumn('link_tiktok', function ($row) {
                     return $row->link_tiktok
-                        ? '<a href="' . $row->link_tiktok . '" target="_blank" class="fw-semibold text-dark">
-                        <i class="bx bxl-tiktok"></i>
-                   </a>'
+                        ? '<a href="' . $row->link_tiktok . '" target="_blank" class="fw-semibold text-dark"><i class="bx bxl-tiktok"></i></a>'
                         : '<span class="text-muted">-</span>';
                 })
 
-                // 🔥 NAMA VERIFIER
+                // 🔥 VERIFIER
                 ->addColumn('verified_by', function ($row) {
                     return $row->verifier->name ?? '<span class="text-muted">Belum diverifikasi</span>';
                 })
@@ -290,23 +310,17 @@ class KontenAbsenController extends Controller
                         'pending' => '<span class="badge bg-warning">Pending</span>',
                         'valid'   => '<span class="badge bg-success">Valid</span>',
                         'ditolak' => '<span class="badge bg-danger">Ditolak</span>',
+                        default   => '<span class="badge bg-secondary">-</span>'
                     };
                 })
 
                 // 🔥 AKSI
                 ->addColumn('aksi', function ($row) {
-
                     if ($row->status_verifikasi == 'pending') {
                         return '
-                        <button class="btn btn-success btn-sm btnValid" data-id="' . $row->id . '">
-                            ✔ Valid
-                        </button>
-                        <button class="btn btn-danger btn-sm btnTolak" data-id="' . $row->id . '">
-                            ✖ Tolak
-                        </button>
-                    ';
+                    <button class="btn btn-success btn-sm btnValid" data-id="' . $row->id . '">✔ Valid</button>
+                    <button class="btn btn-danger btn-sm btnTolak" data-id="' . $row->id . '">✖ Tolak</button>';
                     }
-
                     return '<span class="text-muted">Selesai</span>';
                 })
 
@@ -321,10 +335,11 @@ class KontenAbsenController extends Controller
                 ])
                 ->make(true);
         }
-        $ruangans = ruangan::get();
 
+        $ruangans = auth()->user()->ruangans;
         return view('Admin.Konten', compact('ruangans'));
     }
+
     public function valid(Request $request)
     {
         $data = absenkonten::findOrFail($request->id);
@@ -332,7 +347,6 @@ class KontenAbsenController extends Controller
             'status_verifikasi' => 'valid',
             'verified_by' => auth()->id(),
             'keterangan' => 'Konten sudah sesuai'
-
         ]);
 
         return response()->json(['success' => true]);
