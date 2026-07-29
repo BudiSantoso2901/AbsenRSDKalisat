@@ -105,7 +105,7 @@
                                 <th>Instagram</th>
                                 <th>Facebook</th>
                                 <th>TikTok</th>
-                                <th>Keterangan</th>
+                                {{-- <th>Keterangan</th> --}}
                                 <th>Verifikasi Oleh</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -117,7 +117,82 @@
         </div>
 
     </div>
+
+    <!--  MODAL EDIT / PERBAIKI KONTEN -->
+    <div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="formUpdateKonten" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="id" id="edit_id">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="modalTitleEdit">✏️ Edit Absen Konten</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- 🔥 ALASAN PENOLAKAN DARI FIELD 'keterangan' (TAMPIL KHUSUS STATUS DITOLAK) -->
+                        <div class="alert alert-danger d-flex align-items-center mb-3 d-none" id="boxAlasanDitolak"
+                            role="alert">
+                            <i class="bx bx-error-circle me-2 fs-3"></i>
+                            <div>
+                                <strong>Alasan Ditolak:</strong><br>
+                                <span id="textAlasanDitolak">-</span>
+                            </div>
+                        </div>
+
+                        <!-- Instagram -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Link Instagram</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bx bxl-instagram text-danger fs-5"></i></span>
+                                <input type="url" name="link_ig" id="edit_link_ig" class="form-control"
+                                    placeholder="https://instagram.com/...">
+                            </div>
+                        </div>
+
+                        <!-- Facebook -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Link Facebook</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bx bxl-facebook text-primary fs-5"></i></span>
+                                <input type="url" name="link_fb" id="edit_link_fb" class="form-control"
+                                    placeholder="https://facebook.com/...">
+                            </div>
+                        </div>
+
+                        <!-- TikTok -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Link TikTok</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bx bxl-tiktok text-dark fs-5"></i></span>
+                                <input type="url" name="link_tiktok" id="edit_link_tiktok" class="form-control"
+                                    placeholder="https://tiktok.com/...">
+                            </div>
+                        </div>
+
+                        <!-- Upload Bukti Baru -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Ganti Bukti Foto/PDF (Opsional)</label>
+                            <input type="file" name="bukti_foto" id="edit_bukti_foto" class="form-control"
+                                accept="image/*,.pdf">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary fw-semibold" id="btnSimpanUpdate">
+                            💾 Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
+
 @push('scripts')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
@@ -142,7 +217,7 @@
                 }
             });
 
-            // APPLY
+            // APPLY FILTER TANGGAL
             $('#filterTanggal').on('apply.daterangepicker', function(ev, picker) {
                 start_date = picker.startDate.format('YYYY-MM-DD');
                 end_date = picker.endDate.format('YYYY-MM-DD');
@@ -151,7 +226,7 @@
                 table.ajax.reload();
             });
 
-            // RESET
+            // RESET FILTER TANGGAL
             $('#filterTanggal').on('cancel.daterangepicker', function() {
                 $(this).val('');
                 start_date = '';
@@ -159,12 +234,12 @@
                 table.ajax.reload();
             });
 
-            // 🔥 DATATABLE
+            // 🔥 DATATABLE SETUP
             table = $('#kontenTable').DataTable({
                 processing: true,
                 serverSide: true,
                 responsive: true,
-                scrollX: true, // 🔥 penting untuk mobile
+                scrollX: true,
 
                 ajax: {
                     url: "{{ route('pegawai.konten.index') }}",
@@ -198,10 +273,10 @@
                         data: 'link_tiktok',
                         orderable: false
                     },
-                    {
-                        data: 'keterangan',
-                        orderable: false
-                    },
+                    // {
+                    //     data: 'keterangan',
+                    //     orderable: false
+                    // },
                     {
                         data: 'verified_by',
                         orderable: false
@@ -230,7 +305,7 @@
                 }
             });
 
-            // 🔥 ALERT
+            // 🔥 SESSION SWEETALERT NOTIFICATION
             @if (session('success'))
                 Swal.fire({
                     icon: 'success',
@@ -249,60 +324,79 @@
                 });
             @endif
 
-        });
-        $(document).on('click', '.btnEdit', function() {
-            let id = $(this).data('id');
+            // 🔥 HANDLER ACTION EDIT / PERBAIKI
+            $(document).on('click', '.btnEdit', function() {
+                let id = $(this).data('id');
+                let ig = $(this).data('ig') || '';
+                let fb = $(this).data('fb') || '';
+                let tiktok = $(this).data('tiktok') || '';
+                let status = $(this).data('status');
 
-            Swal.fire({
-                title: 'Perbaiki Konten',
-                html: `
-            <input type="text" id="link_ig" class="swal2-input" placeholder="Link Instagram">
-            <input type="text" id="link_fb" class="swal2-input" placeholder="Link Facebook">
-            <input type="text" id="link_tiktok" class="swal2-input" placeholder="Link TikTok">
-            <input type="file" id="bukti_foto" class="swal2-file">
-        `,
-                showCancelButton: true,
-                confirmButtonText: 'Simpan',
-                cancelButtonText: 'Batal',
-                preConfirm: () => {
+                // Ambil data dari row terpilih untuk membaca keterangan penolakan
+                let rowData = table.row($(this).closest('tr')).data();
+                let keterangan = rowData.keterangan || 'Tidak ada alasan khusus';
 
-                    let formData = new FormData();
+                $('#edit_id').val(id);
+                $('#edit_link_ig').val(ig);
+                $('#edit_link_fb').val(fb);
+                $('#edit_link_tiktok').val(tiktok);
+                $('#edit_bukti_foto').val('');
 
-                    formData.append('id', id);
-                    formData.append('_token', '{{ csrf_token() }}');
-
-                    formData.append('link_ig', $('#link_ig').val());
-                    formData.append('link_fb', $('#link_fb').val());
-                    formData.append('link_tiktok', $('#link_tiktok').val());
-
-                    let file = $('#bukti_foto')[0].files[0];
-                    if (file) {
-                        formData.append('bukti_foto', file);
-                    }
-
-                    return $.ajax({
-                        url: "{{ route('pegawai.konten.update') }}",
-                        method: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false
-                    }).then(response => {
-                        return response;
-                    }).catch(() => {
-                        Swal.showValidationMessage('Gagal update');
-                    });
+                // Tampilkan pesan penolakan HANYA jika status = ditolak
+                if (status === 'ditolak') {
+                    $('#modalTitleEdit').html('✏️ Perbaiki Konten Ditolak');
+                    $('#boxAlasanDitolak').removeClass('d-none').addClass('d-flex');
+                    $('#textAlasanDitolak').html(keterangan);
+                } else {
+                    $('#modalTitleEdit').html('✏️ Edit Absen Konten');
+                    $('#boxAlasanDitolak').addClass('d-none').removeClass('d-flex');
                 }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    table.ajax.reload();
 
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: 'Data berhasil diperbaiki & dikirim ulang'
-                    });
-                }
+                $('#modalEdit').modal('show');
             });
+
+            // 🔥 HANDLER SUBMIT FORM UPDATE VIA AJAX
+            $('#formUpdateKonten').submit(function(e) {
+                e.preventDefault();
+
+                let formData = new FormData(this);
+                let btn = $('#btnSimpanUpdate');
+
+                btn.prop('disabled', true).html(
+                    '<i class="bx bx-loader-alt bx-spin me-1"></i> Menyimpan...');
+
+                $.ajax({
+                    url: "{{ route('pegawai.konten.update') }}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        $('#modalEdit').modal('hide');
+                        table.ajax.reload(null, false);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Data berhasil diperbarui',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        let msg = xhr.responseJSON?.message || 'Gagal memperbarui data';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: msg
+                        });
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('💾 Simpan Perubahan');
+                    }
+                });
+            });
+
         });
     </script>
 @endpush
