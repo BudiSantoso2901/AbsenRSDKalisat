@@ -86,7 +86,7 @@
         </g>
     </svg>
     <h1>Halaman tidak dapat di akses</h1>
-    <h2>Harap <a target="_blank" href="" onclick="window.history.back(); return false;">Kembali!</a></h2>
+    <h2>Harap <a target="_blank" href="{{ route('login') }}" >Kembali!</a></h2>
 </body>
 <script>
     var root = document.documentElement;
