@@ -17,7 +17,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
-    {{-- style font  --}}
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Icons -->
@@ -47,24 +46,42 @@
     <link rel="apple-touch-icon" href="/icon/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <!-- 🔥 SELECT2 CSS & BOOTSTRAP 5 THEME -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+    @stack('styles')
+
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
+
+    <style>
+        /* mobile feel */
+        body {
+            overscroll-behavior: contain;
+        }
+
+        .card {
+            border-radius: 16px;
+        }
+
+        button {
+            border-radius: 12px;
+        }
+
+        /* Fix Select2 Layer / Z-Index di dalam Bootstrap Modal */
+        .select2-container--bootstrap-5 {
+            z-index: 2050 !important;
+        }
+
+        .swal2-container {
+            z-index: 3000 !important;
+        }
+    </style>
 </head>
-<style>
-    /* mobile feel */
-    body {
-        overscroll-behavior: contain;
-    }
-
-    .card {
-        border-radius: 16px;
-    }
-
-    button {
-        border-radius: 12px;
-    }
-</style>
 
 <body>
 
@@ -97,10 +114,10 @@
 
     {{-- ================= CORE JS ================= --}}
 
-    {{-- JQUERY (HANYA SEKALI) --}}
+    {{-- JQUERY (HARUS PALING ATAS SEBELUM SCRIPT LAIN) --}}
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 
-    {{-- BOOTSTRAP --}}
+    {{-- BOOTSTRAP & POPPER --}}
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
 
@@ -116,6 +133,9 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
+    {{-- ================= SELECT2 JS ================= --}}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     {{-- ================= LEAFLET ================= --}}
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -125,12 +145,10 @@
     {{-- ================= VENDOR & MAIN ================= --}}
     <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
-    <script src="{{ asset('/assets/vendor/js/bootstrap.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
 
-    {{-- sweert Alerts --}}
+    {{-- SWEETALERT2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     {{-- ================= PAGE SCRIPT ================= --}}
     <script>
         if ('serviceWorker' in navigator) {
@@ -138,6 +156,7 @@
                 .then(() => console.log('SW registered'))
                 .catch(err => console.error('SW failed', err));
         }
+
         document.addEventListener('DOMContentLoaded', function() {
 
             @if (session('swal_success'))
@@ -178,6 +197,7 @@
 
         });
     </script>
+
     @stack('scripts')
 
 </body>
