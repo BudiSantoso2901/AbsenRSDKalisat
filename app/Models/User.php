@@ -53,13 +53,8 @@ class User extends Authenticatable
     /**
      * Relasi pivot ke tabel ruangan
      */
-    public function ruangans(): BelongsToMany
+    public function ruangans()
     {
-        return $this->belongsToMany(
-            Ruangan::class,
-            'user_ruangan',
-            'id_user',
-            'id_ruangan'
-        )->withTimestamps();
+        return $this->belongsToMany(Ruangan::class, 'user_ruangan', 'id_user', 'id_ruangan')->withTimestamps();
     }
 }
