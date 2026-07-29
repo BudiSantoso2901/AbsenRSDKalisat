@@ -23,7 +23,7 @@
         }
 
         .filter-box {
-            min-width: 180px;
+            min-width: 200px;
         }
 
         .table-responsive {
@@ -35,23 +35,30 @@
 
         <!-- 🔥 HEADER -->
         <div class="header-flex mb-3">
-            <h4 class="fw-bold mb-0">Verifikasi Konten Pegawai</h4>
-
-            <!-- FILTER RUANGAN -->
-            <div class="filter-box">
-                <label class="form-label fw-semibold">Ruangan</label>
-                <select id="filterRuangan" class="form-select">
-                    <option value="">Semua Ruangan</option>
-                    @foreach ($ruangans as $r)
-                        <option value="{{ $r->id }}">{{ $r->nama_ruangan }}</option>
-                    @endforeach
-                </select>
+            <div>
+                <h4 class="fw-bold mb-1">Verifikasi Konten Pegawai</h4>
+                <p class="text-muted mb-0 small">Menampilkan data konten dari ruangan yang Anda ampu.</p>
             </div>
 
-            <!-- FILTER TANGGAL -->
-            <div class="filter-box">
-                <label class="form-label fw-semibold">Tanggal</label>
-                <input type="text" id="filterTanggal" class="form-control" placeholder="Pilih tanggal">
+            <div class="d-flex gap-2 flex-wrap align-items-end">
+                <!-- OPTIONAL: FILTER RUANGAN KHUSUS RUANGAN YANG DIAMPU USER (JIKALAU USER MEMILIKI > 1 RUANGAN) -->
+                @if(isset($ruangans) && $ruangans->count() > 1)
+                    <div class="filter-box">
+                        <label class="form-label fw-semibold mb-1">Filter Ruangan Anda</label>
+                        <select id="filterRuangan" class="form-select form-select-sm">
+                            <option value="">Semua Akses Ruangan</option>
+                            @foreach ($ruangans as $r)
+                                <option value="{{ $r->id }}">{{ $r->nama_ruangan }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                <!-- FILTER TANGGAL -->
+                <div class="filter-box">
+                    <label class="form-label fw-semibold mb-1">Filter Tanggal</label>
+                    <input type="text" id="filterTanggal" class="form-control form-control-sm" placeholder="Pilih rentang tanggal">
+                </div>
             </div>
         </div>
 
@@ -121,7 +128,7 @@
                 table.ajax.reload();
             });
 
-            // 🔥 FILTER RUANGAN
+            // 🔥 FILTER RUANGAN (Optional jika user mengampu > 1 ruangan)
             $('#filterRuangan').change(function() {
                 ruangan_id = $(this).val();
                 table.ajax.reload();
@@ -140,11 +147,12 @@
                     data: function(d) {
                         d.start_date = start_date;
                         d.end_date = end_date;
-                        d.ruangan_id = ruangan_id;
+                        d.ruangan_id = ruangan_id; // Tetap opsional dikirimkan jika difilter
                     }
                 },
 
-                columns: [{
+                columns: [
+                    {
                         data: 'DT_RowIndex',
                         orderable: false,
                         searchable: false
@@ -198,6 +206,7 @@
                 ]
             });
 
+            // 🔥 AKSI VALID
             $(document).on('click', '.btnValid', function() {
                 let id = $(this).data('id');
 
@@ -217,12 +226,14 @@
                             id: id
                         }, function(res) {
 
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
 
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
-                                text: 'Konten sudah divalidasi'
+                                text: 'Konten sudah divalidasi',
+                                timer: 1500,
+                                showConfirmButton: false
                             });
 
                         });
@@ -249,7 +260,6 @@
                     cancelButtonText: 'Batal',
                     confirmButtonColor: '#d33',
 
-                    // 🔥 VALIDASI INPUT
                     inputValidator: (value) => {
                         if (!value) {
                             return 'Keterangan wajib diisi!';
@@ -265,12 +275,14 @@
                             keterangan: result.value
                         }, function(res) {
 
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
 
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
-                                text: 'Konten berhasil ditolak'
+                                text: 'Konten berhasil ditolak',
+                                timer: 1500,
+                                showConfirmButton: false
                             });
 
                         });
