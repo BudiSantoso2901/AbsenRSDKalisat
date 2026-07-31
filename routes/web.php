@@ -52,6 +52,7 @@ Route::prefix('/')
         });
         Route::prefix('konten')->group(function () {
             Route::get('/', [KontenAbsenController::class, 'view_konten_admin'])->name('admin.konten');
+            Route::get('/admin/konten/export', [KontenAbsenController::class, 'export_konten_admin'])->name('admin.konten.export');
             Route::post('/admin/konten/valid', [KontenAbsenController::class, 'valid'])->name('admin.konten.valid');
             Route::post('/admin/konten/tolak', [KontenAbsenController::class, 'tolak'])->name('admin.konten.tolak');
         });
