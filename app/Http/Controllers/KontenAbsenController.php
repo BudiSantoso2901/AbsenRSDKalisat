@@ -98,15 +98,22 @@ class KontenAbsenController extends Controller
                     };
                 })
                 ->addColumn('aksi', function ($row) {
-                    if (in_array($row->status_verifikasi, ['ditolak', 'pending'])) {
+                    $status = trim(strtolower($row->status_verifikasi));
+
+                    if (in_array($status, ['ditolak', 'pending'])) {
+                        $ig     = e($row->link_ig ?? '');
+                        $fb     = e($row->link_fb ?? '');
+                        $tiktok = e($row->link_tiktok ?? '');
+                        $ket    = e($row->keterangan ?? '');
+
                         return '
             <button class="btn btn-warning btn-sm btnEdit"
                 data-id="' . $row->id . '"
-                data-ig="' . ($row->link_ig ?? '') . '"
-                data-fb="' . ($row->link_fb ?? '') . '"
-                data-tiktok="' . ($row->link_tiktok ?? '') . '"
-                data-status="' . $row->status_verifikasi . '"
-                data-keterangan="' . htmlspecialchars($row->keterangan ?? '', ENT_QUOTES) . '"
+                data-ig="' . $ig . '"
+                data-fb="' . $fb . '"
+                data-tiktok="' . $tiktok . '"
+                data-status="' . $status . '"
+                data-keterangan="' . $ket . '"
             >
                 ✏️ EDIT
             </button>

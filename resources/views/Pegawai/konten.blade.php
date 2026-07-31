@@ -288,7 +288,8 @@
                     {
                         data: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        responsivePriority: 1
                     }
                 ],
 
@@ -324,17 +325,16 @@
                 });
             @endif
 
-            // 🔥 HANDLER ACTION EDIT / PERBAIKI
             $(document).on('click', '.btnEdit', function() {
-                let id = $(this).data('id');
-                let ig = $(this).data('ig') || '';
-                let fb = $(this).data('fb') || '';
-                let tiktok = $(this).data('tiktok') || '';
-                let status = $(this).data('status');
+                let btn = $(this);
 
-                // Ambil data dari row terpilih untuk membaca keterangan penolakan
-                let rowData = table.row($(this).closest('tr')).data();
-                let keterangan = rowData.keterangan || 'Tidak ada alasan khusus';
+                let id = btn.data('id');
+                let ig = btn.data('ig') || '';
+                let fb = btn.data('fb') || '';
+                let tiktok = btn.data('tiktok') || '';
+                let status = $.trim(btn.data('status')).toLowerCase();
+
+                let keterangan = btn.data('keterangan') || 'Tidak ada alasan khusus';
 
                 $('#edit_id').val(id);
                 $('#edit_link_ig').val(ig);
@@ -355,7 +355,6 @@
                 $('#modalEdit').modal('show');
             });
 
-            // 🔥 HANDLER SUBMIT FORM UPDATE VIA AJAX
             $('#formUpdateKonten').submit(function(e) {
                 e.preventDefault();
 
