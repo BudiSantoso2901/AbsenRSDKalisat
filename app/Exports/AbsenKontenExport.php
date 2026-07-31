@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Exports;
 
 use App\Models\absenkonten;
@@ -25,7 +26,14 @@ class AbsenKontenExport implements FromQuery, WithHeadings, WithMapping, ShouldA
         $query = absenkonten::with(['pegawai', 'ruangan', 'verifier'])
             ->whereIn('id_ruangan', $this->userRuanganIds);
 
-        // Filter Tanggal
+        // 🔥 1. Filter Nama Pegawai (Berdasarkan nama di relasi pegawai)
+        if ($this->request->filled('nama_pegawai')) {
+            $query->whereHas('pegawai', function ($q) {
+                $q->where('name', 'like', '%' . $this->request->nama_pegawai . '%');
+            });
+        }
+
+        // 2. Filter Tanggal
         if ($this->request->start_date && $this->request->end_date) {
             $query->whereBetween('tanggal', [
                 $this->request->start_date,
@@ -33,20 +41,19 @@ class AbsenKontenExport implements FromQuery, WithHeadings, WithMapping, ShouldA
             ]);
         }
 
-        // Filter Ruangan (Opsional)
-        if ($this->request->id_ruangan) {
+        // 3. Filter Ruangan
+        if ($this->request->filled('id_ruangan')) {
             $query->where('id_ruangan', $this->request->id_ruangan);
         }
 
-        // Filter Status Verifikasi (Opsional)
-        if ($this->request->status_verifikasi) {
+        // 4. Filter Status Verifikasi
+        if ($this->request->filled('status_verifikasi')) {
             $query->where('status_verifikasi', $this->request->status_verifikasi);
         }
 
         return $query->latest('tanggal');
     }
 
-    // Header Kolom di Excel
     public function headings(): array
     {
         return [
@@ -57,13 +64,12 @@ class AbsenKontenExport implements FromQuery, WithHeadings, WithMapping, ShouldA
             'Link FB',
             'Link IG',
             'Link TikTok',
-            'Keterangan',
+            'Keterangan / Alasan',
             'Status Verifikasi',
             'Diverifikasi Oleh',
         ];
     }
 
-    // Pemetaan Data Per Baris
     public function map($row): array
     {
         static $no = 0;
@@ -83,7 +89,6 @@ class AbsenKontenExport implements FromQuery, WithHeadings, WithMapping, ShouldA
         ];
     }
 
-    // Styling Header Excel
     public function styles(Worksheet $sheet)
     {
         return [
@@ -91,7 +96,7 @@ class AbsenKontenExport implements FromQuery, WithHeadings, WithMapping, ShouldA
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4E73DF'] // Warna header biru
+                    'startColor' => ['rgb' => '4E73DF']
                 ],
             ],
         ];
