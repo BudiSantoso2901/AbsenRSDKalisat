@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\DataTables;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use App\Exports\AbsenKontenExport;
+use App\Models\Pegawai;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KontenAbsenController extends Controller
 {
@@ -245,6 +248,17 @@ class KontenAbsenController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function export_konten_admin(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $userRuanganIds = $user->ruangans()->pluck('ruangans.id')->toArray();
+
+        $fileName = 'Laporan_Absen_Konten_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new AbsenKontenExport($request, $userRuanganIds), $fileName);
+    }
     public function view_konten_admin(Request $request)
     {
         /** @var \App\Models\User $user */
@@ -256,6 +270,12 @@ class KontenAbsenController extends Controller
             $data = absenkonten::with(['pegawai', 'ruangan', 'verifier'])
                 ->whereIn('id_ruangan', $userRuanganIds);
 
+            // Filter Spesifik Pegawai dari Dropdown
+            if ($request->filled('id_pegawai')) {
+                $data->where('id_pegawai', $request->id_pegawai);
+            }
+
+            // Filter Tanggal
             if ($request->start_date && $request->end_date) {
                 $data->whereBetween('tanggal', [
                     $request->start_date,
@@ -263,12 +283,22 @@ class KontenAbsenController extends Controller
                 ]);
             }
 
+            // Filter Spesifik Ruangan
+            if ($request->filled('id_ruangan')) {
+                $data->where('id_ruangan', $request->id_ruangan);
+            }
+
+            // Filter Status Verifikasi
+            if ($request->filled('status_verifikasi')) {
+                $data->where('status_verifikasi', $request->status_verifikasi);
+            }
+
             $data->latest();
 
             return DataTables::of($data)
                 ->addIndexColumn()
 
-                // 🔥 NAMA PEGAWAI (Gunakan optional / null safe operator)
+                // 🔥 NAMA PEGAWAI
                 ->addColumn('nama_pegawai', function ($row) {
                     return $row->pegawai->name ?? '-';
                 })
@@ -313,7 +343,8 @@ class KontenAbsenController extends Controller
 
                 // 🔥 STATUS
                 ->addColumn('status', function ($row) {
-                    return match ($row->status_verifikasi) {
+                    $status = trim(strtolower($row->status_verifikasi));
+                    return match ($status) {
                         'pending' => '<span class="badge bg-warning">Pending</span>',
                         'valid'   => '<span class="badge bg-success">Valid</span>',
                         'ditolak' => '<span class="badge bg-danger">Ditolak</span>',
@@ -323,10 +354,11 @@ class KontenAbsenController extends Controller
 
                 // 🔥 AKSI
                 ->addColumn('aksi', function ($row) {
-                    if ($row->status_verifikasi == 'pending') {
+                    $status = trim(strtolower($row->status_verifikasi));
+                    if ($status === 'pending') {
                         return '
-                    <button class="btn btn-success btn-sm btnValid" data-id="' . $row->id . '">✔ Valid</button>
-                    <button class="btn btn-danger btn-sm btnTolak" data-id="' . $row->id . '">✖ Tolak</button>';
+                        <button class="btn btn-success btn-sm btnValid" data-id="' . $row->id . '">✔ Valid</button>
+                        <button class="btn btn-danger btn-sm btnTolak" data-id="' . $row->id . '">✖ Tolak</button>';
                     }
                     return '<span class="text-muted">Selesai</span>';
                 })
@@ -342,9 +374,11 @@ class KontenAbsenController extends Controller
                 ])
                 ->make(true);
         }
-
-        $ruangans = auth()->user()->ruangans;
-        return view('Admin.Konten', compact('ruangans'));
+        $ruangans = $user->ruangans;
+        $pegawaiList = Pegawai::whereHas('absenkontens', function ($q) use ($userRuanganIds) {
+            $q->whereIn('id_ruangan', $userRuanganIds);
+        })->orderBy('name', 'asc')->get();
+        return view('Admin.Konten', compact('ruangans', 'pegawaiList'));
     }
 
     public function valid(Request $request)
