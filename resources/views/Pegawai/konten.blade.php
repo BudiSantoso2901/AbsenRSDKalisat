@@ -283,7 +283,8 @@
                     },
                     {
                         data: 'status',
-                        orderable: false
+                        orderable: false,
+                        responsivePriority: 2
                     },
                     {
                         data: 'aksi',

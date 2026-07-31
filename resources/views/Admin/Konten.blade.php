@@ -18,51 +18,127 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
-        }
-
-        .filter-box {
-            min-width: 200px;
         }
 
         .table-responsive {
             overflow-x: auto;
         }
+
+        table.dataTable tbody tr:hover {
+            background-color: #f1f5ff;
+        }
+
+        /* Filter Section Styling */
+        .filter-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .btn-action-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .btn-action-group .btn {
+                width: 100%;
+            }
+        }
     </style>
 
     <div class="container-xxl flex-grow-1 container-p-y">
 
-        <!-- 🔥 HEADER -->
+        <!-- 🔥 HEADER TITLE -->
         <div class="header-flex mb-3">
             <div>
                 <h4 class="fw-bold mb-1">Verifikasi Konten Pegawai</h4>
-                <p class="text-muted mb-0 small">Menampilkan data konten dari ruangan yang Anda ampu.</p>
-            </div>
-
-            <div class="d-flex gap-2 flex-wrap align-items-end">
-                <!-- OPTIONAL: FILTER RUANGAN KHUSUS RUANGAN YANG DIAMPU USER (JIKALAU USER MEMILIKI > 1 RUANGAN) -->
-                @if(isset($ruangans) && $ruangans->count() > 1)
-                    <div class="filter-box">
-                        <label class="form-label fw-semibold mb-1">Filter Ruangan Anda</label>
-                        <select id="filterRuangan" class="form-select form-select-sm">
-                            <option value="">Semua Akses Ruangan</option>
-                            @foreach ($ruangans as $r)
-                                <option value="{{ $r->id }}">{{ $r->nama_ruangan }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif
-
-                <!-- FILTER TANGGAL -->
-                <div class="filter-box">
-                    <label class="form-label fw-semibold mb-1">Filter Tanggal</label>
-                    <input type="text" id="filterTanggal" class="form-control form-control-sm" placeholder="Pilih rentang tanggal">
-                </div>
+                <p class="text-muted mb-0 small">Menampilkan dan memverifikasi data konten dari ruangan yang Anda ampu.</p>
             </div>
         </div>
 
-        <!-- 🔥 TABLE -->
+        <!-- 🔥 FILTER & EXPORT CARD -->
+        <div class="card card-custom mb-4">
+            <div class="card-body">
+                <form id="formExportFilter" action="{{ route('admin.konten.export') }}" method="GET">
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold text-dark small mb-1">
+                                <i class="bx bx-user me-1"></i> Nama Pegawai
+                            </label>
+                            <select name="id_pegawai" id="filterPegawai" class="form-select form-select-sm select2">
+                                <option value="">Semua Pegawai</option>
+                                @if (isset($pegawaiList))
+                                    @foreach ($pegawaiList as $p)
+                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+
+                        <!-- 2. FILTER RUANGAN -->
+                        @if (isset($ruangans) && $ruangans->count() > 0)
+                            <div class="col-12 col-md-3">
+                                <label class="form-label fw-semibold text-dark small mb-1">
+                                    <i class="bx bx-building-house me-1"></i> Filter Ruangan
+                                </label>
+                                <select name="id_ruangan" id="filterRuangan" class="form-select form-select-sm">
+                                    <option value="">Semua Akses Ruangan</option>
+                                    @foreach ($ruangans as $r)
+                                        <option value="{{ $r->id }}">{{ $r->nama_ruangan }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <!-- 3. FILTER TANGGAL -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold text-dark small mb-1">
+                                <i class="bx bx-calendar me-1"></i> Rentang Tanggal
+                            </label>
+                            <input type="text" id="filterTanggal" class="form-control form-control-sm"
+                                placeholder="Pilih Rentang Tanggal" readonly>
+                            <input type="hidden" name="start_date" id="start_date">
+                            <input type="hidden" name="end_date" id="end_date">
+                        </div>
+
+                        <!-- 4. FILTER STATUS VERIFIKASI -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold text-dark small mb-1">
+                                <i class="bx bx-check-shield me-1"></i> Status
+                            </label>
+                            <select name="status_verifikasi" id="filterStatus" class="form-select form-select-sm">
+                                <option value="">Semua Status</option>
+                                <option value="pending">⏳ Pending</option>
+                                <option value="valid">✅ Valid</option>
+                                <option value="ditolak">❌ Ditolak</option>
+                            </select>
+                        </div>
+
+                        <!-- 5. TOMBOL ACTION (RESET & EXPORT) -->
+                        <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" id="btnResetFilter" class="btn btn-sm btn-outline-secondary px-3"
+                                title="Reset Filter">
+                                <i class="bx bx-refresh me-1"></i> Reset Filter
+                            </button>
+                            <button type="submit" id="btnExport" class="btn btn-sm btn-success px-3 shadow-sm"
+                                title="Export Laporan Excel">
+                                <i class="bx bx-file me-1"></i> Export Excel
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 🔥 TABLE DATATABLE -->
         <div class="card card-custom">
             <div class="card-body">
                 <div class="table-responsive">
@@ -91,22 +167,28 @@
 @endsection
 
 @push('scripts')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
     <script>
         let start_date = '';
         let end_date = '';
         let ruangan_id = '';
+        let status_verifikasi = '';
+        let id_pegawai = '';
         let table;
 
         $(document).ready(function() {
 
-            // 🔥 DATE RANGE
+            // 🔥 1. SETUP DATE RANGE PICKER
             $('#filterTanggal').daterangepicker({
                 autoUpdateInput: false,
+                opens: 'right',
                 locale: {
                     format: 'YYYY-MM-DD',
                     applyLabel: 'Terapkan',
@@ -114,27 +196,79 @@
                 }
             });
 
+            // 🔥 2. SETUP SELECT2 PEGAWAI
+            $('#filterPegawai').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Pilih / Cari Pegawai',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterPegawai').on('change', function() {
+                id_pegawai = $(this).val() || ''; // Aman saat diklik tombol x (clear)
+                if (table) {
+                    table.ajax.reload();
+                }
+            });
+
+            // 🔥 3. APPLY & RESET FILTER TANGGAL
             $('#filterTanggal').on('apply.daterangepicker', function(ev, picker) {
                 start_date = picker.startDate.format('YYYY-MM-DD');
                 end_date = picker.endDate.format('YYYY-MM-DD');
+
+                $('#start_date').val(start_date);
+                $('#end_date').val(end_date);
                 $(this).val(start_date + ' s/d ' + end_date);
-                table.ajax.reload();
+
+                if (table) {
+                    table.ajax.reload();
+                }
             });
 
             $('#filterTanggal').on('cancel.daterangepicker', function() {
-                $(this).val('');
+                resetTanggal();
+            });
+
+            function resetTanggal() {
+                $('#filterTanggal').val('');
+                $('#start_date').val('');
+                $('#end_date').val('');
                 start_date = '';
                 end_date = '';
-                table.ajax.reload();
-            });
+                if (table) {
+                    table.ajax.reload();
+                }
+            }
 
-            // 🔥 FILTER RUANGAN (Optional jika user mengampu > 1 ruangan)
+            // 🔥 4. FILTER RUANGAN & STATUS
             $('#filterRuangan').change(function() {
                 ruangan_id = $(this).val();
-                table.ajax.reload();
+                if (table) {
+                    table.ajax.reload();
+                }
             });
 
-            // 🔥 DATATABLE
+            $('#filterStatus').change(function() {
+                status_verifikasi = $(this).val();
+                if (table) {
+                    table.ajax.reload();
+                }
+            });
+
+            // 🔥 5. RESET SEMUA FILTER (DIPERBAIKI: Mengganti nama_pegawai -> id_pegawai)
+            $('#btnResetFilter').on('click', function() {
+                id_pegawai = '';
+                ruangan_id = '';
+                status_verifikasi = '';
+
+                $('#filterPegawai').val('').trigger('change.select2');
+                $('#filterRuangan').val('');
+                $('#filterStatus').val('');
+
+                resetTanggal();
+            });
+
+            // 🔥 6. DATATABLE SETUP
             table = $('#kontenTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -145,14 +279,15 @@
                 ajax: {
                     url: "{{ route('admin.konten') }}",
                     data: function(d) {
+                        d.id_pegawai = id_pegawai;
                         d.start_date = start_date;
                         d.end_date = end_date;
-                        d.ruangan_id = ruangan_id; // Tetap opsional dikirimkan jika difilter
+                        d.id_ruangan = ruangan_id;
+                        d.status_verifikasi = status_verifikasi;
                     }
                 },
 
-                columns: [
-                    {
+                columns: [{
                         data: 'DT_RowIndex',
                         orderable: false,
                         searchable: false
@@ -196,17 +331,30 @@
                     {
                         data: 'status',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        responsivePriority: 2
                     },
                     {
                         data: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        responsivePriority: 1
                     }
-                ]
-            });
+                ],
 
-            // 🔥 AKSI VALID
+                language: {
+                    processing: '<div class="spinner-border text-primary spinner-border-sm" role="status"></div> Memuat data...',
+                    search: "🔍 Cari:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                    zeroRecords: "Data tidak ditemukan",
+                    paginate: {
+                        next: "→",
+                        previous: "←"
+                    }
+                }
+            });
+            // 🔥 7. AKSI VALIDASI KONTEN
             $(document).on('click', '.btnValid', function() {
                 let id = $(this).data('id');
 
@@ -220,29 +368,31 @@
                     confirmButtonColor: '#28a745'
                 }).then((result) => {
                     if (result.isConfirmed) {
-
                         $.post("{{ route('admin.konten.valid') }}", {
                             _token: '{{ csrf_token() }}',
                             id: id
                         }, function(res) {
-
                             table.ajax.reload(null, false);
-
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
-                                text: 'Konten sudah divalidasi',
+                                text: 'Konten telah divalidasi',
                                 timer: 1500,
                                 showConfirmButton: false
                             });
-
+                        }).fail(function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ||
+                                    'Gagal memvalidasi data'
+                            });
                         });
                     }
                 });
             });
 
-
-            // 🔥 AKSI TOLAK (SweetAlert input)
+            // 🔥 8. AKSI PENOLAKAN KONTEN
             $(document).on('click', '.btnTolak', function() {
                 let id = $(this).data('id');
 
@@ -252,39 +402,37 @@
                     icon: 'warning',
                     input: 'textarea',
                     inputPlaceholder: 'Contoh: Link tidak sesuai / bukti tidak valid...',
-                    inputAttributes: {
-                        'aria-label': 'Masukkan keterangan'
-                    },
                     showCancelButton: true,
                     confirmButtonText: 'Tolak',
                     cancelButtonText: 'Batal',
                     confirmButtonColor: '#d33',
-
                     inputValidator: (value) => {
                         if (!value) {
-                            return 'Keterangan wajib diisi!';
+                            return 'Alasan penolakan wajib diisi!';
                         }
                     }
-
                 }).then((result) => {
                     if (result.isConfirmed) {
-
                         $.post("{{ route('admin.konten.tolak') }}", {
                             _token: '{{ csrf_token() }}',
                             id: id,
                             keterangan: result.value
                         }, function(res) {
-
                             table.ajax.reload(null, false);
-
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
-                                text: 'Konten berhasil ditolak',
+                                text: 'Konten telah ditolak',
                                 timer: 1500,
                                 showConfirmButton: false
                             });
-
+                        }).fail(function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ||
+                                    'Gagal menolak data'
+                            });
                         });
                     }
                 });
