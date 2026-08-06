@@ -149,7 +149,6 @@
     {{-- SWEETALERT2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    {{-- ================= PAGE SCRIPT ================= --}}
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
@@ -159,38 +158,42 @@
 
         document.addEventListener('DOMContentLoaded', function() {
 
-            @if (session('swal_success'))
+            // Cek session format 'swal_success' atau standar 'success'
+            @if (session('swal_success') || session('success'))
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
-                    text: '{{ session('swal_success') }}',
+                    text: '{{ session('swal_success') ?? session('success') }}',
                     confirmButtonColor: '#097612'
                 });
             @endif
 
-            @if (session('swal_error'))
+            // Cek session format 'swal_error' atau standar 'error'
+            @if (session('swal_error') || session('error'))
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal',
-                    text: '{{ session('swal_error') }}',
+                    text: '{{ session('swal_error') ?? session('error') }}',
                     confirmButtonColor: '#dc3545'
                 });
             @endif
 
-            @if (session('swal_warning'))
+            // Cek session format 'swal_warning' atau standar 'warning'
+            @if (session('swal_warning') || session('warning'))
                 Swal.fire({
                     icon: 'warning',
                     title: 'Perhatian',
-                    text: '{{ session('swal_warning') }}',
+                    text: '{{ session('swal_warning') ?? session('warning') }}',
                     confirmButtonColor: '#ffc107'
                 });
             @endif
 
-            @if (session('swal_info'))
+            // Cek session format 'swal_info' atau standar 'info'
+            @if (session('swal_info') || session('info'))
                 Swal.fire({
                     icon: 'info',
                     title: 'Informasi',
-                    text: '{{ session('swal_info') }}',
+                    text: '{{ session('swal_info') ?? session('info') }}',
                     confirmButtonColor: '#0dcaf0'
                 });
             @endif

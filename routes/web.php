@@ -4,6 +4,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\JamKerjaController;
 use App\Http\Controllers\KontenAbsenController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
@@ -33,6 +34,9 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/pegawai/register', [LoginController::class, 'get_register'])->name('pegawai.register.form');
 Route::post('/pegawai/register', [LoginController::class, 'register'])->name('pegawai.register');
+
+Route::get('/pegawai/absen-konten/bukti/{id}', [KontenAbsenController::class, 'viewBukti'])
+    ->name('pegawai.konten.bukti');
 
 Route::prefix('/')
     ->middleware('admin.auth')
@@ -117,4 +121,6 @@ Route::prefix('pegawai')
             ->name('pegawai.konten.store');
         Route::post('/pegawai/konten/update', [KontenAbsenController::class, 'update_konten'])
             ->name('pegawai.konten.update');
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
