@@ -100,6 +100,12 @@
                     <div>Panduan</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                <a href="{{ route('profile.edit') }}" class="menu-link">
+                    <i class="menu-icon bx bx-user"></i>
+                    <div>Profil</div>
+                </a>
+            </li>
         @endauth
 
         {{-- ================= LOGOUT ================= --}}
