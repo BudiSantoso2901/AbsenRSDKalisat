@@ -72,11 +72,6 @@
             border-radius: 12px;
         }
 
-        /* Fix Select2 Layer / Z-Index di dalam Bootstrap Modal */
-        .select2-container--bootstrap-5 {
-            z-index: 2050 !important;
-        }
-
         .swal2-container {
             z-index: 3000 !important;
         }

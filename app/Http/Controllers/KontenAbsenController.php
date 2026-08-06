@@ -42,13 +42,26 @@ class KontenAbsenController extends Controller
                         ->translatedFormat('l, d F Y');
                 })
 
-                // 🔥 BUKTI
                 ->addColumn('bukti', function ($row) {
-                    $url = asset('storage/' . $row->bukti_foto);
+                    if (!$row->bukti_foto) {
+                        return '<span class="text-muted">-</span>';
+                    }
 
-                    return '<a href="' . $url . '" target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="bx bx-show"></i> Lihat
-                </a>';
+                    $url = route('pegawai.konten.bukti', $row->id);
+                    $extension = strtolower(pathinfo($row->bukti_foto, PATHINFO_EXTENSION));
+
+                    if ($extension === 'pdf') {
+                        return '<button type="button" class="btn btn-sm btn-outline-danger btnLihatBukti"
+                    data-url="' . $url . '" data-type="pdf">
+                    <i class="bx bxs-file-pdf"></i> Lihat PDF
+                </button>';
+                    }
+
+                    return '<button type="button" class="btn btn-sm btn-outline-primary btnLihatBukti"
+                data-url="' . $url . '" data-type="image">
+                <img src="' . $url . '" alt="bukti" style="width:28px;height:28px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:4px;">
+                Lihat Foto
+            </button>';
                 })
 
                 // 🔥 KETERANGAN (FIX)
@@ -140,6 +153,46 @@ class KontenAbsenController extends Controller
         }
 
         return view('Pegawai.konten');
+    }
+    public function viewBukti($id)
+    {
+        $konten = absenkonten::with('ruangan')->findOrFail($id);
+
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $isPegawai = auth()->guard('pegawai')->check();
+        $pegawaiId = auth()->guard('pegawai')->id();
+
+        // Validasi hak akses:
+        // 1. Jika yang login pegawai, pastikan itu miliknya sendiri
+        if ($isPegawai && $konten->id_pegawai != $pegawaiId) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // 2. Jika yang login admin (web guard), pastikan admin memiliki akses ke ruangan konten tersebut
+        if (!$isPegawai && $user) {
+            $userRuanganIds = $user->ruangans()->pluck('ruangans.id')->toArray();
+            if (!in_array($konten->id_ruangan, $userRuanganIds)) {
+                abort(403, 'Unauthorized action.');
+            }
+        }
+
+        if (!$konten->bukti_foto) {
+            abort(404, 'File tidak ditemukan');
+        }
+
+        $path = storage_path('app/public/' . $konten->bukti_foto);
+
+        if (!file_exists($path)) {
+            abort(404, 'File tidak ditemukan');
+        }
+
+        $mime = mime_content_type($path);
+
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+        ]);
     }
     public function create_konten_absen()
     {
@@ -313,10 +366,26 @@ class KontenAbsenController extends Controller
                     return \Carbon\Carbon::parse($row->tanggal)->translatedFormat('d M Y');
                 })
 
-                // 🔥 BUKTI FOTO
                 ->addColumn('bukti', function ($row) {
-                    $url = asset('storage/' . $row->bukti_foto);
-                    return '<a href="' . $url . '" target="_blank" class="btn btn-sm btn-outline-primary">Lihat</a>';
+                    if (!$row->bukti_foto) {
+                        return '<span class="text-muted">-</span>';
+                    }
+
+                    $url = route('pegawai.konten.bukti', $row->id);
+                    $extension = strtolower(pathinfo($row->bukti_foto, PATHINFO_EXTENSION));
+
+                    if ($extension === 'pdf') {
+                        return '<button type="button" class="btn btn-sm btn-outline-danger btnLihatBukti"
+                    data-url="' . $url . '" data-type="pdf">
+                    <i class="bx bxs-file-pdf"></i> Lihat PDF
+                </button>';
+                    }
+
+                    return '<button type="button" class="btn btn-sm btn-outline-primary btnLihatBukti"
+                data-url="' . $url . '" data-type="image">
+                <img src="' . $url . '" alt="bukti" style="width:28px;height:28px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:4px;">
+                Lihat Foto
+            </button>';
                 })
 
                 // 🔥 LINK SOSMED

@@ -117,7 +117,26 @@
         </div>
 
     </div>
-
+    <!-- MODAL PREVIEW BUKTI -->
+    <div class="modal fade" id="modalPreviewBukti" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">📎 Preview Bukti</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" style="min-height: 70vh;">
+                    <div id="previewContainer" style="width:100%; height:70vh;"></div>
+                </div>
+                <div class="modal-footer">
+                    <a id="btnBukaTabBaru" href="#" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="bx bx-link-external"></i> Buka di Tab Baru
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!--  MODAL EDIT / PERBAIKI KONTEN -->
     <div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -205,6 +224,36 @@
         let table;
 
         $(document).ready(function() {
+            $(document).on('click', '.btnLihatBukti', function() {
+                let url = $(this).data('url');
+                let type = $(this).data('type');
+                let container = $('#previewContainer');
+
+                container.empty();
+
+                if (type === 'pdf') {
+                    container.html(
+                        '<iframe src="' + url +
+                        '" style="width:100%; height:70vh; border:none;"></iframe>'
+                    );
+                } else {
+                    container.html(
+                        '<div class="d-flex justify-content-center align-items-center h-100">' +
+                        '<img src="' + url +
+                        '" style="max-width:100%; max-height:70vh; object-fit:contain;">' +
+                        '</div>'
+                    );
+                }
+
+                $('#btnBukaTabBaru').attr('href', url);
+                $('#modalPreviewBukti').modal('show');
+            });
+
+            // 🔥 BERSIHKAN PREVIEW SAAT MODAL DITUTUP (hemat memori & hentikan load PDF)
+            $('#modalPreviewBukti').on('hidden.bs.modal', function() {
+                $('#previewContainer').empty();
+                $('#btnBukaTabBaru').attr('href', '#');
+            });
 
             // 🔥 DATE RANGE
             $('#filterTanggal').daterangepicker({

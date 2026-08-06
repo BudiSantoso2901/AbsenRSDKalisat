@@ -50,6 +50,25 @@
                 width: 100%;
             }
         }
+
+        @media (max-width: 768px) {
+            .btn-action-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .btn-action-group .btn {
+                width: 100%;
+            }
+        }
+
+        /* 🔥 Tambahkan ini untuk memperbaiki posisi dropdown Select2 di dalam Modal */
+        .select2-container--open {
+            z-index: 99999 !important;
+        }
+    </style>
     </style>
 
     <div class="container-xxl flex-grow-1 container-p-y">
@@ -162,10 +181,27 @@
                 </div>
             </div>
         </div>
-
+    </div>
+    <div class="modal fade" id="modalPreviewBukti" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">📎 Preview Bukti</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" style="min-height: 70vh;">
+                    <div id="previewContainer" style="width:100%; height:70vh;"></div>
+                </div>
+                <div class="modal-footer">
+                    <a id="btnBukaTabBaru" href="#" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="bx bx-link-external"></i> Buka di Tab Baru
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
-
 @push('scripts')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
@@ -175,6 +211,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
     <script>
         let start_date = '';
         let end_date = '';
@@ -205,7 +242,7 @@
             });
 
             $('#filterPegawai').on('change', function() {
-                id_pegawai = $(this).val() || ''; // Aman saat diklik tombol x (clear)
+                id_pegawai = $(this).val() || '';
                 if (table) {
                     table.ajax.reload();
                 }
@@ -255,19 +292,46 @@
                 }
             });
 
-            // 🔥 5. RESET SEMUA FILTER (DIPERBAIKI: Mengganti nama_pegawai -> id_pegawai)
+            // 🔥 5. RESET SEMUA FILTER
             $('#btnResetFilter').on('click', function() {
                 id_pegawai = '';
                 ruangan_id = '';
                 status_verifikasi = '';
 
-                $('#filterPegawai').val('').trigger('change.select2');
+                $('#filterPegawai').val(null).trigger('change');
                 $('#filterRuangan').val('');
                 $('#filterStatus').val('');
 
                 resetTanggal();
             });
+            $(document).on('click', '.btnLihatBukti', function(e) {
+                e.preventDefault();
+                let url = $(this).data('url');
+                let type = $(this).data('type');
+                let container = $('#previewContainer');
 
+                container.empty();
+
+                if (type === 'pdf') {
+                    // Menggunakan iframe agar langsung tampil di dalam modal
+                    container.html(
+                        '<iframe src="' + url +
+                        '" style="width:100%; height:70vh; border:none;"></iframe>'
+                    );
+                } else {
+                    container.html(
+                        '<div class="d-flex justify-content-center align-items-center h-100">' +
+                        '<img src="' + url +
+                        '" style="max-width:100%; max-height:70vh; object-fit:contain;">' +
+                        '</div>'
+                    );
+                }
+
+                $('#btnBukaTabBaru').attr('href', url);
+
+                var myModal = new bootstrap.Modal(document.getElementById('modalPreviewBukti'));
+                myModal.show();
+            });
             // 🔥 6. DATATABLE SETUP
             table = $('#kontenTable').DataTable({
                 processing: true,
@@ -354,6 +418,7 @@
                     }
                 }
             });
+
             // 🔥 7. AKSI VALIDASI KONTEN
             $(document).on('click', '.btnValid', function() {
                 let id = $(this).data('id');
