@@ -66,7 +66,7 @@
     CUSTOM CSS
     ====================================================== --}}
 
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/tambah.css') }}?v={{ filemtime(public_path('css/tambah.css')) }}">
 
 
     {{-- =====================================================
@@ -465,8 +465,6 @@
     MAIN JS
     ====================================================== --}}
 
-    {{-- <script src="{{ asset('assets/js/main.js') }}">
-    </script> --}}
     <script src="{{ asset('js/main.js') }}?v={{ filemtime(public_path('js/main.js')) }}"></script>
 
 
