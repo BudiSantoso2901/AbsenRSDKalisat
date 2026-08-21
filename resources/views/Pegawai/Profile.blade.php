@@ -1,694 +1,1608 @@
-@extends('_layouts.layouts') {{-- ganti sesuai nama layout Anda, mis. layouts.app / layouts.master --}}
+@extends('_layouts.layouts')
 
-@section('title', 'Profil Saya')
+@section('title', 'Profile')
+
 
 @push('styles')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <style>
-        :root {
-            --primary: #097612;
-            --primary-light: #0fa81c;
-            --primary-soft: rgba(9, 118, 18, .08);
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --radius: 18px;
-        }
 
-        .profile-hero {
-            position: relative;
-            border-radius: var(--radius);
-            overflow: hidden;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            padding: 2.5rem 1.5rem 5.5rem;
-            color: #fff;
-            margin-bottom: -4rem;
-        }
+<style>
 
-        .profile-hero::before,
-        .profile-hero::after {
-            content: "";
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, .08);
-        }
+/* =========================================================
+   PROFILE
+========================================================= */
 
-        .profile-hero::before {
-            width: 220px;
-            height: 220px;
-            top: -80px;
-            right: -60px;
-        }
+.profile-page{
+    max-width:1100px;
+    margin:auto;
+    padding-bottom:30px;
+}
 
-        .profile-hero::after {
-            width: 140px;
-            height: 140px;
-            bottom: -60px;
-            left: 10%;
-        }
 
-        .profile-hero h4,
-        .profile-hero p {
-            position: relative;
-            z-index: 2;
-        }
+/* =========================================================
+   HEADER HIJAU
+========================================================= */
 
-        .profile-card {
-            border: none;
-            border-radius: var(--radius);
-            box-shadow: 0 .5rem 2rem rgba(0, 0, 0, .08);
-        }
+.profile-header{
+    position:relative;
+    height:235px;
+    margin:-15px -12px 0;
+    padding-top:20px;
+    overflow:hidden;
+    background:linear-gradient(
+        160deg,
+        #a8dc9a 0%,
+        #62b95d 55%,
+        #319e50 100%
+    );
+    border-radius:0 0 35px 35px;
+}
 
-        .avatar-wrapper {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin: 0 auto;
-        }
+.profile-header::before{
+    content:"";
+    position:absolute;
+    width:230px;
+    height:230px;
+    right:-100px;
+    top:-100px;
+    border-radius:50%;
+    background:rgba(255,255,255,.08);
+}
 
-        .avatar-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 5px solid #fff;
-            box-shadow: 0 .35rem 1rem rgba(0, 0, 0, .18);
-            transition: transform .35s ease, filter .35s ease;
-        }
+.profile-header::after{
+    content:"";
+    position:absolute;
+    width:150px;
+    height:150px;
+    left:-80px;
+    bottom:-100px;
+    border-radius:50%;
+    background:rgba(255,255,255,.08);
+}
 
-        .avatar-wrapper:hover img {
-            transform: scale(1.05);
-            filter: brightness(.92);
-        }
+.profile-title{
+    position:relative;
+    z-index:2;
+    color:#fff;
+    text-align:center;
+    font-size:20px;
+    font-weight:600;
+}
 
-        .avatar-edit {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 3px solid #fff;
-            transition: transform .2s ease, background .2s ease;
-            box-shadow: 0 .2rem .5rem rgba(0, 0, 0, .25);
-        }
 
-        .avatar-edit:hover {
-            transform: scale(1.12) rotate(-8deg);
-            background: var(--primary-light);
-        }
+/* =========================================================
+   PROFILE CARD
+========================================================= */
 
-        .avatar-edit i {
-            font-size: 1.1rem;
-        }
+.profile-card{
+    position:relative;
+    z-index:3;
+    margin:-50px 15px 0;
+    min-height:380px;
+    background:#f4f4f4;
+    border-radius:14px;
+    padding:0 20px 25px;
+}
 
-        .avatar-loader {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, .45);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 1.5rem;
-        }
 
-        .avatar-wrapper.uploading .avatar-loader {
-            display: flex;
-        }
+/* =========================================================
+   FOTO PROFIL
+========================================================= */
 
-        .dropzone-hint {
-            text-align: center;
-            font-size: .8rem;
-            color: #8a93a3;
-            margin-top: .75rem;
-        }
+.profile-photo{
+    position:relative;
+    width:145px;
+    height:145px;
+    margin:-82px auto 0;
+    z-index:5;
 
-        .form-floating-icon {
-            position: relative;
-        }
+    border-radius:50%;
+    overflow:hidden;
 
-        .form-floating-icon .toggle-eye {
-            position: absolute;
-            top: 50%;
-            right: 14px;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #8a93a3;
-            z-index: 5;
-            transition: color .2s ease;
-        }
+    background:#fff;
+    border:5px solid #fff;
 
-        .form-floating-icon .toggle-eye:hover {
-            color: var(--primary);
-        }
+    box-shadow:0 4px 14px rgba(0,0,0,.12);
+}
 
-        .strength-meter {
-            height: 6px;
-            border-radius: 4px;
-            background: #e9ecef;
-            overflow: hidden;
-            margin-top: .5rem;
-        }
+.profile-photo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:50%;
+}
 
-        .strength-meter-bar {
-            height: 100%;
-            width: 0%;
-            border-radius: 4px;
-            transition: width .35s ease, background-color .35s ease;
-        }
 
-        .strength-label {
-            font-size: .75rem;
-            margin-top: .25rem;
-            display: block;
-            font-weight: 500;
-        }
+/* =========================================================
+   IDENTITAS
+========================================================= */
 
-        .section-title {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            margin-bottom: 1rem;
-        }
+.profile-nip{
+    text-align:center;
+    margin-top:5px;
+    color:#111;
+    font-size:15px;
+    font-weight:700;
+}
 
-        .section-title i {
-            color: var(--primary);
-            font-size: 1.25rem;
-        }
+.profile-name{
+    text-align:center;
+    margin-top:8px;
+    margin-bottom:30px;
+    color:#111;
+    font-size:19px;
+    font-weight:700;
+}
 
-        .toggle-password-section {
-            border: 1px dashed #d9dee3;
-            border-radius: 14px;
-            padding: .9rem 1.1rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background .2s ease, border-color .2s ease;
-        }
 
-        .toggle-password-section:hover {
-            background: var(--primary-soft);
-            border-color: var(--primary);
-        }
+/* =========================================================
+   MENU PROFILE
+========================================================= */
 
-        .toggle-password-section i.chev {
-            transition: transform .3s ease;
-        }
+.profile-menu{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
 
-        .toggle-password-section.open i.chev {
-            transform: rotate(180deg);
-        }
+.profile-menu-item{
+    width:100%;
+    min-height:52px;
 
-        #passwordFields {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height .4s ease, opacity .3s ease, margin-top .3s ease;
-            opacity: 0;
-        }
+    display:grid;
+    grid-template-columns:34px 1fr;
+    align-items:center;
+    column-gap:18px;
 
-        #passwordFields.open {
-            max-height: 600px;
-            opacity: 1;
-            margin-top: 1rem;
-        }
+    padding:10px 0;
 
-        .btn-save {
-            background: var(--primary);
-            border: none;
-            border-radius: 12px;
-            padding: .75rem 1.75rem;
-            font-weight: 600;
-            transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
-            box-shadow: 0 .3rem .8rem rgba(9, 118, 18, .25);
-        }
+    border:0;
+    outline:0;
+    background:transparent;
 
-        .btn-save:hover:not(:disabled) {
-            background: var(--primary-light);
-            transform: translateY(-2px);
-            box-shadow: 0 .5rem 1.2rem rgba(9, 118, 18, .35);
-        }
+    color:#111;
+    text-decoration:none !important;
+    text-align:left;
 
-        .btn-save:disabled {
-            opacity: .75;
-            cursor: not-allowed;
-        }
+    font-family:inherit;
+    font-size:17px;
+    font-weight:500;
 
-        .info-pill {
-            background: var(--primary-soft);
-            color: var(--primary);
-            border-radius: 999px;
-            padding: .3rem .85rem;
-            font-size: .78rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: .35rem;
-        }
+    cursor:pointer;
 
-        .field-valid {
-            border-color: var(--primary) !important;
-        }
+    box-sizing:border-box;
+}
 
-        .field-invalid {
-            border-color: var(--danger) !important;
-        }
 
-        .shake {
-            animation: shakeErr .4s;
-        }
+/* SEMUA ICON PUNYA AREA YANG SAMA */
 
-        @keyframes shakeErr {
+.profile-menu-item i{
+    width:34px;
+    height:34px;
 
-            0%,
-            100% {
-                transform: translateX(0);
-            }
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-            20%,
-            60% {
-                transform: translateX(-6px);
-            }
+    margin:0 !important;
+    padding:0 !important;
 
-            40%,
-            80% {
-                transform: translateX(6px);
-            }
-        }
+    font-size:25px;
 
-        .crop-modal .cropper-canvas-wrapper {
-            max-height: 60vh;
-        }
+    color:#111;
+}
 
-        @media (max-width: 576px) {
-            .profile-hero {
-                padding: 2rem 1rem 5rem;
-            }
 
-            .avatar-wrapper {
-                width: 116px;
-                height: 116px;
-            }
-        }
-    </style>
+/* SEMUA TEXT MULAI DARI GARIS YANG SAMA */
+
+.profile-menu-item span{
+    display:block;
+
+    margin:0;
+    padding:0;
+
+    line-height:1.3;
+}
+
+
+/* HOVER */
+
+.profile-menu-item:hover{
+    color:#20a965;
+}
+
+.profile-menu-item:hover i{
+    color:#20a965;
+}
+
+/* =========================================================
+   MODAL UMUM
+========================================================= */
+
+.profile-modal .modal-content{
+    border:0;
+    border-radius:18px;
+    overflow:hidden;
+}
+
+.profile-modal .modal-header{
+    padding:18px 20px;
+}
+
+.profile-modal .modal-title{
+    font-size:19px;
+    font-weight:700;
+    color:#52677f;
+}
+
+.profile-modal .modal-body{
+    padding:20px;
+}
+
+.profile-modal .form-label{
+    font-size:14px;
+    font-weight:600;
+    color:#52677f;
+}
+
+.profile-modal .form-control{
+    min-height:45px;
+    font-size:14px;
+}
+
+.profile-modal .input-group-text{
+    min-width:45px;
+    justify-content:center;
+}
+
+
+/* =========================================================
+   FOTO DI PENGATURAN PROFIL
+========================================================= */
+
+.edit-avatar{
+    position:relative;
+    width:120px;
+    height:120px;
+    margin:0 auto 12px;
+}
+
+.edit-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:50%;
+    border:4px solid #fff;
+    box-shadow:0 3px 12px rgba(0,0,0,.15);
+}
+
+.edit-avatar-button{
+    position:absolute;
+    right:0;
+    bottom:0;
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    background:#4caf50;
+    color:#fff;
+    border:3px solid #fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-size:18px;
+}
+
+.edit-avatar-loader{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:rgba(0,0,0,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-size:24px;
+}
+
+.edit-avatar.uploading .edit-avatar-loader{
+    display:flex;
+}
+
+.photo-hint{
+    text-align:center;
+    font-size:11px;
+    color:#888;
+    line-height:1.5;
+    margin-bottom:20px;
+}
+
+
+/* =========================================================
+   PASSWORD
+========================================================= */
+
+.password-input{
+    position:relative;
+}
+
+.password-input .toggle-eye{
+    position:absolute;
+    top:50%;
+    right:14px;
+    transform:translateY(-50%);
+    color:#888;
+    cursor:pointer;
+    z-index:5;
+    font-size:20px;
+}
+
+.strength-meter{
+    height:6px;
+    margin-top:8px;
+    background:#e9ecef;
+    border-radius:4px;
+    overflow:hidden;
+}
+
+.strength-meter-bar{
+    width:0;
+    height:100%;
+    border-radius:4px;
+    transition:.3s;
+}
+
+.strength-label{
+    display:block;
+    margin-top:4px;
+    font-size:11px;
+}
+
+
+/* =========================================================
+   VALIDASI
+========================================================= */
+
+.field-valid{
+    border-color:#4caf50!important;
+}
+
+.field-invalid{
+    border-color:#dc3545!important;
+}
+
+.invalid-message{
+    color:#dc3545;
+    font-size:11px;
+    margin-top:4px;
+}
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.btn-profile-save{
+    background:#4caf50;
+    color:#fff;
+    border:0;
+    border-radius:10px;
+    padding:10px 18px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.btn-profile-save:hover{
+    background:#399d40;
+    color:#fff;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:767px){
+
+    .profile-page{
+        width:100%;
+    }
+
+    .profile-header{
+        height:235px;
+        margin:-15px -12px 0;
+        border-radius:0 0 32px 32px;
+    }
+
+    .profile-title{
+        font-size:20px;
+    }
+
+    .profile-card{
+        margin:-50px 10px 0;
+        min-height:390px;
+        padding:0 20px 25px;
+        border-radius:13px;
+    }
+
+    .profile-photo{
+        width:145px;
+        height:145px;
+        margin:-82px auto 0;
+    }
+
+    .profile-nip{
+        font-size:15px;
+    }
+
+    .profile-name{
+        font-size:19px;
+        margin-bottom:28px;
+    }
+
+    .profile-menu-item{
+        grid-template-columns:34px 1fr;
+        column-gap:18px;
+        min-height:52px;
+        padding:10px 0;
+        font-size:17px;
+    }
+
+    .profile-menu-item i{
+        width:34px;
+        height:34px
+        font-size:25px;
+    }
+
+    /* =========================================
+       FOOTER TIDAK TERTUTUP MOBILE TOOLBAR
+    ========================================= */
+
+    /* .content-footer,
+    footer{
+        margin-bottom:95px !important;
+    } */
+
+}
+
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media(min-width:768px){
+
+    .profile-header{
+        margin-left:0;
+        margin-right:0;
+        border-radius:20px;
+    }
+
+    .profile-card{
+        max-width:500px;
+        margin:-50px auto 0;
+    }
+
+}
+
+</style>
+
 @endpush
 
+
 @section('content')
-    <div class="container-xxl flex-grow-1 container-p-y">
 
-        {{-- HERO --}}
-        <div class="profile-hero animate__animated animate__fadeIn">
-            <h4 class="mb-1 fw-bold"><i class='bx bxs-user-circle me-2'></i>Profil Saya</h4>
-            <p class="mb-0 opacity-75">Kelola informasi akun dan keamanan Anda</p>
-        </div>
+<div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="row justify-content-center">
-            <div class="col-12 col-lg-8">
+<div class="profile-page">
 
-                <div class="card profile-card animate__animated animate__fadeInUp">
-                    <div class="card-body p-4 p-md-5">
 
-                        <form id="profileForm" action="{{ route('profile.update') }}" method="POST"
-                            enctype="multipart/form-data" novalidate>
-                            @csrf
-                            @method('PUT')
-                            {{-- ================= AVATAR ================= --}}
-                            <div class="text-center mb-4">
-                                <div class="avatar-wrapper" id="avatarWrapper">
-                                    <img id="avatarPreview"
-                                        src="{{ $pegawai->foto_pegawai ? asset('storage/' . $pegawai->foto_pegawai) : asset('assets/img/default-avatar.png') }}"
-                                        alt="Foto Profil">
-                                    <div class="avatar-loader">
-                                        <i class='bx bx-loader-alt bx-spin'></i>
-                                    </div>
-                                    <label class="avatar-edit" for="foto_pegawai" title="Ganti foto">
-                                        <i class='bx bxs-camera'></i>
-                                    </label>
-                                </div>
-                                <input type="file" name="foto_pegawai" id="foto_pegawai"
-                                    accept="image/png, image/jpeg, image/jpg" class="d-none">
-                                <p class="dropzone-hint">Klik ikon kamera atau <b>drag & drop</b> gambar ke foto.<br>
-                                    Format JPG/PNG, maks 2MB.</p>
-                                <div class="invalid-feedback d-block text-center" id="fotoError"
-                                    style="display:none !important;"></div>
-                            </div>
+{{-- =========================================================
+     HEADER
+========================================================= --}}
 
-                            {{-- ================= DATA DIRI ================= --}}
-                            <div class="mb-4">
-                                <div class="section-title"><i class='bx bxs-id-card'></i>Data Diri</div>
+<div class="profile-header">
 
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Nama Lengkap <span
-                                            class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-transparent"><i class='bx bx-user'></i></span>
-                                        <input type="text" name="name" id="name" class="form-control"
-                                            value="{{ old('name', $pegawai->name) }}" placeholder="Masukkan nama lengkap"
-                                            required minlength="3" maxlength="255">
-                                    </div>
-                                    <div class="invalid-feedback" id="nameError"></div>
-                                </div>
+    <div class="profile-title">
+        Profile
+    </div>
 
-                                @if (isset($pegawai->email))
-                                    <div class="mb-1">
-                                        <span class="info-pill"><i class='bx bx-envelope'></i>{{ $pegawai->email }}</span>
-                                    </div>
-                                @endif
-                            </div>
+</div>
 
-                            <hr class="my-4">
 
-                            {{-- ================= GANTI PASSWORD (COLLAPSIBLE) ================= --}}
-                            <div class="mb-3">
-                                <div class="toggle-password-section" id="togglePasswordSection">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class='bx bxs-lock-alt fs-5' style="color:var(--primary)"></i>
-                                        <span class="fw-semibold">Ubah Kata Sandi</span>
-                                        <small class="text-muted d-none d-sm-inline">(opsional)</small>
-                                    </div>
-                                    <i class='bx bx-chevron-down chev fs-4'></i>
-                                </div>
+{{-- =========================================================
+     PROFILE CARD
+========================================================= --}}
 
-                                <div id="passwordFields">
-                                    <div class="mb-3">
-                                        <label for="password" class="form-label">Kata Sandi Baru</label>
-                                        <div class="form-floating-icon">
-                                            <input type="password" name="password" id="password" class="form-control"
-                                                placeholder="Minimal 6 karakter" minlength="6">
-                                            <i class='bx bx-hide toggle-eye' data-target="password"></i>
-                                        </div>
-                                        <div class="strength-meter">
-                                            <div class="strength-meter-bar" id="strengthBar"></div>
-                                        </div>
-                                        <span class="strength-label" id="strengthLabel"></span>
-                                    </div>
+<div class="profile-card">
 
-                                    <div class="mb-2">
-                                        <label for="password_confirmation" class="form-label">Konfirmasi Kata Sandi</label>
-                                        <div class="form-floating-icon">
-                                            <input type="password" name="password_confirmation" id="password_confirmation"
-                                                class="form-control" placeholder="Ulangi kata sandi baru">
-                                            <i class='bx bx-hide toggle-eye' data-target="password_confirmation"></i>
-                                        </div>
-                                        <div class="invalid-feedback" id="confirmError"></div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div class="d-flex justify-content-end gap-2 mt-4">
-                                <button type="reset" class="btn btn-outline-secondary rounded-3" id="btnReset">
-                                    <i class='bx bx-reset me-1'></i>Reset
-                                </button>
-                                <button type="submit" class="btn btn-save text-white" id="btnSave">
-                                    <span id="btnSaveText"><i class='bx bx-save me-1'></i>Simpan Perubahan</span>
-                                    <span id="btnSaveLoading" class="d-none">
-                                        <span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...
-                                    </span>
-                                </button>
-                            </div>
+    {{-- FOTO --}}
 
-                        </form>
+    <div class="profile-photo">
 
-                    </div>
+        <img
+            src="{{ $pegawai->foto_pegawai
+                ? asset('storage/' . $pegawai->foto_pegawai)
+                : asset('assets/img/default-avatar.png') }}"
+            alt="Foto Profil">
+
+    </div>
+
+
+    {{-- NIP --}}
+
+    <div class="profile-nip">
+        {{ $pegawai->nip ?? '-' }}
+    </div>
+
+
+    {{-- NAMA --}}
+
+    <div class="profile-name">
+        {{ $pegawai->name }}
+    </div>
+
+
+    {{-- =====================================================
+     MENU
+====================================================== --}}
+
+    <div class="profile-menu">
+
+
+        {{-- EMAIL --}}
+
+        <button
+            type="button"
+            class="profile-menu-item"
+            data-bs-toggle="modal"
+            data-bs-target="#emailModal">
+
+            <i class="bx bx-envelope"></i>
+
+            <span>Email</span>
+
+        </button>
+
+
+        {{-- PENGATURAN PROFIL --}}
+
+        <button
+            type="button"
+            class="profile-menu-item"
+            data-bs-toggle="modal"
+            data-bs-target="#profileModal">
+
+            <i class="bx bx-cog"></i>
+
+            <span>Pengaturan Profil</span>
+
+        </button>
+
+
+        {{-- GANTI PASSWORD --}}
+
+        <button
+            type="button"
+            class="profile-menu-item"
+            data-bs-toggle="modal"
+            data-bs-target="#passwordModal">
+
+            <i class="bx bx-lock-alt"></i>
+
+            <span>Ganti Password</span>
+
+        </button>
+
+
+        {{-- KELUAR --}}
+
+        <a
+            href="{{ route('logout') }}"
+            class="profile-menu-item"
+            onclick="
+                event.preventDefault();
+                document.getElementById('logout-form').submit();
+            ">
+
+            <i class="bx bx-log-out"></i>
+
+            <span>Keluar</span>
+
+        </a>
+
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+
+{{-- =========================================================
+     MODAL EMAIL
+========================================================= --}}
+
+<div
+    class="modal fade profile-modal"
+    id="emailModal"
+    tabindex="-1"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Email
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="input-group">
+
+                    <span class="input-group-text">
+
+                        <i class="bx bx-envelope"></i>
+
+                    </span>
+
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        value="{{ $pegawai->email }}"
+                        readonly>
+
                 </div>
 
             </div>
+
         </div>
+
     </div>
-@endsection
+
+</div>
+
+
+{{-- =========================================================
+     MODAL PENGATURAN PROFIL
+     FOTO + NAMA
+========================================================= --}}
+
+<div
+    class="modal fade profile-modal"
+    id="profileModal"
+    tabindex="-1"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+
+            {{-- HEADER --}}
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Pengaturan Profil
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            {{-- BODY --}}
+
+            <div class="modal-body">
+
+                <form
+                    id="profileForm"
+                    action="{{ route('profile.update') }}"
+                    method="POST"
+                    enctype="multipart/form-data">
+
+                    @csrf
+
+                    @method('PUT')
+
+
+                    {{-- FOTO --}}
+
+                    <div class="text-center">
+
+                        <div
+                            class="edit-avatar"
+                            id="avatarWrapper">
+
+                            <img
+                                id="avatarPreview"
+                                src="{{ $pegawai->foto_pegawai
+                                    ? asset('storage/' . $pegawai->foto_pegawai)
+                                    : asset('assets/img/default-avatar.png') }}"
+                                alt="Foto Profil">
+
+
+                            <div class="edit-avatar-loader">
+
+                                <i class="bx bx-loader-alt bx-spin"></i>
+
+                            </div>
+
+
+                            <label
+                                for="foto_pegawai"
+                                class="edit-avatar-button">
+
+                                <i class="bx bxs-camera"></i>
+
+                            </label>
+
+                        </div>
+
+
+                        <input
+                            type="file"
+                            name="foto_pegawai"
+                            id="foto_pegawai"
+                            accept="image/png,image/jpeg,image/jpg"
+                            class="d-none">
+
+
+                        <div
+                            class="photo-hint"
+                            id="fotoError">
+
+                            Klik ikon kamera untuk mengganti foto.<br>
+                            JPG/PNG, maksimal 2MB.
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- NAMA --}}
+
+                    <div class="mb-3">
+
+                        <label
+                            for="name"
+                            class="form-label">
+
+                            Nama Lengkap
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+
+                        <div class="input-group">
+
+                            <span class="input-group-text">
+
+                                <i class="bx bx-user"></i>
+
+                            </span>
+
+
+                            <input
+                                type="text"
+                                name="name"
+                                id="name"
+                                class="form-control"
+                                value="{{ old('name', $pegawai->name) }}"
+                                required
+                                minlength="3"
+                                maxlength="255">
+
+                        </div>
+
+
+                        <div
+                            id="nameError"
+                            class="invalid-message">
+                        </div>
+
+                    </div>
+
+
+                    {{-- BUTTON --}}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+
+                        <button
+                            type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+
+                            Batal
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="btn-profile-save"
+                            id="profileSaveButton">
+
+                            <span id="profileSaveText">
+
+                                <i class="bx bx-save me-1"></i>
+                                Simpan
+
+                            </span>
+
+
+                            <span
+                                id="profileSaveLoading"
+                                class="d-none">
+
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+
+                                Menyimpan...
+
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     MODAL GANTI PASSWORD
+========================================================= --}}
+
+<div
+    class="modal fade profile-modal"
+    id="passwordModal"
+    tabindex="-1"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+
+            {{-- HEADER --}}
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Ganti Password
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            {{-- BODY --}}
+
+            <div class="modal-body">
+
+                <form
+                    id="passwordForm"
+                    action="{{ route('profile.update') }}"
+                    method="POST">
+
+                    @csrf
+
+                    @method('PUT')
+
+
+                    {{-- NAMA TERSEMBUNYI
+                         Agar data profile tetap lengkap
+                         jika backend membutuhkan name
+                    --}}
+
+                    <input
+                        type="hidden"
+                        name="name"
+                        value="{{ $pegawai->name }}">
+
+
+                    {{-- PASSWORD BARU --}}
+
+                    <div class="mb-3">
+
+                        <label
+                            for="password"
+                            class="form-label">
+
+                            Password Baru
+
+                        </label>
+
+
+                        <div class="password-input">
+
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                class="form-control"
+                                placeholder="Minimal 6 karakter"
+                                minlength="6"
+                                required>
+
+
+                            <i
+                                class="bx bx-hide toggle-eye"
+                                data-target="password">
+                            </i>
+
+                        </div>
+
+
+                        <div class="strength-meter">
+
+                            <div
+                                class="strength-meter-bar"
+                                id="strengthBar">
+                            </div>
+
+                        </div>
+
+
+                        <span
+                            class="strength-label"
+                            id="strengthLabel">
+                        </span>
+
+                    </div>
+
+
+                    {{-- KONFIRMASI PASSWORD --}}
+
+                    <div class="mb-2">
+
+                        <label
+                            for="password_confirmation"
+                            class="form-label">
+
+                            Konfirmasi Password
+
+                        </label>
+
+
+                        <div class="password-input">
+
+                            <input
+                                type="password"
+                                name="password_confirmation"
+                                id="password_confirmation"
+                                class="form-control"
+                                placeholder="Ulangi password"
+                                required>
+
+
+                            <i
+                                class="bx bx-hide toggle-eye"
+                                data-target="password_confirmation">
+                            </i>
+
+                        </div>
+
+
+                        <div
+                            id="confirmError"
+                            class="invalid-message">
+                        </div>
+
+                    </div>
+
+
+                    {{-- BUTTON --}}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+
+                        <button
+                            type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+
+                            Batal
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="btn-profile-save"
+                            id="passwordSaveButton">
+
+                            <span id="passwordSaveText">
+
+                                <i class="bx bx-save me-1"></i>
+                                Simpan
+
+                            </span>
+
+
+                            <span
+                                id="passwordSaveLoading"
+                                class="d-none">
+
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+
+                                Menyimpan...
+
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     LOGOUT
+========================================================= --}}
+
+<form
+    id="logout-form"
+    action="{{ route('logout') }}"
+    method="POST"
+    class="d-none">
+
+    @csrf
+
+</form>
+
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
 
-            /* ============================================================
-             * 1. AVATAR: preview instan + drag & drop + validasi client-side
-             * ============================================================ */
-            const fotoInput = document.getElementById('foto_pegawai');
-            const avatarPreview = document.getElementById('avatarPreview');
-            const avatarWrapper = document.getElementById('avatarWrapper');
-            const fotoError = document.getElementById('fotoError');
-            const defaultAvatarSrc = avatarPreview.src;
+<script>
 
-            function handleFotoFile(file) {
-                if (!file) return;
+document.addEventListener('DOMContentLoaded', function(){
 
-                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-                const maxSize = 2 * 1024 * 1024; // 2MB
 
-                fotoError.style.display = 'none !important';
-                fotoError.textContent = '';
-                avatarWrapper.classList.remove('shake');
+    /* =====================================================
+       PENGATURAN PROFIL
+       FOTO
+    ===================================================== */
 
-                if (!validTypes.includes(file.type)) {
-                    showFotoError('Format file harus JPG atau PNG.');
+    const fotoInput =
+        document.getElementById('foto_pegawai');
+
+    const avatarPreview =
+        document.getElementById('avatarPreview');
+
+    const avatarWrapper =
+        document.getElementById('avatarWrapper');
+
+    const fotoError =
+        document.getElementById('fotoError');
+
+
+    if(fotoInput){
+
+        fotoInput.addEventListener(
+            'change',
+            function(){
+
+                const file =
+                    this.files[0];
+
+                if(!file) return;
+
+
+                const validTypes = [
+                    'image/jpeg',
+                    'image/png',
+                    'image/jpg'
+                ];
+
+                const maxSize =
+                    2 * 1024 * 1024;
+
+
+                if(!validTypes.includes(file.type)){
+
+                    fotoError.innerHTML =
+                        '<span class="text-danger">Format file harus JPG atau PNG.</span>';
+
+                    this.value = '';
+
                     return;
-                }
-                if (file.size > maxSize) {
-                    showFotoError('Ukuran file maksimal 2MB.');
-                    return;
+
                 }
 
-                avatarWrapper.classList.add('uploading');
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    setTimeout(() => {
-                        avatarPreview.src = e.target.result;
-                        avatarWrapper.classList.remove('uploading');
-                        avatarWrapper.classList.add('animate__animated', 'animate__pulse');
-                        setTimeout(() => avatarWrapper.classList.remove('animate__animated',
-                            'animate__pulse'), 600);
-                    }, 350); // sedikit delay biar animasi loading terasa halus
-                };
+
+                if(file.size > maxSize){
+
+                    fotoError.innerHTML =
+                        '<span class="text-danger">Ukuran file maksimal 2MB.</span>';
+
+                    this.value = '';
+
+                    return;
+
+                }
+
+
+                avatarWrapper.classList.add(
+                    'uploading'
+                );
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function(e){
+
+                        avatarPreview.src =
+                            e.target.result;
+
+                        avatarWrapper.classList.remove(
+                            'uploading'
+                        );
+
+                        fotoError.innerHTML =
+                            'Foto siap disimpan.<br>JPG/PNG, maksimal 2MB.';
+
+                    };
+
+
                 reader.readAsDataURL(file);
+
             }
+        );
 
-            function showFotoError(msg) {
-                fotoError.textContent = msg;
-                fotoError.style.removeProperty('display');
-                avatarWrapper.classList.add('shake');
-                fotoInput.value = '';
-                setTimeout(() => avatarWrapper.classList.remove('shake'), 400);
-            }
+    }
 
-            fotoInput.addEventListener('change', function() {
-                handleFotoFile(this.files[0]);
-            });
 
-            // Drag & drop di area avatar
-            ['dragenter', 'dragover'].forEach(evt => {
-                avatarWrapper.addEventListener(evt, function(e) {
+    /* =====================================================
+       VALIDASI NAMA
+    ===================================================== */
+
+    const nameInput =
+        document.getElementById('name');
+
+    const nameError =
+        document.getElementById('nameError');
+
+
+    const profileForm =
+        document.getElementById('profileForm');
+
+
+    if(profileForm){
+
+        profileForm.addEventListener(
+            'submit',
+            function(e){
+
+                const name =
+                    nameInput.value.trim();
+
+
+                if(name.length < 3){
+
                     e.preventDefault();
-                    e.stopPropagation();
-                    avatarWrapper.style.outline = '3px dashed var(--primary)';
-                    avatarWrapper.style.outlineOffset = '4px';
-                });
-            });
-            ['dragleave', 'drop'].forEach(evt => {
-                avatarWrapper.addEventListener(evt, function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    avatarWrapper.style.outline = 'none';
-                });
-            });
-            avatarWrapper.addEventListener('drop', function(e) {
-                const file = e.dataTransfer.files[0];
-                if (file) {
-                    fotoInput.files = e.dataTransfer.files;
-                    handleFotoFile(file);
-                }
-            });
 
-            /* ============================================================
-             * 2. COLLAPSIBLE: bagian ganti password
-             * ============================================================ */
-            const toggleSection = document.getElementById('togglePasswordSection');
-            const passwordFields = document.getElementById('passwordFields');
+                    nameInput.classList.add(
+                        'field-invalid'
+                    );
 
-            toggleSection.addEventListener('click', function() {
-                toggleSection.classList.toggle('open');
-                passwordFields.classList.toggle('open');
-            });
+                    nameError.textContent =
+                        'Nama minimal 3 karakter.';
 
-            /* ============================================================
-             * 3. TOGGLE SHOW/HIDE PASSWORD
-             * ============================================================ */
-            document.querySelectorAll('.toggle-eye').forEach(icon => {
-                icon.addEventListener('click', function() {
-                    const targetInput = document.getElementById(this.dataset.target);
-                    const isPassword = targetInput.type === 'password';
-                    targetInput.type = isPassword ? 'text' : 'password';
-                    this.classList.toggle('bx-hide');
-                    this.classList.toggle('bx-show');
-                });
-            });
-
-            /* ============================================================
-             * 4. PASSWORD STRENGTH METER
-             * ============================================================ */
-            const passwordInput = document.getElementById('password');
-            const strengthBar = document.getElementById('strengthBar');
-            const strengthLabel = document.getElementById('strengthLabel');
-
-            function evaluateStrength(val) {
-                let score = 0;
-                if (val.length >= 6) score++;
-                if (val.length >= 10) score++;
-                if (/[A-Z]/.test(val)) score++;
-                if (/[0-9]/.test(val)) score++;
-                if (/[^A-Za-z0-9]/.test(val)) score++;
-                return score; // 0 - 5
-            }
-
-            passwordInput.addEventListener('input', function() {
-                const val = this.value;
-                const score = evaluateStrength(val);
-                const percent = (score / 5) * 100;
-
-                let color = '#dc3545',
-                    label = 'Sangat Lemah';
-                if (val.length === 0) {
-                    strengthBar.style.width = '0%';
-                    strengthLabel.textContent = '';
                     return;
-                } else if (score <= 1) {
-                    color = '#dc3545';
-                    label = 'Lemah';
-                } else if (score <= 2) {
-                    color = '#ffc107';
-                    label = 'Cukup';
-                } else if (score <= 3) {
-                    color = '#0dcaf0';
-                    label = 'Baik';
-                } else {
-                    color = '#097612';
-                    label = 'Kuat';
+
                 }
 
-                strengthBar.style.width = percent + '%';
-                strengthBar.style.backgroundColor = color;
-                strengthLabel.textContent = label;
-                strengthLabel.style.color = color;
 
-                checkConfirmMatch();
-            });
+                nameInput.classList.remove(
+                    'field-invalid'
+                );
 
-            /* ============================================================
-             * 5. VALIDASI KONFIRMASI PASSWORD REAL-TIME
-             * ============================================================ */
-            const confirmInput = document.getElementById('password_confirmation');
-            const confirmError = document.getElementById('confirmError');
 
-            function checkConfirmMatch() {
-                if (confirmInput.value.length === 0) {
-                    confirmInput.classList.remove('field-valid', 'field-invalid');
-                    confirmError.textContent = '';
-                    return true;
-                }
-                if (passwordInput.value !== confirmInput.value) {
-                    confirmInput.classList.add('field-invalid');
-                    confirmInput.classList.remove('field-valid');
-                    confirmError.textContent = 'Konfirmasi kata sandi tidak sama.';
-                    return false;
-                } else {
-                    confirmInput.classList.add('field-valid');
-                    confirmInput.classList.remove('field-invalid');
-                    confirmError.textContent = '';
-                    return true;
-                }
+                document
+                    .getElementById('profileSaveButton')
+                    .disabled = true;
+
+
+                document
+                    .getElementById('profileSaveText')
+                    .classList.add('d-none');
+
+
+                document
+                    .getElementById('profileSaveLoading')
+                    .classList.remove('d-none');
+
             }
-            confirmInput.addEventListener('input', checkConfirmMatch);
+        );
 
-            /* ============================================================
-             * 6. VALIDASI NAMA REAL-TIME
-             * ============================================================ */
-            const nameInput = document.getElementById('name');
-            const nameError = document.getElementById('nameError');
+    }
 
-            function checkName() {
-                const val = nameInput.value.trim();
-                if (val.length < 3) {
-                    nameInput.classList.add('field-invalid');
-                    nameInput.classList.remove('field-valid');
-                    nameError.textContent = 'Nama minimal 3 karakter.';
-                    return false;
-                }
-                nameInput.classList.add('field-valid');
-                nameInput.classList.remove('field-invalid');
-                nameError.textContent = '';
-                return true;
-            }
-            nameInput.addEventListener('input', checkName);
 
-            /* ============================================================
-             * 7. SUBMIT: validasi akhir + loading state tombol
-             * ============================================================ */
-            const form = document.getElementById('profileForm');
-            const btnSave = document.getElementById('btnSave');
-            const btnSaveText = document.getElementById('btnSaveText');
-            const btnSaveLoading = document.getElementById('btnSaveLoading');
+    /* =====================================================
+       PASSWORD SHOW / HIDE
+    ===================================================== */
 
-            form.addEventListener('submit', function(e) {
-                let valid = true;
+    document
+        .querySelectorAll('.toggle-eye')
+        .forEach(function(icon){
 
-                if (!checkName()) valid = false;
+            icon.addEventListener(
+                'click',
+                function(){
 
-                if (passwordInput.value.length > 0 && passwordInput.value.length < 6) {
-                    valid = false;
-                    passwordInput.classList.add('field-invalid');
-                }
+                    const target =
+                        document.getElementById(
+                            this.dataset.target
+                        );
 
-                if (passwordInput.value.length > 0 && !checkConfirmMatch()) {
-                    valid = false;
-                    // otomatis buka bagian password kalau ada error di dalamnya
-                    toggleSection.classList.add('open');
-                    passwordFields.classList.add('open');
-                }
 
-                if (!valid) {
-                    e.preventDefault();
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Periksa kembali form',
-                            text: 'Beberapa data belum valid, silakan periksa kembali.',
-                            confirmButtonColor: '#097612'
-                        });
+                    if(target.type === 'password'){
+
+                        target.type =
+                            'text';
+
+                        this.classList.remove(
+                            'bx-hide'
+                        );
+
+                        this.classList.add(
+                            'bx-show'
+                        );
+
+                    }else{
+
+                        target.type =
+                            'password';
+
+                        this.classList.remove(
+                            'bx-show'
+                        );
+
+                        this.classList.add(
+                            'bx-hide'
+                        );
+
                     }
-                    return;
+
                 }
-
-                // Loading state
-                btnSave.disabled = true;
-                btnSaveText.classList.add('d-none');
-                btnSaveLoading.classList.remove('d-none');
-            });
-
-            /* ============================================================
-             * 8. RESET: kembalikan avatar ke foto lama saat klik reset
-             * ============================================================ */
-            document.getElementById('btnReset').addEventListener('click', function() {
-                setTimeout(() => {
-                    avatarPreview.src = defaultAvatarSrc;
-                    strengthBar.style.width = '0%';
-                    strengthLabel.textContent = '';
-                    [nameInput, confirmInput, passwordInput].forEach(el => el.classList.remove(
-                        'field-valid', 'field-invalid'));
-                    nameError.textContent = '';
-                    confirmError.textContent = '';
-                    passwordFields.classList.remove('open');
-                    toggleSection.classList.remove('open');
-                }, 10);
-            });
+            );
 
         });
-    </script>
+
+
+    /* =====================================================
+       PASSWORD STRENGTH
+    ===================================================== */
+
+    const passwordInput =
+        document.getElementById('password');
+
+    const strengthBar =
+        document.getElementById('strengthBar');
+
+    const strengthLabel =
+        document.getElementById('strengthLabel');
+
+
+    function evaluateStrength(value){
+
+        let score = 0;
+
+        if(value.length >= 6)
+            score++;
+
+        if(value.length >= 10)
+            score++;
+
+        if(/[A-Z]/.test(value))
+            score++;
+
+        if(/[0-9]/.test(value))
+            score++;
+
+        if(/[^A-Za-z0-9]/.test(value))
+            score++;
+
+        return score;
+
+    }
+
+
+    if(passwordInput){
+
+        passwordInput.addEventListener(
+            'input',
+            function(){
+
+                const value =
+                    this.value;
+
+                const score =
+                    evaluateStrength(value);
+
+
+                if(value.length === 0){
+
+                    strengthBar.style.width =
+                        '0%';
+
+                    strengthLabel.textContent =
+                        '';
+
+                    return;
+
+                }
+
+
+                let color =
+                    '#dc3545';
+
+                let label =
+                    'Lemah';
+
+
+                if(score <= 1){
+
+                    color =
+                        '#dc3545';
+
+                    label =
+                        'Lemah';
+
+                }else if(score <= 2){
+
+                    color =
+                        '#ffc107';
+
+                    label =
+                        'Cukup';
+
+                }else if(score <= 3){
+
+                    color =
+                        '#0dcaf0';
+
+                    label =
+                        'Baik';
+
+                }else{
+
+                    color =
+                        '#4caf50';
+
+                    label =
+                        'Kuat';
+
+                }
+
+
+                strengthBar.style.width =
+                    ((score / 5) * 100) + '%';
+
+                strengthBar.style.backgroundColor =
+                    color;
+
+                strengthLabel.textContent =
+                    label;
+
+                strengthLabel.style.color =
+                    color;
+
+
+                checkPasswordMatch();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       KONFIRMASI PASSWORD
+    ===================================================== */
+
+    const confirmInput =
+        document.getElementById(
+            'password_confirmation'
+        );
+
+    const confirmError =
+        document.getElementById(
+            'confirmError'
+        );
+
+
+    function checkPasswordMatch(){
+
+        if(!confirmInput.value){
+
+            confirmInput.classList.remove(
+                'field-valid',
+                'field-invalid'
+            );
+
+            confirmError.textContent =
+                '';
+
+            return true;
+
+        }
+
+
+        if(
+            passwordInput.value !==
+            confirmInput.value
+        ){
+
+            confirmInput.classList.add(
+                'field-invalid'
+            );
+
+            confirmInput.classList.remove(
+                'field-valid'
+            );
+
+            confirmError.textContent =
+                'Konfirmasi password tidak sama.';
+
+            return false;
+
+        }
+
+
+        confirmInput.classList.add(
+            'field-valid'
+        );
+
+        confirmInput.classList.remove(
+            'field-invalid'
+        );
+
+        confirmError.textContent =
+            '';
+
+        return true;
+
+    }
+
+
+    if(confirmInput){
+
+        confirmInput.addEventListener(
+            'input',
+            checkPasswordMatch
+        );
+
+    }
+
+
+    /* =====================================================
+       SUBMIT PASSWORD
+    ===================================================== */
+
+    const passwordForm =
+        document.getElementById(
+            'passwordForm'
+        );
+
+
+    if(passwordForm){
+
+        passwordForm.addEventListener(
+            'submit',
+            function(e){
+
+                let valid = true;
+
+
+                if(
+                    passwordInput.value.length < 6
+                ){
+
+                    passwordInput.classList.add(
+                        'field-invalid'
+                    );
+
+                    valid = false;
+
+                }
+
+
+                if(!checkPasswordMatch()){
+
+                    valid = false;
+
+                }
+
+
+                if(!valid){
+
+                    e.preventDefault();
+
+                    return;
+
+                }
+
+
+                document
+                    .getElementById(
+                        'passwordSaveButton'
+                    )
+                    .disabled = true;
+
+
+                document
+                    .getElementById(
+                        'passwordSaveText'
+                    )
+                    .classList.add(
+                        'd-none'
+                    );
+
+
+                document
+                    .getElementById(
+                        'passwordSaveLoading'
+                    )
+                    .classList.remove(
+                        'd-none'
+                    );
+
+            }
+        );
+
+    }
+
+
+});
+
+</script>
+
 @endpush
+
+@endsection
