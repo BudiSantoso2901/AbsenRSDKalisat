@@ -4,21 +4,14 @@
     $isPegawai = auth('pegawai')->check();
 @endphp
 
-<html
-    lang="en"
-    class="light-style layout-menu-fixed"
-    dir="ltr"
-    data-theme="theme-default"
-    data-assets-path="{{ asset('assets') }}/"
-    data-template="vertical-menu-template-free">
+<html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default"
+    data-assets-path="{{ asset('assets') }}/" data-template="vertical-menu-template-free">
 
 <head>
 
     <meta charset="utf-8" />
 
-    <meta
-        name="viewport"
-        content="width=device-width,
+    <meta name="viewport" content="width=device-width,
         initial-scale=1.0,
         user-scalable=no,
         minimum-scale=1.0,
@@ -31,142 +24,98 @@
 
 
     {{-- =====================================================
-         FAVICON
+    FAVICON
     ====================================================== --}}
 
-    <link
-        rel="icon"
-        type="image/x-icon"
-        href="{{ asset('assets/img/images-removebg-preview.png') }}" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/images-removebg-preview.png') }}" />
 
 
     {{-- =====================================================
-         FONTS
+    FONTS
     ====================================================== --}}
 
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
 
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 
     {{-- =====================================================
-         ICON
+    ICON
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/vendor/fonts/boxicons.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/boxicons.css') }}" />
 
 
     {{-- =====================================================
-         CORE CSS
+    CORE CSS
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/vendor/css/core.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/vendor/css/theme-default.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/theme-default.css') }}" />
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
 
 
     {{-- =====================================================
-         CUSTOM CSS
+    CUSTOM CSS
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/css/tambah.css') }}" />
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
 
 
     {{-- =====================================================
-         VENDOR CSS
+    VENDOR CSS
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
 
-    <link
-        rel="stylesheet"
-        href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
 
 
     {{-- =====================================================
-         DATATABLES
+    DATATABLES
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-    <link
-        rel="stylesheet"
-        href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
 
 
     {{-- =====================================================
-         LEAFLET
+    LEAFLET
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
 
     {{-- =====================================================
-         PWA
+    PWA
     ====================================================== --}}
 
-    <link
-        rel="manifest"
-        href="/manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
-    <meta
-        name="theme-color"
-        content="#28a745">
+    <meta name="theme-color" content="#28a745">
 
-    <link
-        rel="apple-touch-icon"
-        href="/icon/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon/icon-192.png">
 
-    <meta
-        name="apple-mobile-web-app-capable"
-        content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 
-    <meta
-        name="apple-mobile-web-app-status-bar-style"
-        content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 
     {{-- =====================================================
-         SELECT2
+    SELECT2
     ====================================================== --}}
 
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 
-    <link
-        rel="stylesheet"
+    <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
 
@@ -175,7 +124,7 @@
 
 
     {{-- =====================================================
-         HELPERS
+    HELPERS
     ====================================================== --}}
 
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
@@ -184,31 +133,30 @@
 
 
     <style>
-
         /* =====================================================
            GLOBAL
         ====================================================== */
 
         html,
-        body{
-            min-height:100%;
+        body {
+            min-height: 100%;
         }
 
-        body{
-            min-height:100vh;
-            overscroll-behavior:contain;
+        body {
+            min-height: 100vh;
+            overscroll-behavior: contain;
         }
 
-        .card{
-            border-radius:16px;
+        .card {
+            border-radius: 16px;
         }
 
-        button{
-            border-radius:12px;
+        button {
+            border-radius: 12px;
         }
 
-        .swal2-container{
-            z-index:3000 !important;
+        .swal2-container {
+            z-index: 3000 !important;
         }
 
 
@@ -216,12 +164,12 @@
            GLOBAL TANPA HEADBAR / NAVBAR
         ====================================================== */
 
-        .layout-wrapper{
-            min-height:100vh !important;
+        .layout-wrapper {
+            min-height: 100vh !important;
         }
 
-        .layout-container{
-            min-height:100vh !important;
+        .layout-container {
+            min-height: 100vh !important;
         }
 
         /*
@@ -229,24 +177,24 @@
          * Layout halaman langsung menggunakan
          * ruang yang sebelumnya dipakai navbar.
          */
-        .layout-page{
-            min-height:100vh !important;
-            padding-top:0 !important;
-            margin-top:0 !important;
+        .layout-page {
+            min-height: 100vh !important;
+            padding-top: 0 !important;
+            margin-top: 0 !important;
         }
 
-        .content-wrapper{
-            min-height:100vh !important;
-            padding-top:0 !important;
-            margin-top:0 !important;
+        .content-wrapper {
+            min-height: 100vh !important;
+            padding-top: 0 !important;
+            margin-top: 0 !important;
         }
 
         /*
          * Tetap beri sedikit ruang agar konten
          * tidak menempel langsung ke ujung layar.
          */
-        .container-p-y{
-            padding-top:16px !important;
+        .container-p-y {
+            padding-top: 16px !important;
         }
 
 
@@ -255,17 +203,17 @@
            SIDEBAR TIDAK DIGUNAKAN
         ====================================================== */
 
-        body.pegawai-layout .layout-container{
-            width:100% !important;
-            max-width:100% !important;
+        body.pegawai-layout .layout-container {
+            width: 100% !important;
+            max-width: 100% !important;
         }
 
-        body.pegawai-layout .layout-page{
-            width:100% !important;
-            max-width:100% !important;
+        body.pegawai-layout .layout-page {
+            width: 100% !important;
+            max-width: 100% !important;
 
-            padding-left:0 !important;
-            margin-left:0 !important;
+            padding-left: 0 !important;
+            margin-left: 0 !important;
         }
 
 
@@ -276,11 +224,9 @@
          * Khusus pegawai kita hapus ruang tersebut.
          */
 
-        html.layout-menu-fixed
-        body.pegawai-layout
-        .layout-page{
-            padding-left:0 !important;
-            margin-left:0 !important;
+        html.layout-menu-fixed body.pegawai-layout .layout-page {
+            padding-left: 0 !important;
+            margin-left: 0 !important;
         }
 
 
@@ -288,12 +234,12 @@
            CONTENT PEGAWAI
         ====================================================== */
 
-        body.pegawai-layout .content-wrapper{
-            width:100% !important;
-            max-width:100% !important;
+        body.pegawai-layout .content-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
 
-            padding-left:0 !important;
-            margin-left:0 !important;
+            padding-left: 0 !important;
+            margin-left: 0 !important;
         }
 
 
@@ -306,9 +252,9 @@
          * Yang dihilangkan hanya navbar/headbar atas.
          */
 
-        body.master-layout .content-wrapper{
-            padding-top:0 !important;
-            margin-top:0 !important;
+        body.master-layout .content-wrapper {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
         }
 
 
@@ -316,24 +262,23 @@
            MOBILE
         ====================================================== */
 
-        @media(max-width:767px){
+        @media(max-width:767px) {
 
-            .container-p-y{
-                padding-top:12px !important;
+            .container-p-y {
+                padding-top: 12px !important;
             }
 
             body.pegawai-layout .layout-container,
             body.pegawai-layout .layout-page,
-            body.pegawai-layout .content-wrapper{
-                width:100% !important;
-                max-width:100% !important;
+            body.pegawai-layout .content-wrapper {
+                width: 100% !important;
+                max-width: 100% !important;
 
-                padding-left:0 !important;
-                margin-left:0 !important;
+                padding-left: 0 !important;
+                margin-left: 0 !important;
             }
 
         }
-
     </style>
 
 </head>
@@ -343,7 +288,7 @@
 
 
     {{-- =====================================================
-         WRAPPER UTAMA
+    WRAPPER UTAMA
     ====================================================== --}}
 
     <div class="layout-wrapper layout-content-navbar">
@@ -352,10 +297,10 @@
 
 
             {{-- =================================================
-                 SIDEBAR
+            SIDEBAR
 
-                 MASTER  = ADA
-                 PEGAWAI = TIDAK ADA
+            MASTER = ADA
+            PEGAWAI = TIDAK ADA
             ================================================== --}}
 
             @if(!$isPegawai)
@@ -366,37 +311,37 @@
 
 
             {{-- =================================================
-                 PAGE
+            PAGE
             ================================================== --}}
 
             <div class="layout-page">
 
 
                 {{-- =============================================
-                     CONTENT WRAPPER
+                CONTENT WRAPPER
 
-                     NAVBAR / HEADBAR SUDAH DIHAPUS GLOBAL
+                NAVBAR / HEADBAR SUDAH DIHAPUS GLOBAL
                 ============================================== --}}
 
                 <div class="content-wrapper">
 
 
                     {{-- =========================================
-                         CONTENT HALAMAN
+                    CONTENT HALAMAN
                     ========================================== --}}
 
                     @yield('content')
 
 
                     {{-- =========================================
-                         FOOTER
+                    FOOTER
                     ========================================== --}}
 
                     @include('partials.footer')
 
 
                     {{-- =========================================
-                         CONTENT BACKDROP
+                    CONTENT BACKDROP
                     ========================================== --}}
 
                     <div class="content-backdrop fade"></div>
@@ -410,9 +355,9 @@
 
 
         {{-- =================================================
-             OVERLAY SIDEBAR
+        OVERLAY SIDEBAR
 
-             CUMA DIBUTUHKAN MASTER
+        CUMA DIBUTUHKAN MASTER
         ================================================== --}}
 
         @if(!$isPegawai)
@@ -426,129 +371,115 @@
 
 
     {{-- =====================================================
-         CORE JS
+    CORE JS
     ====================================================== --}}
 
 
     {{-- JQUERY --}}
 
-    <script
-        src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}">
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}">
     </script>
 
 
     {{-- =====================================================
-         BOOTSTRAP & POPPER
+    BOOTSTRAP & POPPER
     ====================================================== --}}
 
-    <script
-        src="{{ asset('assets/vendor/libs/popper/popper.js') }}">
+    <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}">
     </script>
 
-    <script
-        src="{{ asset('assets/vendor/js/bootstrap.js') }}">
+    <script src="{{ asset('assets/vendor/js/bootstrap.js') }}">
     </script>
 
 
     {{-- =====================================================
-         PERFECT SCROLLBAR
+    PERFECT SCROLLBAR
     ====================================================== --}}
 
-    <script
-        src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}">
+    <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}">
     </script>
 
 
     {{-- =====================================================
-         MENU
+    MENU
     ====================================================== --}}
 
     @if(!$isPegawai)
 
-        <script
-            src="{{ asset('assets/vendor/js/menu.js') }}">
+        <script src="{{ asset('assets/vendor/js/menu.js') }}">
         </script>
 
     @endif
 
 
     {{-- =====================================================
-         DATATABLES
+    DATATABLES
     ====================================================== --}}
 
-    <script
-        src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js">
     </script>
 
-    <script
-        src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js">
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js">
     </script>
 
-    <script
-        src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js">
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js">
     </script>
 
-    <script
-        src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js">
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js">
     </script>
 
 
     {{-- =====================================================
-         SELECT2
+    SELECT2
     ====================================================== --}}
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
     </script>
 
 
     {{-- =====================================================
-         LEAFLET
+    LEAFLET
     ====================================================== --}}
 
-    <script
-        src="https://unpkg.com/leaflet/dist/leaflet.js">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js">
     </script>
 
 
     {{-- =====================================================
-         WEBCAM
+    WEBCAM
     ====================================================== --}}
 
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js">
     </script>
 
 
     {{-- =====================================================
-         APEX CHART
+    APEX CHART
     ====================================================== --}}
 
-    <script
-        src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}">
+    <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}">
     </script>
 
 
     {{-- =====================================================
-         MAIN JS
+    MAIN JS
     ====================================================== --}}
 
-    <script
-        src="{{ asset('assets/js/main.js') }}">
+    {{-- <script src="{{ asset('assets/js/main.js') }}">
+    </script> --}}
+    <script src="{{ asset('js/main.js') }}?v={{ filemtime(public_path('js/main.js')) }}"></script>
+
+
+    {{-- =====================================================
+    SWEETALERT
+    ====================================================== --}}
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
     </script>
 
 
     {{-- =====================================================
-         SWEETALERT
-    ====================================================== --}}
-
-    <script
-        src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
-    </script>
-
-
-    {{-- =====================================================
-         SERVICE WORKER + FLASH MESSAGE
+    SERVICE WORKER + FLASH MESSAGE
     ====================================================== --}}
 
     <script>
@@ -557,19 +488,19 @@
            SERVICE WORKER
         ====================================================== */
 
-        if('serviceWorker' in navigator){
+        if ('serviceWorker' in navigator) {
 
             navigator
                 .serviceWorker
                 .register('/sw.js')
 
-                .then(function(){
+                .then(function () {
 
                     console.log('SW registered');
 
                 })
 
-                .catch(function(err){
+                .catch(function (err) {
 
                     console.error(
                         'SW failed',
@@ -587,7 +518,7 @@
 
         document.addEventListener(
             'DOMContentLoaded',
-            function(){
+            function () {
 
 
                 /* =============================================
@@ -598,9 +529,9 @@
 
                     Swal.fire({
 
-                        icon:'success',
+                        icon: 'success',
 
-                        title:'Berhasil',
+                        title: 'Berhasil',
 
                         text:
                             @json(
@@ -608,7 +539,7 @@
                                 ?? session('success')
                             ),
 
-                        confirmButtonColor:'#097612'
+                        confirmButtonColor: '#097612'
 
                     });
 
@@ -623,9 +554,9 @@
 
                     Swal.fire({
 
-                        icon:'error',
+                        icon: 'error',
 
-                        title:'Gagal',
+                        title: 'Gagal',
 
                         text:
                             @json(
@@ -633,7 +564,7 @@
                                 ?? session('error')
                             ),
 
-                        confirmButtonColor:'#dc3545'
+                        confirmButtonColor: '#dc3545'
 
                     });
 
@@ -648,9 +579,9 @@
 
                     Swal.fire({
 
-                        icon:'warning',
+                        icon: 'warning',
 
-                        title:'Perhatian',
+                        title: 'Perhatian',
 
                         text:
                             @json(
@@ -658,7 +589,7 @@
                                 ?? session('warning')
                             ),
 
-                        confirmButtonColor:'#ffc107'
+                        confirmButtonColor: '#ffc107'
 
                     });
 
@@ -673,9 +604,9 @@
 
                     Swal.fire({
 
-                        icon:'info',
+                        icon: 'info',
 
-                        title:'Informasi',
+                        title: 'Informasi',
 
                         text:
                             @json(
@@ -683,7 +614,7 @@
                                 ?? session('info')
                             ),
 
-                        confirmButtonColor:'#0dcaf0'
+                        confirmButtonColor: '#0dcaf0'
 
                     });
 
@@ -697,16 +628,16 @@
 
 
     {{-- =====================================================
-         SCRIPT DARI HALAMAN
+    SCRIPT DARI HALAMAN
     ====================================================== --}}
 
     @stack('scripts')
 
 
     {{-- =====================================================
-         MOBILE BOTTOM TOOLBAR
+    MOBILE BOTTOM TOOLBAR
 
-         HANYA PEGAWAI
+    HANYA PEGAWAI
     ====================================================== --}}
 
     @if($isPegawai)
