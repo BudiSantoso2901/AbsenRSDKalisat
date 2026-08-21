@@ -21,6 +21,15 @@
             display: none;
         }
 
+        .preview-pdf {
+            width: 100%;
+            height: 400px;
+            margin-top: 10px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            display: none;
+        }
+
         .upload-box {
             border: 2px dashed #dcdcdc;
             border-radius: 12px;
@@ -114,6 +123,12 @@
                             accept="image/jpeg,image/png,image/jpg,application/pdf" class="d-none" required>
 
                         <img id="preview" class="preview-img">
+
+                        <iframe
+                            id="previewPdf"
+                            class="preview-pdf">
+                        </iframe>
+
                     </div>
 
                     {{-- Instagram --}}
@@ -177,6 +192,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('bukti_foto');
             const preview = document.getElementById('preview');
+            const previewPdf = document.getElementById('previewPdf');
             const form = document.getElementById('formKonten');
 
             // 1. Validasi & Preview file upload client-side
@@ -211,11 +227,23 @@
                     return;
                 }
 
+                const fileUrl = URL.createObjectURL(file);
+
                 if (file.type.startsWith('image/')) {
-                    preview.src = URL.createObjectURL(file);
+
+                    preview.src = fileUrl;
                     preview.style.display = 'block';
-                } else {
-                    preview.style.display = 'none'; // Jika PDF tidak ditampilkan sebagai gambar
+
+                    previewPdf.src = '';
+                    previewPdf.style.display = 'none';
+
+                } else if (file.type === 'application/pdf') {
+
+                    preview.style.display = 'none';
+                    preview.src = '';
+
+                    previewPdf.src = fileUrl;
+                    previewPdf.style.display = 'block';
                 }
             });
 
