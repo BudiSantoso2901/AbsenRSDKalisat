@@ -16,7 +16,7 @@
                 </a>
             </li>
 
-            {{-- <li
+            <li
                 class="menu-item {{ request()->is('pegawai/*', 'jabatan/*', 'jam-kerja/*', 'lokasi/*') ? 'open active' : '' }}">
                 <a href="javascript:void(0)" class="menu-link menu-toggle">
                     <i class="menu-icon bx bx-layer"></i>
@@ -43,7 +43,7 @@
                         <a href="{{ route('ruangan.index') }}" class="menu-link">Ruangan</a>
                     </li>
                 </ul>
-            </li> --}}
+            </li>
 
             <li class="menu-item {{ request()->is('absensi*', 'admin/absensi*') ? 'open active' : '' }}">
                 <a href="javascript:void(0)" class="menu-link menu-toggle">
