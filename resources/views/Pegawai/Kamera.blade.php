@@ -1,678 +1,1743 @@
 @extends('_layouts.layouts')
 
 @section('content')
-    <style>
-        /* Container kamera */
-        #my_camera {
-            width: 270px;
-            height: 270px;
-            margin: auto;
-            padding: 6px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #f06292, #2ecc71);
-            box-shadow:
-                0 8px 20px rgba(9, 118, 18, 0.35),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.3);
-        }
 
-        /* Video kamera */
-        #my_camera video {
-            width: 100% !important;
-            height: 100% !important;
-            border-radius: 12px;
-            object-fit: cover;
-            background: #000;
-            transform: scaleX(-1) !important;
-        }
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-        /* Hasil foto */
-        #results img {
-            border-radius: 12px;
-            transform: scaleX(1) !important;
-        }
+<style>
 
-        .btn-absen {
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            padding: 12px;
-            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
-            transition: all 0.25s ease;
-        }
+/* =========================================================
+   CAMERA
+========================================================= */
 
-        .btn-absen:hover {
-            background-color: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(40, 167, 69, 0.55);
-        }
+#my_camera{
+    width:270px;
+    height:270px;
+    margin:auto;
+    padding:5px;
 
-        .btn-absen:active {
-            transform: scale(0.98);
-        }
+    border-radius:16px;
 
-        .alert-lokasi {
-            background: linear-gradient(135deg, #f06292, #2ecc71);
-            color: #fff;
-            border: none;
-            border-radius: 14px;
-            padding: 14px 16px;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
-        }
+    background:linear-gradient(
+        135deg,
+        #ff2da6,
+        #c83fa8,
+        #28c76f
+    );
 
-        .alert-lokasi strong {
-            color: #fff;
-        }
+    box-shadow:none;
+}
 
-        .alert-lokasi i {
-            font-size: 1.1rem;
-        }
+#my_camera video{
+    width:100%!important;
+    height:100%!important;
 
-        .btn-reset {
-            background: linear-gradient(135deg, #fb01ff, rgb(155, 3, 135));
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            padding: 12px;
-            box-shadow: 0 6px 16px rgba(255, 91, 217, 0.4);
-            transition: all 0.25s ease;
-        }
+    border-radius:11px;
 
-        .btn-reset:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgb(255, 0, 225);
-        }
+    object-fit:cover;
+    background:#000;
 
-        .btn-reset:active {
-            transform: scale(0.97);
-        }
+    transform:scaleX(-1)!important;
+}
 
-        /* RESPONSIVE */
-        @media (max-width: 576px) {
 
-            .btn-reset,
-            .btn-absen {
-                width: 100%;
-            }
-        }
-    </style>
-    <div class="container-xxl flex-grow-1 container-p-y">
+/* =========================================================
+   CARD
+========================================================= */
 
-        <h4 class="fw-bold py-3 mb-4">
-            <span class="text-muted fw-light">Kamera /</span> Ambil Gambar & Lokasi
-        </h4>
+.absensi-card{
+    border-radius:18px;
+    overflow:hidden;
+}
 
-        <div class="row g-4">
+.absensi-card .card-body{
+    padding:20px;
+}
 
-            {{-- ================= CARD KAMERA (BARIS 1) ================= --}}
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header fw-bold">
-                        Kamera
-                    </div>
 
-                    <div class="card-body">
-                        <small class="text-muted d-block mb-1">
-                            Jangan lupa absen sebelum meninggalkan lokasi
-                        </small>
-                        {{-- Waktu --}}
-                        <div class="mb-3">
-                            <div class="alert alert-lokasi mt-3">
-                                <strong>Lokasi:</strong> {{ $lokasi->nama_lokasi }} <br>
-                                <strong>Radius:</strong> {{ $lokasi->radius_meter }} meter <br>
-                                <strong>Jam Kerja:</strong>
-                                {{ $jamKerja->jam_mulai }} - {{ $jamKerja->jam_selesai }}
-                                <br>
-                                <strong>
-                                    <i class="bx bx-time"></i>
-                                    <small id="currentTime">--:--:--</small>
-                                </strong>
-                            </div>
-                        </div>
-                        <form id="form-absensi" enctype="multipart/form-data">
-                            @csrf
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Pilih Absensi</label>
-                                <select class="form-select" id="mode_absen">
-                                    <option value="normal">Absen Kerja</option>
-                                    <option value="kegiatan">Apel / Jumat Sehat</option>
-                                </select>
-                            </div>
-                            {{-- STATUS --}}
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Jenis Absensi</label>
-                                <select class="form-select" name="status" id="status_absen">
-                                    <option value="hadir">Hadir</option>
-                                    <option value="izin">Izin</option>
-                                    <option value="sakit">Sakit</option>
-                                </select>
-                            </div>
+/* =========================================================
+   CAMERA TITLE
+========================================================= */
 
-                            {{-- ================= HADIR ================= --}}
-                            <div id="section-hadir">
+.camera-title{
+    text-align:center;
+    margin-bottom:12px;
+}
 
-                                <div id="my_camera" class="mb-3"></div>
-                                {{-- <input type="hidden" name="foto" id="fotoBase64"> --}}
-                                <input type="hidden" name="latitude" id="inputLat">
-                                <input type="hidden" name="longitude" id="inputLng">
+.camera-title h5{
+    margin:0;
+    font-size:16px;
+}
 
-                            </div>
+.camera-title small{
+    color:#999;
+}
 
-                            {{-- ================= IZIN / SAKIT ================= --}}
-                            <div id="section-izin" style="display:none">
 
-                                <div class="mb-3">
-                                    <label class="form-label">Keterangan <strong>*</strong></label>
-                                    <textarea class="form-control" name="keterangan" rows="3"></textarea>
-                                </div>
+/* =========================================================
+   LOCATION
+========================================================= */
 
-                                <div class="mb-3">
-                                    <label class="form-label">Upload Surat <strong>*</strong></label>
-                                    <input type="file" name="surat" class="form-control">
-                                </div>
+.location-box{
+    background:#f5fbf7;
+    border:1px solid #d9efde;
+    border-radius:15px;
+    padding:14px;
+    margin-bottom:18px;
+}
 
-                            </div>
-                            <div class="d-flex gap-2 mt-2 flex-wrap">
-                                <button type="button" class="btn btn-reset flex-fill" id="btnReset">
-                                    <i class="bx bx-refresh"></i> Reset Lokasi & Refresh
-                                </button>
+.location-title{
+    font-weight:600;
+    color:#687785;
+    margin-bottom:10px;
+}
 
-                                <button class="btn btn-absen flex-fill" type="submit" id="btnSubmit">
-                                    <i class="bx bx-camera"></i> Absen Kerja
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+.location-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+
+.location-item{
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:10px;
+    padding:10px;
+}
+
+.location-item.full{
+    grid-column:1 / -1;
+}
+
+.location-label{
+    display:block;
+    font-size:11px;
+    color:#999;
+    margin-bottom:3px;
+}
+
+.location-value{
+    font-size:13px;
+    font-weight:600;
+}
+
+.gps-status{
+    margin-top:10px;
+    color:#28a745;
+    font-size:13px;
+}
+
+.location-detail{
+    margin-top:5px;
+    font-size:11px;
+    color:#999;
+}
+
+
+/* =========================================================
+   MAP
+========================================================= */
+
+.map-toggle{
+    width:100%;
+    margin-top:10px;
+
+    padding:9px;
+
+    border:1px solid #d9efde;
+    background:#fff;
+    color:#36894d;
+
+    border-radius:10px;
+}
+
+.map-box{
+    display:none;
+    margin-top:10px;
+
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.map-box.show{
+    display:block;
+}
+
+#attendance-map{
+    height:300px;
+    width:100%;
+}
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.actions{
+    display:flex;
+    gap:8px;
+    margin-top:15px;
+    margin-bottom:18px;
+}
+
+.btn-reset,
+.btn-absen{
+    flex:1;
+
+    height:42px;
+    min-height:42px;
+
+    padding:6px 10px;
+
+    border-radius:8px;
+
+    font-size:13px;
+    font-weight:600;
+
+    box-shadow:none;
+}
+
+
+/* =========================================================
+   REFRESH
+========================================================= */
+
+.btn-reset{
+    background:#fff;
+    border:1px solid #ddd;
+    color:#666;
+}
+
+.btn-reset:hover{
+    background:#f8f8f8;
+}
+
+
+/* =========================================================
+   ABSEN
+========================================================= */
+
+.btn-absen{
+    background:#28a745;
+    border:1px solid #28a745;
+    color:#fff;
+}
+
+.btn-absen:hover{
+    background:#218838;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:576px){
+
+    #my_camera{
+        width:260px;
+        height:260px;
+    }
+
+    .actions{
+        flex-wrap:nowrap;
+    }
+
+    .btn-reset,
+    .btn-absen{
+        width:auto;
+        flex:1;
+    }
+
+}
+
+</style>
+
+
+{{-- =========================================================
+     MAIN CONTAINER
+========================================================= --}}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+    <div class="absensi-card card shadow-sm">
+
+        <div class="card-body">
+
+
+            {{-- =================================================
+                 CAMERA TITLE
+            ================================================= --}}
+
+            <div class="camera-title">
+
+                <h5>
+                    📷 Ambil Foto Absensi
+                </h5>
+
+                <small>
+                    Posisikan wajah di tengah kamera.
+                </small>
+
             </div>
 
-            {{-- ================= CARD MAP (BARIS 2) ================= --}}
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header fw-bold">
-                        Lokasi Pengguna
-                    </div>
 
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <small>
-                                Latitude: <b id="lat">-</b><br>
-                                Longitude: <b id="lng">-</b>
-                            </small>
-                        </div>
+            {{-- =================================================
+                 CAMERA
+            ================================================= --}}
 
-                        <div id="map" style="height: 350px; width: 100%;"></div>
-                    </div>
-                </div>
+            <div id="section-hadir"
+                 class="mb-4">
+
+                <div id="my_camera"></div>
+
             </div>
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="table-responsive text-nowrap">
-                        <table class="table">
-                            <caption class="ms-4">
-                                Data Absensi Bulan Ini
-                            </caption>
-                            <thead>
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Waktu Datang</th>
-                                    <th>Waktu Pulang</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($absensi as $row)
-                                    <tr>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($row->tanggal)->locale('id')->translatedFormat('l, d F Y') }}
-                                        </td>
-                                        <td>
-                                            {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
 
-                                            @if ($row->tl_badge)
-                                                <span class="badge bg-warning ms-1">{{ $row->tl_badge }}</span>
-                                            @endif
-                                        </td>
 
-                                        <td>
-                                            {{ $row->waktu_pulang
-                                                ? \Carbon\Carbon::parse($row->waktu_pulang)->locale('id')->translatedFormat('l, j F Y H.i')
-                                                : '-' }}
-                                        </td>
+            {{-- =================================================
+                 FORM
+            ================================================= --}}
 
-                                        <td>
-                                            <span class="badge bg-success">
-                                                {{ strtoupper($row->status) }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+            <form id="form-absensi"
+                  enctype="multipart/form-data">
+
+                @csrf
+
+
+                {{-- PENTING:
+                     LATITUDE & LONGITUDE ADA DI DALAM FORM
+                --}}
+
+                <input type="hidden"
+                       name="latitude"
+                       id="inputLat">
+
+                <input type="hidden"
+                       name="longitude"
+                       id="inputLng">
+
+
+                {{-- =================================================
+                     MODE ABSENSI
+                ================================================= --}}
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        Mode Absensi
+                    </label>
+
+                    <select class="form-select"
+                            id="mode_absen"
+                            name="mode_absen">
+
+                        <option value="normal">
+                            Absen Kerja
+                        </option>
+
+                        <option value="kegiatan">
+                            Apel / Jumat Sehat
+                        </option>
+
+                    </select>
+
                 </div>
+
+
+                {{-- =================================================
+                     STATUS
+                ================================================= --}}
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        Status Kehadiran
+                    </label>
+
+                    <select class="form-select"
+                            name="status"
+                            id="status_absen">
+
+                        <option value="hadir">
+                            Hadir
+                        </option>
+
+                        <option value="izin">
+                            Izin
+                        </option>
+
+                        <option value="sakit">
+                            Sakit
+                        </option>
+
+                        <option value="cuti">
+                            Cuti
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                {{-- =================================================
+                     IZIN / SAKIT
+                ================================================= --}}
+
+                <div id="section-izin"
+                     style="display:none">
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Keterangan <strong>*</strong>
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            name="keterangan"
+                            rows="3"
+                            placeholder="Tuliskan keterangan..."></textarea>
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Upload Surat
+                        </label>
+
+                        <input type="file"
+                               name="surat"
+                               class="form-control">
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     BUTTON
+                ================================================= --}}
+
+                <div class="actions">
+
+                    <button type="button"
+                            class="btn-reset"
+                            id="btnReset">
+
+                        🔄 Refresh Lokasi
+
+                    </button>
+
+
+                    <button type="submit"
+                            class="btn-absen"
+                            id="btnSubmit">
+
+                        📷 Absen Sekarang
+
+                    </button>
+
+                </div>
+
+            </form>
+
+            {{-- =================================================
+                 LOCATION
+            ================================================= --}}
+
+            <div class="location-box">
+
+                <div class="location-title">
+
+                    📍 Lokasi Absensi
+
+                </div>
+
+
+                <div class="location-grid">
+
+
+                    {{-- LOKASI --}}
+
+                    <div class="location-item full">
+
+                        <span class="location-label">
+                            Lokasi
+                        </span>
+
+                        <span class="location-value"
+                              id="locationName">
+
+                            {{ $lokasi->nama_lokasi }}
+
+                        </span>
+
+                    </div>
+
+
+                    {{-- RADIUS --}}
+
+                    <div class="location-item">
+
+                        <span class="location-label">
+                            Radius
+                        </span>
+
+                        <span class="location-value"
+                              id="locationRadius">
+
+                            {{ $lokasi->radius_meter }} m
+
+                        </span>
+
+                    </div>
+
+
+                    {{-- JAM KERJA --}}
+
+                    <div class="location-item">
+
+                        <span class="location-label">
+                            Jam Kerja
+                        </span>
+
+                        <span class="location-value">
+
+                            {{ $jamKerja->jam_mulai }}
+                            -
+                            {{ $jamKerja->jam_selesai }}
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     GPS STATUS
+                ================================================= --}}
+
+                <div class="gps-status">
+
+                    ●
+
+                    <span id="gpsText">
+                        GPS sedang digunakan
+                    </span>
+
+                </div>
+
+
+                {{-- =================================================
+                     KOORDINAT
+                ================================================= --}}
+
+                <div class="location-detail">
+
+                    Lat:
+                    <b id="lat">-</b>
+
+                    &nbsp;
+
+                    Lng:
+                    <b id="lng">-</b>
+
+                </div>
+
+
+                {{-- =================================================
+                     MAP BUTTON
+                ================================================= --}}
+
+                <button type="button"
+                        class="map-toggle"
+                        id="mapToggle">
+
+                    🗺️
+
+                    <span id="mapToggleText">
+                        Tampilkan Peta
+                    </span>
+
+                </button>
+
+
+                {{-- =================================================
+                     MAP
+                ================================================= --}}
+
+                <div class="map-box"
+                     id="mapBox">
+
+                    <div id="attendance-map"></div>
+
+                </div>
+
             </div>
+
+
+
+
         </div>
+
     </div>
-@endsection
+
+</div>
+
+
+{{-- =========================================================
+     LEAFLET
+========================================================= --}}
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
 @push('scripts')
-    <script>
-        /* ================= Tampilan  ================= */
-        const statusSelect = document.getElementById('status_absen');
-        const sectionHadir = document.getElementById('section-hadir');
-        const sectionIzin = document.getElementById('section-izin');
-        const modeSelect = document.getElementById('mode_absen');
-        const btnSubmit = document.getElementById('btnSubmit');
-        let isSubmitting = false;
-        modeSelect.addEventListener('change', function() {
-            if (this.value === 'kegiatan') {
-                btnSubmit.innerHTML = '<i class="bx bx-flag"></i> Absen Kegiatan';
-                btnSubmit.classList.remove('btn-success');
-                btnSubmit.style.backgroundColor = '#ff9800';
-            } else {
-                btnSubmit.innerHTML = '<i class="bx bx-camera"></i> Absen Kerja';
-                btnSubmit.style.backgroundColor = '#28a745';
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+
+/* =========================================================
+   HELPER
+========================================================= */
+
+const $ = id => document.getElementById(id);
+
+/* =========================================================
+   POPUP SWEETALERT
+========================================================= */
+function popupPesan(message, defaultIcon = 'warning'){
+
+    const pesan =
+        String(
+            message ||
+            'Terjadi kesalahan.'
+        );
+
+    const lower =
+        pesan.toLowerCase();
+
+    let icon =
+        defaultIcon;
+
+    let title =
+        'Perhatian';
+
+
+    if(
+        lower.includes('berhasil') ||
+        lower.includes('sukses')
+    ){
+
+        icon =
+            'success';
+
+        title =
+            'Berhasil';
+
+    }else if(
+        lower.includes('gagal') ||
+        lower.includes('error') ||
+        lower.includes('server') ||
+        lower.includes('tidak valid')
+    ){
+
+        icon =
+            'error';
+
+        title =
+            'Gagal';
+
+    }
+
+
+    return Swal.fire({
+
+        icon:
+            icon,
+
+        title:
+            title,
+
+        text:
+            pesan,
+
+        confirmButtonText:
+            'OK',
+
+        confirmButtonColor:
+            '#097612'
+
+    });
+
+}
+
+
+/* =========================================================
+   ELEMENT
+========================================================= */
+
+const form =
+    $('form-absensi');
+
+const modeSelect =
+    $('mode_absen');
+
+const statusSelect =
+    $('status_absen');
+
+const btnSubmit =
+    $('btnSubmit');
+
+const btnReset =
+    $('btnReset');
+
+const sectionHadir =
+    $('section-hadir');
+
+const sectionIzin =
+    $('section-izin');
+
+
+let isSubmitting = false;
+
+
+/* =========================================================
+   MODE ABSENSI
+========================================================= */
+
+modeSelect.addEventListener(
+    'change',
+    function(){
+
+        if(this.value === 'kegiatan'){
+
+            btnSubmit.innerHTML =
+                '🚩 Absen Kegiatan';
+
+            btnSubmit.style.background =
+                '#ff9800';
+
+        }else{
+
+            btnSubmit.innerHTML =
+                '📷 Absen Sekarang';
+
+            btnSubmit.style.background =
+                '#28a745';
+
+        }
+
+        renderLokasi(this.value);
+
+    }
+);
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+statusSelect.addEventListener(
+    'change',
+    function(){
+
+        if(this.value === 'hadir'){
+
+            sectionHadir.style.display =
+                'block';
+
+            sectionIzin.style.display =
+                'none';
+
+        }else{
+
+            sectionHadir.style.display =
+                'none';
+
+            sectionIzin.style.display =
+                'block';
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   DATA LOKASI
+========================================================= */
+
+const lokasiPegawai = {
+
+    lat: {{ $lokasi->latitude }},
+
+    lng: {{ $lokasi->longitude }},
+
+    radius: {{ $lokasi->radius_meter }},
+
+    nama: @json($lokasi->nama_lokasi)
+
+};
+
+
+const lokasiKegiatan = {
+
+    lat: -8.13484147,
+
+    lng: 113.82144392,
+
+    radius: 50,
+
+    nama: 'Lokasi Apel / Jumat Sehat'
+
+};
+
+
+function getLokasi(mode){
+
+    return mode === 'kegiatan'
+        ? lokasiKegiatan
+        : lokasiPegawai;
+
+}
+
+
+/* =========================================================
+   MAP TILE
+========================================================= */
+
+const osm =
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            maxZoom:19,
+
+            attribution:
+                '© OpenStreetMap contributors'
+        }
+    );
+
+
+/*
+ * SATELIT
+ */
+
+const esri =
+    L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+            maxZoom:19,
+
+            attribution:
+                'Tiles © Esri'
+        }
+    );
+
+
+/* =========================================================
+   MAP VARIABLES
+========================================================= */
+
+let map = null;
+
+let lokasiMarker = null;
+
+let radiusCircle = null;
+
+let markerUser = null;
+
+
+/* =========================================================
+   INIT MAP
+========================================================= */
+
+function initMap(){
+
+    if(map)
+        return;
+
+
+    map =
+        L.map(
+            'attendance-map',
+            {
+
+                center:[
+                    lokasiPegawai.lat,
+                    lokasiPegawai.lng
+                ],
+
+                zoom:17,
+
+                scrollWheelZoom:false,
+
+                /*
+                 * DEFAULT SATELIT
+                 */
+
+                layers:[
+                    esri
+                ]
+
             }
-            renderLokasi(this.value);
-        });
+        );
 
-        statusSelect.addEventListener('change', function() {
-            if (this.value === 'hadir') {
-                sectionHadir.style.display = 'block';
-                sectionIzin.style.display = 'none';
-            } else {
-                sectionHadir.style.display = 'none';
-                sectionIzin.style.display = 'block';
+
+    /*
+     * PILIH MAP
+     */
+
+    L.control.layers({
+
+        'Satelit':
+            esri,
+
+        'Street Map':
+            osm
+
+    }).addTo(map);
+
+}
+
+
+/* =========================================================
+   RENDER LOKASI
+========================================================= */
+
+function renderLokasi(mode='normal'){
+
+    initMap();
+
+
+    const lokasi =
+        getLokasi(mode);
+
+
+    if(lokasiMarker)
+        map.removeLayer(
+            lokasiMarker
+        );
+
+
+    if(radiusCircle)
+        map.removeLayer(
+            radiusCircle
+        );
+
+
+    map.setView(
+        [
+            lokasi.lat,
+            lokasi.lng
+        ],
+        17
+    );
+
+
+    lokasiMarker =
+        L.marker([
+            lokasi.lat,
+            lokasi.lng
+        ])
+        .addTo(map)
+        .bindPopup(
+            `<b>${lokasi.nama}</b>`
+        );
+
+
+    radiusCircle =
+        L.circle(
+            [
+                lokasi.lat,
+                lokasi.lng
+            ],
+            {
+
+                radius:
+                    lokasi.radius,
+
+                color:
+                    mode === 'kegiatan'
+                        ? 'orange'
+                        : 'green',
+
+                fillColor:
+                    mode === 'kegiatan'
+                        ? '#ff9800'
+                        : '#4CAF50',
+
+                fillOpacity:
+                    .2
+
             }
-        });
+        )
+        .addTo(map);
 
-        /* ================= FORM SUBMIT ================= */
-        document.getElementById('form-absensi').addEventListener('submit', function(e) {
-            e.preventDefault();
 
-            if (isSubmitting) return;
-            isSubmitting = true;
+    $('locationName').innerText =
+        lokasi.nama;
 
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Memproses...';
 
-            const status = statusSelect.value;
-            const formData = new FormData(this);
+    $('locationRadius').innerText =
+        lokasi.radius + ' m';
 
-            // ================= VALIDASI IZIN / SAKIT =================
-            if (status !== 'hadir') {
-                formData.delete('foto');
-                const keteranganField = this.querySelector('textarea[name="keterangan"]');
-                const keterangan = keteranganField ? keteranganField.value.trim() : '';
 
-                if (!keterangan.trim()) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Perhatian',
-                        text: 'Keterangan wajib diisi untuk izin atau sakit'
-                    });
-                    return;
+    setTimeout(
+        () => map.invalidateSize(),
+        200
+    );
+
+}
+
+
+/* =========================================================
+   MAP TOGGLE
+========================================================= */
+
+$('mapToggle').addEventListener(
+    'click',
+    function(){
+
+        const box =
+            $('mapBox');
+
+
+        const show =
+            box.classList.toggle(
+                'show'
+            );
+
+
+        $('mapToggleText').innerText =
+            show
+                ? 'Sembunyikan Peta'
+                : 'Tampilkan Peta';
+
+
+        if(show){
+
+            renderLokasi(
+                modeSelect.value
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   GPS
+========================================================= */
+
+function getGPS(){
+
+    if(!navigator.geolocation){
+
+        $('gpsText').innerText =
+            'GPS tidak tersedia';
+
+        return;
+
+    }
+
+
+    $('gpsText').innerText =
+        'Mencari lokasi...';
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position){
+
+            const lat =
+                position.coords.latitude;
+
+            const lng =
+                position.coords.longitude;
+
+
+            /*
+             * TAMPILKAN KOORDINAT
+             */
+
+            $('lat').innerText =
+                lat.toFixed(6);
+
+            $('lng').innerText =
+                lng.toFixed(6);
+
+
+            /*
+             * SIMPAN KE FORM
+             */
+
+            $('inputLat').value =
+                lat;
+
+            $('inputLng').value =
+                lng;
+
+
+            /*
+             * STATUS GPS
+             *
+             * Tidak menampilkan +66m
+             */
+
+            $('gpsText').innerText =
+                'GPS aktif';
+
+
+            /*
+             * USER MARKER
+             */
+
+            if(map){
+
+                if(markerUser){
+
+                    map.removeLayer(
+                        markerUser
+                    );
+
                 }
 
-                kirim(formData);
-                return;
+
+                markerUser =
+                    L.marker([
+                        lat,
+                        lng
+                    ])
+                    .addTo(map)
+                    .bindPopup(
+                        'Lokasi Anda'
+                    );
+
             }
 
-            // ================= VALIDASI HADIR =================
-            if (typeof Webcam === 'undefined') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Kamera tidak aktif',
-                    text: 'Webcam belum siap'
-                });
-                return;
-            }
-            formData.delete('keterangan');
-            formData.delete('surat');
-            Webcam.snap(function(data_uri) {
-                formData.append('foto', dataURItoBlob(data_uri), 'absen.jpg');
-                kirim(formData);
-            });
-        });
+        },
 
-        /* ================= AJAX ================= */
-        function kirim(formData) {
-            const mode = document.getElementById('mode_absen').value;
 
-            let url = "{{ route('absensi.store') }}"; // default normal
+        function(error){
 
-            if (mode === 'kegiatan') {
-                url = "{{ route('absensi.kegiatan') }}";
+            console.log(
+                'GPS Error:',
+                error
+            );
+
+
+            if(error.code === 1){
+
+                $('gpsText').innerText =
+                    'Izin lokasi ditolak';
+
+            }else{
+
+                $('gpsText').innerText =
+                    'GPS tidak tersedia';
+
             }
 
-            fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(async res => {
-                    const data = await res.json();
-                    return {
-                        status: res.status,
-                        data
-                    };
-                })
-                .then(({
-                    status,
-                    data
-                }) => {
+        },
 
-                    // ================= ERROR =================
-                    if (status === 422) {
-                        isSubmitting = false;
-                        btnSubmit.disabled = false;
 
-                        btnSubmit.innerHTML = (mode === 'kegiatan') ?
-                            '<i class="bx bx-flag"></i> Absen Kegiatan' :
-                            '<i class="bx bx-camera"></i> Absen Kerja';
+        {
 
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Perhatian',
-                            text: data.message
-                        });
-                        return;
-                    }
+            enableHighAccuracy:true,
 
-                    // ================= MODE NORMAL =================
-                    if (mode === 'normal') {
+            timeout:30000,
 
-                        if (data.telat === true) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: '⚠️ Anda Terlambat',
-                                html: `
-                            <b>${data.menitTelat} menit</b><br>
-                            Badge: <b>${data.badge}</b>
-                        `
-                            }).then(() => {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: data.message || 'Absen berhasil'
-                                }).then(() => location.reload());
-                            });
-                            return;
-                        }
+            maximumAge:0
 
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: data.message || 'Absen berhasil'
-                        }).then(() => location.reload());
-
-                        return;
-                    }
-
-                    // ================= MODE KEGIATAN =================
-                    if (mode === 'kegiatan') {
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: data.message || 'Absen kegiatan berhasil'
-                        }).then(() => location.reload());
-
-                        return;
-                    }
-                })
-                .catch(() => {
-                    isSubmitting = false;
-                    btnSubmit.disabled = false;
-
-                    btnSubmit.innerHTML = '<i class="bx bx-camera"></i> Absen';
-
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: 'Terjadi kesalahan server'
-                    });
-                });
         }
 
-        /* ================= HELPER ================= */
-        function dataURItoBlob(dataURI) {
-            const byteString = atob(dataURI.split(',')[1]);
-            const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-            return new Blob([ab], {
-                type: mimeString
-            });
-        }
+    );
 
-        /* ================= WAKTU REALTIME ================= */
-        function updateTime() {
-            const now = new Date();
-            const hours = now.getHours();
-            const timeString = now.toLocaleTimeString('id-ID');
+}
 
-            let waktu;
-            let icon;
 
-            if (hours >= 4 && hours < 11) {
-                waktu = 'Pagi';
-                icon = '🌅 ';
-            } else if (hours >= 11 && hours < 15) {
-                waktu = 'Siang';
-                icon = '☀️ ';
-            } else if (hours >= 15 && hours < 18) {
-                waktu = 'Sore';
-                icon = '🌤 ';
-            } else {
-                waktu = 'Malam';
-                icon = '🌙 ';
-            }
+/*
+ * GPS AWAL
+ */
 
-            document.getElementById('currentTime').innerText =
-                `${icon} ${timeString} - ${waktu}`;
-        }
+getGPS();
 
-        setInterval(updateTime, 1000);
-        updateTime()
 
-        /* ================= WEBCAM ================= */
-        function getCameraSize() {
-            if (window.innerWidth <= 768) {
-                // Mobile
-                return {
-                    width: 260,
-                    height: 260
-                };
-            } else {
-                // Desktop
-                return {
-                    width: 420,
-                    height: 420
-                };
-            }
-        }
+/* =========================================================
+   REFRESH GPS
+========================================================= */
 
-        const camSize = getCameraSize();
-        Webcam.set({
-            width: camSize.width,
-            height: camSize.height,
-            image_format: 'jpeg',
-            jpeg_quality: 85,
-            constraints: {
-                facingMode: "user" // kamera depan
-            }
-        });
+btnReset.addEventListener(
+    'click',
+    function(){
 
-        Webcam.attach('#my_camera');
+        const oldText =
+            this.innerHTML;
 
-        function take_snapshot() {
-            Webcam.snap(function(data_uri) {
-                document.getElementById('results').innerHTML = `
-                                <img src="${data_uri}" class="img-fluid rounded mt-2">
-                            `;
-            });
-        }
 
-        /* ================= MAP ================= */
+        this.disabled =
+            true;
 
-        // ====== DATA LOKASI ======
-        const lokasiPegawai = {
-            lat: {{ $lokasi->latitude }},
-            lng: {{ $lokasi->longitude }},
-            radius: {{ $lokasi->radius_meter }},
-            nama: "{{ $lokasi->nama_lokasi }}"
+
+        this.innerHTML =
+            '⏳ Mencari lokasi...';
+
+
+        getGPS();
+
+
+        setTimeout(
+            () => {
+
+                this.disabled =
+                    false;
+
+
+                this.innerHTML =
+                    oldText;
+
+            },
+            1500
+        );
+
+    }
+);
+
+
+/* =========================================================
+   WEBCAM
+========================================================= */
+
+function getCameraSize(){
+
+    if(window.innerWidth <= 768){
+
+        return {
+
+            width:260,
+
+            height:260
+
         };
 
-        const lokasiKegiatan = {
-            lat: -8.13484147,
-            lng: 113.82144392,
-            radius: 50,
-            nama: "Lokasi Apel / Jumat Sehat"
-        };
+    }
 
-        // ====== GET LOKASI ======
-        function getLokasi(mode) {
-            return mode === 'kegiatan' ? lokasiKegiatan : lokasiPegawai;
+
+    return {
+
+        width:420,
+
+        height:420
+
+    };
+
+}
+
+
+const camSize =
+    getCameraSize();
+
+
+if(typeof Webcam !== 'undefined'){
+
+    Webcam.set({
+
+        width:
+            camSize.width,
+
+        height:
+            camSize.height,
+
+        image_format:
+            'jpeg',
+
+        jpeg_quality:
+            85,
+
+        constraints:{
+
+            facingMode:
+                'user'
+
         }
 
-        // ====== TILE ======
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        });
+    });
 
-        const esri = L.tileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles © Esri'
-            });
 
-        // ====== INIT MAP ======
-        const map = L.map('map', {
-            center: [lokasiPegawai.lat, lokasiPegawai.lng],
-            zoom: 17,
-            layers: [esri]
-        });
+    Webcam.attach(
+        '#my_camera'
+    );
 
-        L.control.layers({
-            "OpenStreetMap": osm,
-            "Satelit": esri
-        }).addTo(map);
+}
 
-        // ====== STATE ======
-        let lokasiMarker = null;
-        let radiusCircle = null;
-        let markerUser = null;
 
-        // ====== RENDER LOKASI ======
-        function renderLokasi(mode = 'normal') {
-            const lokasi = getLokasi(mode);
+/* =========================================================
+   FORM SUBMIT
+========================================================= */
 
-            // Hapus marker lama
-            if (lokasiMarker) map.removeLayer(lokasiMarker);
-            if (radiusCircle) map.removeLayer(radiusCircle);
+form.addEventListener(
+    'submit',
+    function(e){
 
-            // Set view ke lokasi tujuan
-            map.setView([lokasi.lat, lokasi.lng], 17);
+        e.preventDefault();
 
-            // Marker lokasi
-            lokasiMarker = L.marker([lokasi.lat, lokasi.lng])
-                .addTo(map)
-                .bindPopup(`
-            <b>${lokasi.nama}</b><br>
-            Mode: ${mode === 'kegiatan' ? 'Kegiatan' : 'Kerja'}
-        `)
-                .openPopup();
 
-            // Circle radius
-            radiusCircle = L.circle([lokasi.lat, lokasi.lng], {
-                radius: lokasi.radius,
-                color: mode === 'kegiatan' ? 'orange' : 'green',
-                fillColor: mode === 'kegiatan' ? '#ff9800' : '#4CAF50',
-                fillOpacity: 0.2
-            }).addTo(map);
+        if(isSubmitting)
+            return;
+
+
+        isSubmitting =
+            true;
+
+
+        const status =
+            statusSelect.value;
+
+
+        const mode =
+            modeSelect.value;
+
+
+        const formData =
+            new FormData(this);
+
+
+        /* =================================================
+           CEK GPS
+
+           HADIR    -> WAJIB GPS
+           KEGIATAN -> WAJIB GPS
+           IZIN     -> TIDAK WAJIB GPS
+           SAKIT    -> TIDAK WAJIB GPS
+        ================================================= */
+
+        if(
+            status === 'hadir' ||
+            mode === 'kegiatan'
+        ){
+
+            if(
+                !$('inputLat').value ||
+                !$('inputLng').value
+            ){
+
+                isSubmitting =
+                    false;
+
+
+                popupPesan(
+                    'Lokasi GPS belum ditemukan. Silakan refresh lokasi.',
+                    'warning'
+                );
+
+
+                return;
+
+            }
+
         }
 
-        // ====== GEOLOCATION ======
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
 
-                    document.getElementById('lat').innerText = lat.toFixed(6);
-                    document.getElementById('lng').innerText = lng.toFixed(6);
-                    document.getElementById('inputLat').value = lat;
-                    document.getElementById('inputLng').value = lng;
+        /* =================================================
+           HADIR
+        ================================================= */
 
-                    // Hapus marker lama user
-                    if (markerUser) map.removeLayer(markerUser);
+        if(status === 'hadir'){
 
-                    markerUser = L.marker([lat, lng])
-                        .addTo(map)
-                        .bindPopup('Lokasi Anda')
-                        .openPopup();
-                },
-                function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'GPS Error',
-                        text: 'Aktifkan lokasi / GPS'
-                    });
-                }, {
-                    enableHighAccuracy: true,
-                    timeout: 30000,
-                    maximumAge: 0
+            /*
+             * Jangan kirim keterangan
+             */
+
+            formData.delete(
+                'keterangan'
+            );
+
+
+            /*
+             * Jangan kirim surat
+             */
+
+            formData.delete(
+                'surat'
+            );
+
+
+            /*
+             * CEK KAMERA
+             */
+
+            if(
+                typeof Webcam === 'undefined'
+            ){
+
+                isSubmitting =
+                    false;
+
+
+                popupPesan(
+                    'Kamera belum siap.',
+                    'warning'
+                );
+
+
+                return;
+
+            }
+
+
+            btnSubmit.disabled =
+                true;
+
+
+            btnSubmit.innerHTML =
+                '⏳ Mengambil foto...';
+
+
+            Webcam.snap(
+                function(data){
+
+                    if(!data){
+
+                        isSubmitting =
+                            false;
+
+
+                        btnSubmit.disabled =
+                            false;
+
+
+                        btnSubmit.innerHTML =
+                            mode === 'kegiatan'
+                                ? '🚩 Absen Kegiatan'
+                                : '📷 Absen Sekarang';
+
+
+                        popupPesan(
+                            'Foto gagal diambil.',
+                            'error'
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    formData.append(
+                        'foto',
+                        dataURItoBlob(data),
+                        'absen.jpg'
+                    );
+
+
+                    kirim(
+                        formData
+                    );
+
                 }
             );
+
+
+            return;
+
         }
 
-        // ====== LOAD AWAL ======
-        renderLokasi('normal');
 
-        document.getElementById('btnReset').addEventListener('click', function() {
-            const btn = this;
+        /* =================================================
+           IZIN / SAKIT
 
-            // animasi loading
-            btn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Resetting...';
-            btn.disabled = true;
+           GPS TIDAK WAJIB
+           FOTO TIDAK DIKIRIM
+        ================================================= */
 
-            // reset value lokasi
-            document.getElementById('inputLat').value = '';
-            document.getElementById('inputLng').value = '';
+        const ket =
+            this.querySelector(
+                'textarea[name="keterangan"]'
+            );
 
-            // reset tampilan koordinat
-            document.getElementById('lat').innerText = '-';
-            document.getElementById('lng').innerText = '-';
 
-            // optional: hapus marker map (kalau pakai leaflet)
-            if (typeof marker !== 'undefined') {
-                map.removeLayer(marker);
+        if(
+            !ket ||
+            !ket.value.trim()
+        ){
+
+            isSubmitting =
+                false;
+
+
+            popupPesan(
+                'Keterangan wajib diisi untuk izin, sakit atau cuti.',
+                'warning'
+            );
+
+
+            return;
+
+        }
+
+
+        /*
+         * Jangan kirim foto
+         */
+
+        formData.delete(
+            'foto'
+        );
+
+
+        /*
+         * KIRIM IZIN / SAKIT
+         */
+
+        kirim(
+            formData
+        );
+
+    }
+);
+
+
+/* =========================================================
+   SEND
+========================================================= */
+
+async function kirim(formData){
+
+    const mode =
+        modeSelect.value;
+
+
+    const url =
+        mode === 'kegiatan'
+
+            ? "{{ route('absensi.kegiatan') }}"
+
+            : "{{ route('absensi.store') }}";
+
+
+    btnSubmit.disabled =
+        true;
+
+
+    btnSubmit.innerHTML =
+        '⏳ Memproses...';
+
+
+    try{
+
+        const response =
+            await fetch(
+                url,
+                {
+
+                    method:'POST',
+
+                    headers:{
+
+                        'X-CSRF-TOKEN':
+                            "{{ csrf_token() }}",
+
+                        'Accept':
+                            'application/json'
+
+                    },
+
+                    body:
+                        formData
+
+                }
+            );
+
+
+        const text =
+            await response.text();
+
+
+        let data = {};
+
+
+        try{
+
+            data =
+                text
+                    ? JSON.parse(text)
+                    : {};
+
+        }catch{
+
+            throw new Error(
+                'Response server tidak valid.'
+            );
+
+        }
+
+
+        /*
+         * ERROR
+         *
+         * Pesan dari AbsensiController
+         * akan masuk ke sini.
+         */
+
+        if(!response.ok){
+
+            if(data.errors){
+
+                const errors =
+                    Object.values(
+                        data.errors
+                    )
+                    .flat()
+                    .join('\n');
+
+
+                throw new Error(
+                    errors
+                );
+
             }
 
-            // ambil ulang lokasi
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    document.getElementById('inputLat').value = position.coords.latitude;
-                    document.getElementById('inputLng').value = position.coords.longitude;
 
-                    // reload biar clean
-                    setTimeout(() => {
-                        location.reload();
-                    }, 800);
-                }, function() {
-                    alert('Gagal mengambil lokasi, coba aktifkan GPS');
-                    location.reload();
-                });
-            } else {
-                alert('Browser tidak mendukung GPS');
-                location.reload();
-            }
-        });
-    </script>
+            throw new Error(
+                data.message ||
+                'Gagal melakukan absensi.'
+            );
+
+        }
+
+
+        /*
+         * BERHASIL
+         */
+
+        await popupPesan(
+            data.message ||
+            'Absensi berhasil.',
+            'success'
+        );
+
+        window.location.href = "{{ route('pegawai.dashboard') }}";
+
+
+    }catch(error){
+
+        console.error(
+            'Absensi error:',
+            error
+        );
+
+
+        /*
+         * POPUP PESAN DARI CONTROLLER
+         *
+         * Contoh:
+         *
+         * "Belum waktunya absen masuk"
+         * "Belum waktunya absen pulang"
+         * "Anda berada di luar area absensi"
+         * "Absensi hari ini sudah lengkap"
+         * "Di luar jam Apel"
+         * dll.
+         */
+
+        await popupPesan(
+            error.message ||
+            'Terjadi kesalahan server.',
+            'warning'
+        );
+
+
+        /*
+         * Setelah gagal,
+         * tombol bisa digunakan lagi.
+         */
+
+        isSubmitting =
+            false;
+
+
+        btnSubmit.disabled =
+            false;
+
+
+        btnSubmit.innerHTML =
+            mode === 'kegiatan'
+                ? '🚩 Absen Kegiatan'
+                : '📷 Absen Sekarang';
+
+    }
+
+}
+
+
+/* =========================================================
+   DATA URI -> BLOB
+========================================================= */
+
+function dataURItoBlob(dataURI){
+
+    const parts =
+        dataURI.split(',');
+
+
+    const mime =
+        parts[0]
+            .match(
+                /:(.*?);/
+            )[1];
+
+
+    const binary =
+        atob(parts[1]);
+
+
+    const array =
+        new Uint8Array(
+            binary.length
+        );
+
+
+    for(
+        let i = 0;
+        i < binary.length;
+        i++
+    ){
+
+        array[i] =
+            binary.charCodeAt(i);
+
+    }
+
+
+    return new Blob(
+        [array],
+        {
+
+            type:mime
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   DEFAULT STATUS
+========================================================= */
+
+statusSelect.dispatchEvent(
+    new Event('change')
+);
+
+</script>
+
 @endpush
+
+@endsection
