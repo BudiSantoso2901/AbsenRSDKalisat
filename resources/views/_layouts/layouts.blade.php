@@ -66,7 +66,8 @@
     CUSTOM CSS
     ====================================================== --}}
 
-    <link rel="stylesheet" href="{{ asset('css/tambah.css') }}?v={{ filemtime(public_path('css/tambah.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/tambah.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/mobile.css') }}" />
 
 
     {{-- =====================================================
@@ -465,7 +466,8 @@
     MAIN JS
     ====================================================== --}}
 
-    <script src="{{ asset('js/main.js') }}?v={{ filemtime(public_path('js/main.js')) }}"></script>
+    <script src="{{ asset('assets/js/main.js') }}">
+    </script>
 
 
     {{-- =====================================================
