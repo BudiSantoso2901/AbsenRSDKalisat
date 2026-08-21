@@ -171,6 +171,32 @@ class PegawaiController extends Controller
         $bulan = now()->month;
         $tahun = now()->year;
 
+        /** ================= FILTER RIWAYAT ABSENSI ================= */
+
+        $periode = request('periode', now()->format('Y-m'));
+
+        [$tahunRiwayat, $bulanRiwayat] = explode('-', $periode);
+
+
+        /** ================= RIWAYAT ABSENSI ================= */
+
+        $absensi = Absensi::with('shift')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('waktu_masuk', 'desc')
+            ->get();
+        
+        $riwayatAbsensi = Absensi::with('shift')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulanRiwayat)
+            ->whereYear('tanggal', $tahunRiwayat)
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('waktu_masuk', 'desc')
+            ->paginate(5)
+            ->withQueryString();
+
         /** ================= RINGKASAN BULANAN ================= */
         $hadir = DB::table('absensi')
             ->where('id_pegawai', $pegawai->id)
@@ -193,6 +219,12 @@ class PegawaiController extends Controller
             ->where('status', 'sakit')
             ->count();
 
+        $cuti = DB::table('absensi')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('status', 'cuti')
+            ->count();
         /** ================= DATA CHART MINGGUAN ================= */
         $chartDB = DB::table('absensi')
             ->select(
@@ -235,10 +267,14 @@ class PegawaiController extends Controller
             'hadir',
             'izin',
             'sakit',
+            'cuti',
             'chartHadir',
             'chartIzin',
             'chartSakit',
-            'jamKerja'
+            'jamKerja',
+            'absensi',
+            'riwayatAbsensi',
+            'periode'
         ));
     }
     public function updateShift(Request $request)
