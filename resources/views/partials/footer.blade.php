@@ -7,7 +7,7 @@
                 document.write(new Date().getFullYear());
             </script>
             , made with ❤️ by IT
-            <a href="https://rsdkalisat.jemberkab.go.id/" target="_blank" class="footer-link fw-bolder">RSD KALISAT</a>
+            <a href="https://rsdkalisat.jemberkab.go.id/" target="_blank" class="footer-link fw-bolder">RSD KALISAT 2.0</a>
         </div>
         {{-- <div>
             <a href="https://themeselection.com/license/" class="footer-link me-4" target="_blank">License</a>
