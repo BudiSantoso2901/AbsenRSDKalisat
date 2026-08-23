@@ -294,6 +294,24 @@
     font-size:15px;
     font-weight:700;
     color:#20a965;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.tl-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:4px 7px;
+    border-radius:7px;
+    background:#fff3cd;
+    color:#b7791f;
+    border:1px solid #ffe69c;
+    font-size:10px;
+    font-weight:700;
+    line-height:1;
+    white-space:nowrap;
 }
 
 /* RIWAYAT */
@@ -404,24 +422,202 @@
 }
 
 .history-filter{
+    position:relative;
     margin:0;
 }
 
-.history-filter input{
+.month-picker-trigger{
+    position:relative;
+    z-index:10;
+    pointer-events:auto;
+
+    width:155px;
     height:38px;
-    padding:6px 10px;
+    padding:0 11px;
     border:1.5px solid #e0e4e8;
     border-radius:10px;
     background:#fff;
     color:#555;
-    font-size:13px;
-    outline:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    font-size:12px;
     cursor:pointer;
 }
 
-.history-filter input:focus{
-    border-color:#f06292;
-    box-shadow:0 0 0 3px rgba(240,98,146,.10);
+.month-picker-trigger:hover{
+    border-color:#cbd1d8;
+}
+
+.month-picker-trigger i{
+    font-size:16px;
+    color:#555;
+}
+
+
+/* POPUP */
+.month-picker-popup{
+    display:none;
+    position:absolute;
+    top:calc(100% + 7px);
+    right:0;
+    z-index:1000;
+
+    width:285px;
+    max-width:calc(100vw - 30px);
+
+    padding:14px;
+    border:1px solid #e1e5e9;
+    border-radius:12px;
+    background:#fff;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.12);
+}
+
+.month-picker-popup.show{
+    display:block;
+    pointer-events:auto;
+}
+
+
+/* YEAR */
+.month-picker-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+}
+
+.month-picker-header strong{
+    margin:0;
+    color:#4b5563;
+    font-size:15px;
+}
+
+.year-nav{
+    width:30px;
+    height:30px;
+    padding:0;
+    border:0;
+    border-radius:7px;
+    background:#f7f8f9;
+    color:#667085;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+}
+
+.year-nav i{
+    font-size:18px;
+}
+
+
+/* MONTHS */
+.month-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:7px;
+}
+
+.month-option{
+    height:36px;
+    border:0;
+    border-radius:8px;
+    background:transparent;
+    color:#4b5563;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.month-option:hover{
+    background:#f2f9f5;
+    color:#20a965;
+}
+
+.month-option.selected{
+    background:#20b66a;
+    color:#fff;
+}
+
+
+/* FOOTER */
+.month-picker-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+
+    margin-top:13px;
+    padding-top:11px;
+    border-top:1px solid #eef0f2;
+}
+
+.month-footer-right{
+    display:flex;
+    align-items:center;
+    gap:5px;
+}
+
+.month-footer-btn{
+    padding:6px 7px;
+    border:0;
+    background:transparent;
+    color:#667085;
+    font-size:11px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.month-footer-btn:hover{
+    color:#20a965;
+}
+
+.month-footer-btn.clear{
+    color:#98a2b3;
+}
+
+.month-apply-btn{
+    padding:7px 10px;
+    border:0;
+    border-radius:7px;
+    background:#20b66a;
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.month-apply-btn:hover{
+    background:#159f59;
+}
+
+.history-title-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:5px;
+    margin-bottom:5px;
+}
+
+.history-title-row strong{
+    margin:0;
+}
+
+.jenis-absen-badge{
+    display:inline-flex;
+    align-items:center;
+    padding:3px 6px;
+    border-radius:6px;
+    background:#f3f4f6;
+    color:#7b8491;
+    font-size:11px;
+    font-weight:700;
+    line-height:1;
+    white-space:nowrap;
 }
 
 /* PAGINATION */
@@ -693,10 +889,39 @@
         font-size:18px;
     }
 
-    .history-filter input{
+    .history-title-row{
+        gap:4px;
+    }
+
+    .jenis-absen-badge{
+        padding:3px 5px;
+        font-size:10px;
+    }
+
+    .month-picker-trigger{
         width:145px;
         height:37px;
-        font-size:12px;
+        font-size:11px;
+    }
+
+    .month-picker-popup{
+        position:fixed;
+        top:50%;
+        left:50%;
+        right:auto;
+        bottom:auto;
+        transform:translate(-50%,-50%);
+
+        width:280px;
+        max-width:calc(100vw - 28px);
+        max-height:calc(100dvh - 120px);
+
+        overflow-y:auto;
+        overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
+        touch-action:pan-y;
+
+        z-index:99999;
     }
 }
 
@@ -784,16 +1009,75 @@
 
 @php
 
-    $today = $absensi->first(function($item){
-
-        return \Carbon\Carbon::parse(
-            $item->tanggal
-        )->isToday();
-
+    $today = $absensi->first(function ($item) {
+        return \Carbon\Carbon::parse($item->tanggal)->isToday()
+            && !empty($item->shift_id);
     });
 
-    $todayStatus =
-        strtolower($today->status ?? '');
+    // fallback kalau memang tidak ada absensi reguler
+    if (!$today) {
+        $today = $absensi->first(function ($item) {
+            return \Carbon\Carbon::parse($item->tanggal)->isToday();
+        });
+    }
+
+    $todayStatus = strtolower($today->status ?? '');
+
+    /*
+    |--------------------------------------------------------------------------
+    | HITUNG TL
+    |--------------------------------------------------------------------------
+    */
+
+    $getTlBadge = function ($item) use ($jamKerja, $shiftAktif) {
+
+        // TL hanya berlaku untuk absensi hadir reguler
+        if (
+            !$item ||
+            strtolower($item->status ?? '') !== 'hadir' ||
+            !$item->waktu_masuk ||
+            empty($item->shift_id)
+        ) {
+            return null;
+        }
+
+        // Ambil shift saat absensi dilakukan
+        $shift = $jamKerja->firstWhere('id', $item->shift_id)
+            ?? $shiftAktif;
+
+        if (!$shift || !$shift->jam_mulai) {
+            return null;
+        }
+
+        $waktuMasuk = \Carbon\Carbon::parse(
+            $item->waktu_masuk,
+            'Asia/Jakarta'
+        );
+
+        // Batas telat = jam mulai + toleransi
+        $batasMasuk = \Carbon\Carbon::parse(
+            $item->tanggal,
+            'Asia/Jakarta'
+        )
+        ->setTimeFromTimeString($shift->jam_mulai)
+        ->addMinutes((int) ($shift->toleransi_menit ?? 0));
+
+        // Tidak telat
+        if (!$waktuMasuk->gt($batasMasuk)) {
+            return null;
+        }
+
+        $menitTelat = (int) $batasMasuk->diffInMinutes($waktuMasuk);
+
+        return match (true) {
+            $menitTelat <= 30 => 'TL1',
+            $menitTelat <= 60 => 'TL2',
+            $menitTelat <= 90 => 'TL3',
+            default           => 'TL4',
+        };
+    };
+
+    $todayTl = $getTlBadge($today);
 
 @endphp
 
@@ -1047,15 +1331,25 @@
         <div class="activity-time">
 
             @if(
-                $todayStatus === 'hadir'
-                && $today->waktu_masuk
+                $today &&
+                $todayStatus === 'hadir' &&
+                $today->waktu_masuk
             )
 
-                {{ \Carbon\Carbon::parse(
-                    $today->waktu_masuk
-                )->format('H:i') }}
+                <span>
+                    {{ \Carbon\Carbon::parse(
+                        $today->waktu_masuk
+                    )->format('H:i') }}
+                </span>
+
+                @if($todayTl)
+                    <span class="tl-badge">
+                        {{ $todayTl }}
+                    </span>
+                @endif
 
             @elseif(
+                $today &&
                 in_array(
                     $todayStatus,
                     ['izin','sakit','cuti']
@@ -1064,26 +1358,26 @@
 
                 @if($today->waktu_masuk)
 
-                    {{ \Carbon\Carbon::parse(
-                        $today->waktu_masuk
-                    )->format('H:i') }}
+                    <span>
+                        {{ \Carbon\Carbon::parse(
+                            $today->waktu_masuk
+                        )->format('H:i') }}
+                    </span>
 
                 @elseif($today->created_at)
 
-                    {{ \Carbon\Carbon::parse(
-                        $today->created_at
-                    )->format('H:i') }}
+                    <span>
+                        {{ \Carbon\Carbon::parse(
+                            $today->created_at
+                        )->format('H:i') }}
+                    </span>
 
                 @else
-
                     -
-
                 @endif
 
             @else
-
                 -
-
             @endif
 
         </div>
@@ -1170,13 +1464,87 @@
         </h5>
 
 
-        <form method="GET" class="history-filter">
+        <form method="GET" class="history-filter" id="historyFilterForm">
 
             <input
-                type="month"
+                type="hidden"
                 name="periode"
-                value="{{ request('periode', now()->format('Y-m')) }}"
-                onchange="this.form.submit()">
+                id="periodeInput"
+                value="{{ request('periode', now()->format('Y-m')) }}">
+
+            <button
+                type="button"
+                class="month-picker-trigger"
+                id="monthPickerTrigger">
+
+                <span id="monthPickerLabel">
+                    {{ \Carbon\Carbon::createFromFormat(
+                        'Y-m',
+                        request('periode', now()->format('Y-m'))
+                    )->locale('id')->translatedFormat('F Y') }}
+                </span>
+
+                <i class="bx bx-calendar"></i>
+
+            </button>
+
+
+            <div class="month-picker-popup" id="monthPickerPopup">
+
+                <div class="month-picker-header">
+
+                    <button type="button" class="year-nav" id="prevYear">
+                        <i class="bx bx-chevron-left"></i>
+                    </button>
+
+                    <strong id="monthPickerYear"></strong>
+
+                    <button type="button" class="year-nav" id="nextYear">
+                        <i class="bx bx-chevron-right"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="month-grid" id="monthGrid"></div>
+
+
+                <div class="month-picker-footer">
+
+                    <button
+                        type="button"
+                        class="month-footer-btn clear"
+                        id="clearMonth">
+
+                        Clear
+
+                    </button>
+
+                    <div class="month-footer-right">
+
+                        <button
+                            type="button"
+                            class="month-footer-btn"
+                            id="thisMonth">
+
+                            Bulan ini
+
+                        </button>
+
+                        <button
+                            type="button"
+                            class="month-apply-btn"
+                            id="applyMonth">
+
+                            Terapkan
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </form>
 
@@ -1215,6 +1583,15 @@
 
             };
 
+            /* TL RIWAYAT */
+            $rowTl = $getTlBadge($row);
+
+            $jenisAbsen = match(strtolower($row->keterangan ?? '')) {
+                'apel' => 'Apel',
+                'jumat_sehat' => 'Jumat Sehat',
+                default => null,
+            };
+
         @endphp
 
 
@@ -1230,11 +1607,9 @@
                 </strong>
 
                 <small>
-
                     {{ $tanggal
                         ->locale('id')
                         ->translatedFormat('M') }}
-
                 </small>
 
             </div>
@@ -1244,13 +1619,21 @@
 
             <div class="history-info">
 
-                <strong>
+                <div class="history-title-row">
 
-                    {{ $tanggal
-                        ->locale('id')
-                        ->translatedFormat('l') }}
+                    <strong>
+                        {{ $tanggal
+                            ->locale('id')
+                            ->translatedFormat('l') }}
+                    </strong>
 
-                </strong>
+                    @if($jenisAbsen)
+                        <span class="jenis-absen-badge">
+                            {{ $jenisAbsen }}
+                        </span>
+                    @endif
+
+                </div>
 
 
                 <small>
@@ -1286,48 +1669,45 @@
 
                         <span class="history-time-row">
 
-
                             <span
                                 class="history-time masuk
                                 {{ !$row->waktu_masuk ? 'empty' : '' }}">
 
-                                <i class="bx bx-log-in"></i>
-
                                 Masuk
 
                                 <b>
-
                                     {{ $row->waktu_masuk
                                         ? \Carbon\Carbon::parse(
                                             $row->waktu_masuk
                                         )->format('H:i')
                                         : '-' }}
-
                                 </b>
 
                             </span>
 
+                            @if($rowTl)
+                                <span class="tl-badge">
+                                    {{ $rowTl }}
+                                </span>
+                            @endif
 
-                            <span
-                                class="history-time pulang
-                                {{ !$row->waktu_pulang ? 'empty' : '' }}">
+                            @if(!$jenisAbsen)
+                                <span
+                                    class="history-time pulang
+                                    {{ !$row->waktu_pulang ? 'empty' : '' }}">
 
-                                <i class="bx bx-log-out"></i>
+                                    Pulang
 
-                                <b>Pulang</b>
+                                    <b>
+                                        {{ $row->waktu_pulang
+                                            ? \Carbon\Carbon::parse(
+                                                $row->waktu_pulang
+                                            )->format('H:i')
+                                            : '-' }}
+                                    </b>
 
-                                <b>
-
-                                    {{ $row->waktu_pulang
-                                        ? \Carbon\Carbon::parse(
-                                            $row->waktu_pulang
-                                        )->format('H:i')
-                                        : '-' }}
-
-                                </b>
-
-                            </span>
-
+                                </span>
+                            @endif
 
                         </span>
 
@@ -1616,6 +1996,382 @@ $(function(){
     );
 
 });
+
+
+/* =========================
+   MONTH PICKER
+========================= */
+
+const pickerTrigger =
+    document.getElementById('monthPickerTrigger');
+
+const pickerPopup =
+    document.getElementById('monthPickerPopup');
+
+const periodeInput =
+    document.getElementById('periodeInput');
+
+const pickerLabel =
+    document.getElementById('monthPickerLabel');
+
+const pickerYear =
+    document.getElementById('monthPickerYear');
+
+const monthGrid =
+    document.getElementById('monthGrid');
+
+const prevYearBtn =
+    document.getElementById('prevYear');
+
+const nextYearBtn =
+    document.getElementById('nextYear');
+
+const thisMonthBtn =
+    document.getElementById('thisMonth');
+
+const clearMonthBtn =
+    document.getElementById('clearMonth');
+
+const applyMonthBtn =
+    document.getElementById('applyMonth');
+
+
+const monthNames = [
+    'Jan','Feb','Mar','Apr',
+    'Mei','Jun','Jul','Agu',
+    'Sep','Okt','Nov','Des'
+];
+
+
+const monthFullNames = [
+    'Januari','Februari','Maret','April',
+    'Mei','Juni','Juli','Agustus',
+    'September','Oktober','November','Desember'
+];
+
+
+const initialValue =
+    periodeInput.value.split('-');
+
+
+let selectedYear =
+    parseInt(initialValue[0]);
+
+let selectedMonth =
+    parseInt(initialValue[1]);
+
+let viewingYear =
+    selectedYear;
+
+
+/* =========================
+   RENDER MONTH
+========================= */
+
+function renderMonths(){
+
+    pickerYear.textContent =
+        viewingYear;
+
+    monthGrid.innerHTML = '';
+
+
+    monthNames.forEach(
+        (month,index) => {
+
+            const monthNumber =
+                index + 1;
+
+
+            const button =
+                document.createElement('button');
+
+
+            button.type =
+                'button';
+
+            button.className =
+                'month-option';
+
+            button.textContent =
+                month;
+
+
+            if(
+                viewingYear === selectedYear &&
+                monthNumber === selectedMonth
+            ){
+                button.classList.add(
+                    'selected'
+                );
+            }
+
+
+            button.addEventListener(
+                'click',
+                function(e){
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+
+                    selectedYear =
+                        viewingYear;
+
+                    selectedMonth =
+                        monthNumber;
+
+
+                    renderMonths();
+
+                }
+            );
+
+
+            monthGrid.appendChild(
+                button
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================
+   BUKA POPUP
+========================= */
+
+pickerTrigger.addEventListener(
+    'click',
+    function(e){
+
+        e.preventDefault();
+        e.stopPropagation();
+
+
+        /*
+         * Hanya membuka.
+         * Klik trigger lagi tidak menutup popup.
+         *
+         * Popup hanya ditutup ketika:
+         * 1. klik area luar
+         * 2. klik Terapkan
+         */
+
+        pickerPopup
+            .classList
+            .add('show');
+
+
+        viewingYear =
+            selectedYear;
+
+
+        renderMonths();
+
+    }
+);
+
+
+/* =========================
+   KLIK DI DALAM POPUP
+========================= */
+
+pickerPopup.addEventListener(
+    'click',
+    function(e){
+
+        /*
+         * Semua klik di dalam popup
+         * tidak boleh dianggap click outside.
+         */
+
+        e.stopPropagation();
+
+    }
+);
+
+
+/* =========================
+   YEAR NAVIGATION
+========================= */
+
+prevYearBtn.addEventListener(
+    'click',
+    function(){
+
+        viewingYear--;
+
+        renderMonths();
+
+    }
+);
+
+
+nextYearBtn.addEventListener(
+    'click',
+    function(){
+
+        viewingYear++;
+
+        renderMonths();
+
+    }
+);
+
+
+/* =========================
+   BULAN INI
+========================= */
+
+thisMonthBtn.addEventListener(
+    'click',
+    function(){
+
+        const now = new Date();
+
+        selectedYear = now.getFullYear();
+        selectedMonth = now.getMonth() + 1;
+
+        const month =
+            String(selectedMonth).padStart(2, '0');
+
+        periodeInput.value =
+            `${selectedYear}-${month}`;
+
+        pickerLabel.textContent =
+            `${monthFullNames[selectedMonth - 1]} ${selectedYear}`;
+
+        pickerPopup.classList.remove('show');
+
+        document
+            .getElementById('historyFilterForm')
+            .submit();
+
+    }
+);
+
+
+/* =========================
+   CLEAR
+========================= */
+
+clearMonthBtn.addEventListener(
+    'click',
+    function(){
+
+        const now =
+            new Date();
+
+
+        selectedYear =
+            now.getFullYear();
+
+        selectedMonth =
+            now.getMonth() + 1;
+
+
+        viewingYear =
+            selectedYear;
+
+
+        /*
+         * Tidak submit.
+         * Popup tetap terbuka.
+         */
+
+        renderMonths();
+
+    }
+);
+
+
+/* =========================
+   TERAPKAN
+========================= */
+
+applyMonthBtn.addEventListener(
+    'click',
+    function(){
+
+        const month =
+            String(
+                selectedMonth
+            ).padStart(
+                2,
+                '0'
+            );
+
+
+        periodeInput.value =
+            `${selectedYear}-${month}`;
+
+
+        pickerLabel.textContent =
+            `${monthFullNames[selectedMonth - 1]} ${selectedYear}`;
+
+
+        /*
+         * Baru tutup setelah user
+         * menekan Terapkan.
+         */
+
+        pickerPopup
+            .classList
+            .remove('show');
+
+
+        document
+            .getElementById(
+                'historyFilterForm'
+            )
+            .submit();
+
+    }
+);
+
+
+/* =========================
+   CLICK OUTSIDE
+========================= */
+
+document.addEventListener(
+    'click',
+    function(e){
+
+        if(
+            pickerPopup
+                .classList
+                .contains('show')
+            &&
+            !pickerPopup
+                .contains(e.target)
+            &&
+            !pickerTrigger
+                .contains(e.target)
+        ){
+
+            /*
+             * Klik di luar popup:
+             * tutup tanpa submit.
+             */
+
+            pickerPopup
+                .classList
+                .remove('show');
+
+        }
+
+    }
+);
+
+
+/* =========================
+   INITIAL
+========================= */
+
+renderMonths();
 
 </script>
 
