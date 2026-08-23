@@ -1617,11 +1617,28 @@ async function kirim(formData){
          * BERHASIL
          */
 
-        await popupPesan(
-            data.message ||
-            'Absensi berhasil.',
-            'success'
-        );
+        if (data.telat) {
+
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Anda Terlambat',
+                html: `
+                    <strong>${data.menitTelat} menit</strong><br>
+                    Badge: <strong>${data.badge}</strong>
+                `,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#097612'
+            });
+
+        } else {
+
+            await popupPesan(
+                data.message ||
+                'Absensi berhasil.',
+                'success'
+            );
+
+        }
 
         window.location.href = "{{ route('pegawai.dashboard') }}";
 
