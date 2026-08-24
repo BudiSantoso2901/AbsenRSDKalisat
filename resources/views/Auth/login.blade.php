@@ -645,6 +645,14 @@
             line-height:1.4;
         }
 
+        .app-version{
+            margin-top:14px;
+            color:#a0a6ad;
+            font-size:10px;
+            font-weight:600;
+            letter-spacing:.4px;
+            text-align:center;
+        }
 
         .register-link{
             margin-left:3px;
@@ -1036,6 +1044,10 @@
                                 </a>
 
                             </p>
+
+                            <div class="app-version">
+                                RSD KALISAT JEMBER V2.0
+                            </div>
 
                         </div>
 
