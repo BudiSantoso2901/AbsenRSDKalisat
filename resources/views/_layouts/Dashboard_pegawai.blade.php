@@ -1009,17 +1009,7 @@
 
 @php
 
-    $today = $absensi->first(function ($item) {
-        return \Carbon\Carbon::parse($item->tanggal)->isToday()
-            && !empty($item->shift_id);
-    });
-
-    // fallback kalau memang tidak ada absensi reguler
-    if (!$today) {
-        $today = $absensi->first(function ($item) {
-            return \Carbon\Carbon::parse($item->tanggal)->isToday();
-        });
-    }
+    $today = $absensiHariIni;
 
     $todayStatus = strtolower($today->status ?? '');
 
