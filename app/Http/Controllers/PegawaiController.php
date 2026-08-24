@@ -187,7 +187,29 @@ class PegawaiController extends Controller
             ->orderBy('tanggal', 'desc')
             ->orderBy('waktu_masuk', 'desc')
             ->get();
-        
+
+        /** ================= AKTIVITAS HARI INI ================= */
+
+        $absensiHariIni = Absensi::with('shift')
+            ->where('id_pegawai', $pegawai->id)
+            ->whereDate('tanggal', Carbon::today('Asia/Jakarta'))
+            ->where(function ($query) {
+
+                // Absensi reguler
+                $query->whereNotNull('shift_id')
+
+                    // Izin/sakit/cuti tetap boleh tampil
+                    ->orWhereIn('status', [
+                        'izin',
+                        'sakit',
+                        'cuti'
+                    ]);
+            })
+            ->orderByRaw('CASE WHEN shift_id IS NOT NULL THEN 0 ELSE 1 END')
+            ->orderBy('waktu_masuk', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+                
         $riwayatAbsensi = Absensi::with('shift')
             ->where('id_pegawai', $pegawai->id)
             ->whereMonth('tanggal', $bulanRiwayat)
@@ -273,6 +295,7 @@ class PegawaiController extends Controller
             'chartSakit',
             'jamKerja',
             'absensi',
+            'absensiHariIni',
             'riwayatAbsensi',
             'periode'
         ));
