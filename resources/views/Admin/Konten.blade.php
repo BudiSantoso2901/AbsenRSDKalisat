@@ -95,7 +95,10 @@
                                 <option value="">Semua Pegawai</option>
                                 @if (isset($pegawaiList))
                                     @foreach ($pegawaiList as $p)
-                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                        <option value="{{ $p->id }}"
+                                            data-ruangans="{{ $p->absenkontens->pluck('id_ruangan')->unique()->implode(',') }}">
+                                            {{ $p->name }}
+                                        </option>
                                     @endforeach
                                 @endif
                             </select>
@@ -241,6 +244,8 @@
                 width: '100%'
             });
 
+            const semuaPegawai = $('#filterPegawai option').clone();
+
             $('#filterPegawai').on('change', function() {
                 id_pegawai = $(this).val() || '';
                 if (table) {
@@ -278,8 +283,54 @@
             }
 
             // 🔥 4. FILTER RUANGAN & STATUS
-            $('#filterRuangan').change(function() {
-                ruangan_id = $(this).val();
+            $('#filterRuangan').on('change', function() {
+
+                ruangan_id = $(this).val() || '';
+                id_pegawai = '';
+
+                const select = $('#filterPegawai');
+
+                // Balikkan semua pilihan pegawai
+                select
+                    .empty()
+                    .append(semuaPegawai.clone());
+
+                // Kalau memilih ruangan tertentu
+                if (ruangan_id) {
+
+                    select.find('option').each(function() {
+
+                        // "Semua Pegawai" jangan dihapus
+                        if (!$(this).val()) {
+                            return;
+                        }
+
+                        const ruangans = String(
+                            $(this).attr('data-ruangans') || ''
+                        ).split(',');
+
+                        // Hapus pegawai yang tidak pernah input di ruangan tersebut
+                        if (!ruangans.includes(String(ruangan_id))) {
+                            $(this).remove();
+                        }
+                    });
+                }
+
+                // Reset pilihan pegawai
+                select
+                    .val('')
+                    .trigger('change.select2');
+
+                // Reload tabel
+                if (table) {
+                    table.ajax.reload();
+                }
+            });
+
+
+            $('#filterStatus').change(function() {
+                status_verifikasi = $(this).val();
+
                 if (table) {
                     table.ajax.reload();
                 }
@@ -294,16 +345,29 @@
 
             // 🔥 5. RESET SEMUA FILTER
             $('#btnResetFilter').on('click', function() {
+
                 id_pegawai = '';
                 ruangan_id = '';
                 status_verifikasi = '';
 
-                $('#filterPegawai').val(null).trigger('change');
                 $('#filterRuangan').val('');
                 $('#filterStatus').val('');
 
-                resetTanggal();
+                // Kembalikan list ke semua pegawai
+                loadPegawaiByRuangan('');
+
+                $('#filterTanggal').val('');
+                $('#start_date').val('');
+                $('#end_date').val('');
+
+                start_date = '';
+                end_date = '';
+
+                if (table) {
+                    table.ajax.reload();
+                }
             });
+
             $(document).on('click', '.btnLihatBukti', function(e) {
                 e.preventDefault();
                 let url = $(this).data('url');
