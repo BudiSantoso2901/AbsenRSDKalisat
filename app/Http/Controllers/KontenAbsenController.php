@@ -454,6 +454,10 @@ class KontenAbsenController extends Controller
             ])
             ->orderBy('name', 'asc')
             ->get();
+        return view('Admin.Konten', compact(
+            'ruangans',
+            'pegawaiList'
+        ));
     }
 
     public function valid(Request $request)
