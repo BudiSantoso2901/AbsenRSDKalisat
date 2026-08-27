@@ -190,12 +190,21 @@
                                     placeholder="https://tiktok.com/...">
                             </div>
                         </div>
-
-                        <!-- Upload Bukti Baru -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Ganti Bukti Foto/PDF (Opsional)</label>
-                            <input type="file" name="bukti_foto" id="edit_bukti_foto" class="form-control"
-                                accept="image/*,.pdf">
+                            <label class="form-label fw-semibold">
+                                GANTI BUKTI FOTO/PDF (OPSIONAL)
+                            </label>
+
+                            <div class="input-group">
+                                <button type="button" class="btn btn-outline-primary" id="btnChooseFile">
+                                    Choose File
+                                </button>
+
+                                <input type="text" id="nama_file_display" class="form-control"
+                                    placeholder="Tidak ada file dipilih" readonly>
+                            </div>
+
+                            <input type="file" name="bukti_foto" id="edit_bukti_foto" class="d-none" accept="image/*,.pdf">
                         </div>
 
                     </div>
@@ -223,8 +232,8 @@
         let end_date = '';
         let table;
 
-        $(document).ready(function() {
-            $(document).on('click', '.btnLihatBukti', function() {
+        $(document).ready(function () {
+            $(document).on('click', '.btnLihatBukti', function () {
                 let url = $(this).data('url');
                 let type = $(this).data('type');
                 let container = $('#previewContainer');
@@ -250,7 +259,7 @@
             });
 
             // 🔥 BERSIHKAN PREVIEW SAAT MODAL DITUTUP (hemat memori & hentikan load PDF)
-            $('#modalPreviewBukti').on('hidden.bs.modal', function() {
+            $('#modalPreviewBukti').on('hidden.bs.modal', function () {
                 $('#previewContainer').empty();
                 $('#btnBukaTabBaru').attr('href', '#');
             });
@@ -267,7 +276,7 @@
             });
 
             // APPLY FILTER TANGGAL
-            $('#filterTanggal').on('apply.daterangepicker', function(ev, picker) {
+            $('#filterTanggal').on('apply.daterangepicker', function (ev, picker) {
                 start_date = picker.startDate.format('YYYY-MM-DD');
                 end_date = picker.endDate.format('YYYY-MM-DD');
 
@@ -276,7 +285,7 @@
             });
 
             // RESET FILTER TANGGAL
-            $('#filterTanggal').on('cancel.daterangepicker', function() {
+            $('#filterTanggal').on('cancel.daterangepicker', function () {
                 $(this).val('');
                 start_date = '';
                 end_date = '';
@@ -292,55 +301,55 @@
 
                 ajax: {
                     url: "{{ route('pegawai.konten.index') }}",
-                    data: function(d) {
+                    data: function (d) {
                         d.start_date = start_date;
                         d.end_date = end_date;
                     }
                 },
 
                 columns: [{
-                        data: 'DT_RowIndex',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'tanggal'
-                    },
-                    {
-                        data: 'bukti',
-                        orderable: false
-                    },
-                    {
-                        data: 'link_ig',
-                        orderable: false
-                    },
-                    {
-                        data: 'link_fb',
-                        orderable: false
-                    },
-                    {
-                        data: 'link_tiktok',
-                        orderable: false
-                    },
-                    // {
-                    //     data: 'keterangan',
-                    //     orderable: false
-                    // },
-                    {
-                        data: 'verified_by',
-                        orderable: false
-                    },
-                    {
-                        data: 'status',
-                        orderable: false,
-                        responsivePriority: 2
-                    },
-                    {
-                        data: 'aksi',
-                        orderable: false,
-                        searchable: false,
-                        responsivePriority: 1
-                    }
+                    data: 'DT_RowIndex',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'tanggal'
+                },
+                {
+                    data: 'bukti',
+                    orderable: false
+                },
+                {
+                    data: 'link_ig',
+                    orderable: false
+                },
+                {
+                    data: 'link_fb',
+                    orderable: false
+                },
+                {
+                    data: 'link_tiktok',
+                    orderable: false
+                },
+                // {
+                //     data: 'keterangan',
+                //     orderable: false
+                // },
+                {
+                    data: 'verified_by',
+                    orderable: false
+                },
+                {
+                    data: 'status',
+                    orderable: false,
+                    responsivePriority: 2
+                },
+                {
+                    data: 'aksi',
+                    orderable: false,
+                    searchable: false,
+                    responsivePriority: 1
+                }
                 ],
 
                 language: {
@@ -374,38 +383,63 @@
                     text: '{{ session('error') }}'
                 });
             @endif
+            $(document).on('click', '.btnEdit', function () {
 
-            $(document).on('click', '.btnEdit', function() {
                 let btn = $(this);
 
                 let id = btn.data('id');
                 let ig = btn.data('ig') || '';
                 let fb = btn.data('fb') || '';
                 let tiktok = btn.data('tiktok') || '';
-                let status = $.trim(btn.data('status')).toLowerCase();
-
+                let status = $.trim(btn.data('status') || '').toLowerCase();
+                let bukti = btn.attr('data-bukti-foto') || '';
                 let keterangan = btn.data('keterangan') || 'Tidak ada alasan khusus';
 
                 $('#edit_id').val(id);
                 $('#edit_link_ig').val(ig);
                 $('#edit_link_fb').val(fb);
                 $('#edit_link_tiktok').val(tiktok);
+
                 $('#edit_bukti_foto').val('');
 
-                // Tampilkan pesan penolakan HANYA jika status = ditolak
+                if (bukti) {
+                    let namaFile = bukti.split('/').pop();
+                    $('#nama_file_display').val(namaFile);
+                } else {
+                    $('#nama_file_display').val('Tidak ada file');
+                }
+
                 if (status === 'ditolak') {
                     $('#modalTitleEdit').html('✏️ Perbaiki Konten Ditolak');
-                    $('#boxAlasanDitolak').removeClass('d-none').addClass('d-flex');
+
+                    $('#boxAlasanDitolak')
+                        .removeClass('d-none')
+                        .addClass('d-flex');
+
                     $('#textAlasanDitolak').html(keterangan);
                 } else {
                     $('#modalTitleEdit').html('✏️ Edit Absen Konten');
-                    $('#boxAlasanDitolak').addClass('d-none').removeClass('d-flex');
+
+                    $('#boxAlasanDitolak')
+                        .addClass('d-none')
+                        .removeClass('d-flex');
                 }
 
                 $('#modalEdit').modal('show');
             });
 
-            $('#formUpdateKonten').submit(function(e) {
+            $(document).on('click', '#btnChooseFile', function () {
+                $('#edit_bukti_foto').click();
+            });
+
+            $(document).on('change', '#edit_bukti_foto', function () {
+
+                if (this.files && this.files.length > 0) {
+                    let namaFileBaru = this.files[0].name;
+                    $('#nama_file_display').val(namaFileBaru);
+                }
+            });
+            $('#formUpdateKonten').submit(function (e) {
                 e.preventDefault();
 
                 let formData = new FormData(this);
@@ -420,7 +454,7 @@
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function(res) {
+                    success: function (res) {
                         $('#modalEdit').modal('hide');
                         table.ajax.reload(null, false);
 
@@ -432,7 +466,7 @@
                             showConfirmButton: false
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         let msg = xhr.responseJSON?.message || 'Gagal memperbarui data';
                         Swal.fire({
                             icon: 'error',
@@ -440,7 +474,7 @@
                             text: msg
                         });
                     },
-                    complete: function() {
+                    complete: function () {
                         btn.prop('disabled', false).html('💾 Simpan Perubahan');
                     }
                 });
