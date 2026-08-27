@@ -130,6 +130,8 @@ class KontenAbsenController extends Controller
                 data-tiktok="' . $tiktok . '"
                 data-status="' . $status . '"
                 data-keterangan="' . $ket . '"
+                data-keterangan="' . $ket . '"
+                data-bukti-foto="' . e($row->bukti_foto) . '"
             >
                 ✏️ EDIT
             </button>
