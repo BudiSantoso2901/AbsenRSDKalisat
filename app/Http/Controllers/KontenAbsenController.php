@@ -108,19 +108,19 @@ class KontenAbsenController extends Controller
                 ->addColumn('status', function ($row) {
                     return match ($row->status_verifikasi) {
                         'pending' => '<span class="badge-status badge-pending">⏳ Pending</span>',
-                        'valid'   => '<span class="badge-status badge-valid">✅ Valid</span>',
+                        'valid' => '<span class="badge-status badge-valid">✅ Valid</span>',
                         'ditolak' => '<span class="badge-status badge-ditolak">❌ Ditolak</span>',
-                        default   => '-',
+                        default => '-',
                     };
                 })
                 ->addColumn('aksi', function ($row) {
                     $status = trim(strtolower($row->status_verifikasi));
 
                     if (in_array($status, ['ditolak', 'pending'])) {
-                        $ig     = e($row->link_ig ?? '');
-                        $fb     = e($row->link_fb ?? '');
+                        $ig = e($row->link_ig ?? '');
+                        $fb = e($row->link_fb ?? '');
                         $tiktok = e($row->link_tiktok ?? '');
-                        $ket    = e($row->keterangan ?? '');
+                        $ket = e($row->keterangan ?? '');
 
                         return '
             <button class="btn btn-warning btn-sm btnEdit"
@@ -415,9 +415,9 @@ class KontenAbsenController extends Controller
                     $status = trim(strtolower($row->status_verifikasi));
                     return match ($status) {
                         'pending' => '<span class="badge bg-warning">Pending</span>',
-                        'valid'   => '<span class="badge bg-success">Valid</span>',
+                        'valid' => '<span class="badge bg-success">Valid</span>',
                         'ditolak' => '<span class="badge bg-danger">Ditolak</span>',
-                        default   => '<span class="badge bg-secondary">-</span>'
+                        default => '<span class="badge bg-secondary">-</span>'
                     };
                 })
 
@@ -446,8 +446,14 @@ class KontenAbsenController extends Controller
         $ruangans = $user->ruangans;
         $pegawaiList = Pegawai::whereHas('absenkontens', function ($q) use ($userRuanganIds) {
             $q->whereIn('id_ruangan', $userRuanganIds);
-        })->orderBy('name', 'asc')->get();
-        return view('Admin.Konten', compact('ruangans', 'pegawaiList'));
+        })
+            ->with([
+                'absenkontens' => function ($q) use ($userRuanganIds) {
+                    $q->whereIn('id_ruangan', $userRuanganIds);
+                }
+            ])
+            ->orderBy('name', 'asc')
+            ->get();
     }
 
     public function valid(Request $request)
