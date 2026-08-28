@@ -95,14 +95,16 @@
                     {{-- Tanggal --}}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Tanggal <span class="text-danger">*</span></label>
-                        <input type="date" name="tanggal" id="tanggal" class="form-control" required>
+                        <input type="date" name="tanggal" id="tanggal" class="form-control"
+                            min="{{ now('Asia/Jakarta')->subDays(3)->format('Y-m-d') }}"
+                            max="{{ now('Asia/Jakarta')->format('Y-m-d') }}" required>
                     </div>
 
                     {{-- Ruangan --}}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Ruangan (Opsional)</label>
-                        <select name="id_ruangan" class="form-select">
-                            <option value="" selected>-- Pilih Ruangan --</option>
+                        <select name="id_ruangan" id="id_ruangan" class="form-select">
+                            <option value="">-- Pilih Ruangan --</option>
                             @foreach ($ruangans as $ruangan)
                                 <option value="{{ $ruangan->id }}">{{ $ruangan->nama_ruangan }}</option>
                             @endforeach
@@ -124,9 +126,7 @@
 
                         <img id="preview" class="preview-img">
 
-                        <iframe
-                            id="previewPdf"
-                            class="preview-pdf">
+                        <iframe id="previewPdf" class="preview-pdf">
                         </iframe>
 
                     </div>
@@ -187,9 +187,15 @@
 @endsection
 
 @push('scripts')
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            $('#id_ruangan').select2({
+                theme: 'bootstrap-5',
+                placeholder: '-- Pilih Ruangan --',
+                allowClear: true,
+                width: '100%'
+            });
+
             const fileInput = document.getElementById('bukti_foto');
             const preview = document.getElementById('preview');
             const previewPdf = document.getElementById('previewPdf');
