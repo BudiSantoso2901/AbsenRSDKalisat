@@ -213,6 +213,7 @@ class KontenAbsenController extends Controller
         ]);
 
         $path = null;
+
         if ($request->hasFile('bukti_foto')) {
             $file = $request->file('bukti_foto');
             $extension = strtolower($file->getClientOriginalExtension());
@@ -223,9 +224,31 @@ class KontenAbsenController extends Controller
                 mkdir(storage_path('app/public/absen_konten'), 0755, true);
             }
 
-            // Cek ekstensi untuk kompresi gambar
-            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                // 🔥 Kompres menggunakan ImageManager (Aman dari error linter)
+            // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
+            if ($extension === 'png') {
+                $manager = new ImageManager(new Driver());
+                $img = $manager->read($file->getRealPath());
+
+                if ($img->width() > 1200) {
+                    $img->scale(width: 1200);
+                }
+
+                $webpFilename = pathinfo($filename, PATHINFO_FILENAME) . '.webp';
+                $webpPath = storage_path('app/public/absen_konten/' . $webpFilename);
+
+                $img->toWebp(75)->save($webpPath);
+                clearstatcache(true, $webpPath);
+
+                if (file_exists($webpPath) && filesize($webpPath) < $file->getSize()) {
+                    $path = 'absen_konten/' . $webpFilename;
+                } else {
+                    if (file_exists($webpPath)) {
+                        unlink($webpPath);
+                    }
+
+                    $path = $file->storeAs('absen_konten', $filename, 'public');
+                }
+            } elseif (in_array($extension, ['jpg', 'jpeg', 'gif', 'webp'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -278,8 +301,31 @@ class KontenAbsenController extends Controller
             $filename = time() . '_' . uniqid() . '.' . $extension;
             $destinationPath = storage_path('app/public/absen_konten/' . $filename);
 
-            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                // 🔥 Kompres menggunakan ImageManager
+            // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
+            if ($extension === 'png') {
+                $manager = new ImageManager(new Driver());
+                $img = $manager->read($file->getRealPath());
+
+                if ($img->width() > 1200) {
+                    $img->scale(width: 1200);
+                }
+
+                $webpFilename = pathinfo($filename, PATHINFO_FILENAME) . '.webp';
+                $webpPath = storage_path('app/public/absen_konten/' . $webpFilename);
+
+                $img->toWebp(75)->save($webpPath);
+                clearstatcache(true, $webpPath);
+
+                if (file_exists($webpPath) && filesize($webpPath) < $file->getSize()) {
+                    $data->bukti_foto = 'absen_konten/' . $webpFilename;
+                } else {
+                    if (file_exists($webpPath)) {
+                        unlink($webpPath);
+                    }
+
+                    $data->bukti_foto = $file->storeAs('absen_konten', $filename, 'public');
+                }
+            } elseif (in_array($extension, ['jpg', 'jpeg', 'gif', 'webp'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
