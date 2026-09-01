@@ -226,7 +226,7 @@ class KontenAbsenController extends Controller
             }
 
             // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
-            if ($extension === 'png') {
+            if (in_array($extension, ['png', 'jpg', 'jpeg'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -249,7 +249,7 @@ class KontenAbsenController extends Controller
 
                     $path = $file->storeAs('absen_konten', $filename, 'public');
                 }
-            } elseif (in_array($extension, ['jpg', 'jpeg', 'gif', 'webp'])) {
+            } elseif (in_array($extension, ['gif', 'webp'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -303,7 +303,7 @@ class KontenAbsenController extends Controller
             $destinationPath = storage_path('app/public/absen_konten/' . $filename);
 
             // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
-            if ($extension === 'png') {
+            if (in_array($extension, ['png', 'jpg', 'jpeg'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -326,7 +326,7 @@ class KontenAbsenController extends Controller
 
                     $data->bukti_foto = $file->storeAs('absen_konten', $filename, 'public');
                 }
-            } elseif (in_array($extension, ['jpg', 'jpeg', 'gif', 'webp'])) {
+            } elseif (in_array($extension, ['gif', 'webp'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
