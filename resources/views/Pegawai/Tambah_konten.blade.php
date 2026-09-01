@@ -200,14 +200,15 @@
             const preview = document.getElementById('preview');
             const previewPdf = document.getElementById('previewPdf');
             const form = document.getElementById('formKonten');
+            const btnSimpan = document.getElementById('btnSimpan');
 
             // 1. Validasi & Preview file upload client-side
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
+            fileInput.addEventListener('change', async function(e) {
+                let file = e.target.files[0];
                 if (!file) return;
 
                 const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-                const maxSize = 2 * 1024 * 1024; // 2MB
+                const maxSize = 10 * 1024 * 1024; // 10MB
 
                 if (!validTypes.includes(file.type)) {
                     Swal.fire({
@@ -230,6 +231,43 @@
                     });
                     fileInput.value = '';
                     preview.style.display = 'none';
+                    return;
+                }
+
+                btnSimpan.disabled = true;
+
+                try {
+                    const buffer = await file.arrayBuffer();
+
+                    const stableFile = new File(
+                        [buffer],
+                        file.name, {
+                            type: file.type,
+                            lastModified: Date.now()
+                        }
+                    );
+
+                    const dt = new DataTransfer();
+                    dt.items.add(stableFile);
+                    fileInput.files = dt.files;
+
+                    file = stableFile;
+                    btnSimpan.disabled = false;
+
+                } catch (error) {
+                    console.error('Gagal membaca file:', error);
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'File Tidak Dapat Dibaca',
+                        text: 'Silakan pilih ulang file dari Gallery atau penyimpanan perangkat.',
+                        confirmButtonColor: '#28a745'
+                    });
+
+                    fileInput.value = '';
+                    preview.style.display = 'none';
+                    previewPdf.style.display = 'none';
+                    btnSimpan.disabled = false;
                     return;
                 }
 
