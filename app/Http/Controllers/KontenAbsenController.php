@@ -22,7 +22,8 @@ class KontenAbsenController extends Controller
         if ($request->ajax()) {
 
             $data = absenkonten::with('verifier')
-                ->where('id_pegawai', $pegawaiId);
+                ->where('id_pegawai', $pegawaiId)
+                ->latest('created_at');
 
             // FILTER TANGGAL
             if ($request->start_date && $request->end_date) {
@@ -205,7 +206,7 @@ class KontenAbsenController extends Controller
     {
         $request->validate([
             'tanggal' => 'required|date',
-            'bukti_foto' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf|max:2048',
+            'bukti_foto' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
             'link_tiktok' => 'nullable|url',
@@ -285,7 +286,7 @@ class KontenAbsenController extends Controller
         }
 
         $request->validate([
-            'bukti_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'bukti_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
             'link_tiktok' => 'nullable|url',
