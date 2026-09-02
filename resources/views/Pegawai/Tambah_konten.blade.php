@@ -122,8 +122,8 @@
                         </div>
 
                         <input type="file" name="bukti_foto" id="bukti_foto"
-                            accept="image/jpeg,image/png,image/jpg,application/pdf" class="d-none" required>
-
+                            accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,image/jpeg,image/png,image/heic,image/heif,application/pdf"
+                            class="d-none" required>
                         <img id="preview" class="preview-img">
 
                         <iframe id="previewPdf" class="preview-pdf">
@@ -187,6 +187,8 @@
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             $('#id_ruangan').select2({
@@ -210,33 +212,78 @@
                 const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
                 const maxSize = 10 * 1024 * 1024; // 10MB
 
-                if (!validTypes.includes(file.type)) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Format File Salah!',
-                        text: 'Hanya file berformat JPG, JPEG, PNG, atau PDF yang diperbolehkan.',
-                        confirmButtonColor: '#28a745'
-                    });
-                    fileInput.value = '';
-                    preview.style.display = 'none';
-                    return;
-                }
+                const extension = file.name.split('.').pop().toLowerCase();
 
-                if (file.size > maxSize) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Ukuran File Terlalu Besar!',
-                        text: 'Maksimal ukuran file adalah 2MB.',
-                        confirmButtonColor: '#28a745'
-                    });
-                    fileInput.value = '';
-                    preview.style.display = 'none';
-                    return;
-                }
+                const isHeic =
+                    extension === 'heic' ||
+                    extension === 'heif' ||
+                    file.type === 'image/heic' ||
+                    file.type === 'image/heif';
 
                 btnSimpan.disabled = true;
 
                 try {
+
+                    // HEIC / HEIF → JPG
+                    if (isHeic) {
+                        btnSimpan.innerHTML = '⏳ Memproses Foto...';
+
+                        const converted = await heic2any({
+                            blob: file,
+                            toType: 'image/jpeg',
+                            quality: 0.90
+                        });
+
+                        const jpegBlob = Array.isArray(converted) ?
+                            converted[0] :
+                            converted;
+
+                        const jpegFile = new File(
+                            [jpegBlob],
+                            file.name.replace(/\.[^/.]+$/, '') + '.jpg', {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            }
+                        );
+
+                        const dt = new DataTransfer();
+                        dt.items.add(jpegFile);
+                        fileInput.files = dt.files;
+
+                        file = jpegFile;
+                    }
+
+                    // Validasi format setelah HEIC selesai diubah menjadi JPG
+                    if (!validTypes.includes(file.type)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Format File Salah!',
+                            text: 'Hanya file berformat JPG, JPEG, PNG, HEIC, HEIF, atau PDF yang diperbolehkan.',
+                            confirmButtonColor: '#28a745'
+                        });
+
+                        fileInput.value = '';
+                        preview.style.display = 'none';
+                        previewPdf.style.display = 'none';
+                        return;
+                    }
+
+                    // Maksimal 10 MB
+                    if (file.size > maxSize) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ukuran File Terlalu Besar!',
+                            text: 'Maksimal ukuran file adalah 2MB.',
+                            confirmButtonColor: '#28a745'
+                        });
+
+                        fileInput.value = '';
+                        preview.style.display = 'none';
+                        previewPdf.style.display = 'none';
+                        return;
+                    }
+
+                    // Flow lama kamu
                     const buffer = await file.arrayBuffer();
 
                     const stableFile = new File(
@@ -252,42 +299,44 @@
                     fileInput.files = dt.files;
 
                     file = stableFile;
-                    btnSimpan.disabled = false;
+
+                    const fileUrl = URL.createObjectURL(file);
+
+                    if (file.type.startsWith('image/')) {
+                        preview.src = fileUrl;
+                        preview.style.display = 'block';
+
+                        previewPdf.src = '';
+                        previewPdf.style.display = 'none';
+
+                    } else if (file.type === 'application/pdf') {
+                        preview.style.display = 'none';
+                        preview.src = '';
+
+                        previewPdf.src = fileUrl;
+                        previewPdf.style.display = 'block';
+                    }
 
                 } catch (error) {
-                    console.error('Gagal membaca file:', error);
+
+                    console.error('Gagal membaca / mengkonversi file:', error);
 
                     Swal.fire({
                         icon: 'error',
                         title: 'File Tidak Dapat Dibaca',
-                        text: 'Silakan pilih ulang file dari Gallery atau penyimpanan perangkat.',
+                        text: isHeic ?
+                            'Foto HEIC/HEIF gagal diproses. Silakan pilih ulang foto.' :
+                            'Silakan pilih ulang file dari Gallery atau penyimpanan perangkat.',
                         confirmButtonColor: '#28a745'
                     });
 
                     fileInput.value = '';
                     preview.style.display = 'none';
                     previewPdf.style.display = 'none';
+
+                } finally {
                     btnSimpan.disabled = false;
-                    return;
-                }
-
-                const fileUrl = URL.createObjectURL(file);
-
-                if (file.type.startsWith('image/')) {
-
-                    preview.src = fileUrl;
-                    preview.style.display = 'block';
-
-                    previewPdf.src = '';
-                    previewPdf.style.display = 'none';
-
-                } else if (file.type === 'application/pdf') {
-
-                    preview.style.display = 'none';
-                    preview.src = '';
-
-                    previewPdf.src = fileUrl;
-                    previewPdf.style.display = 'block';
+                    btnSimpan.innerHTML = '💾 Simpan';
                 }
             });
 

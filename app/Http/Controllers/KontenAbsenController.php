@@ -206,7 +206,7 @@ class KontenAbsenController extends Controller
     {
         $request->validate([
             'tanggal' => 'required|date',
-            'bukti_foto' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf,heif|max:10240',
+            'bukti_foto' => 'required|file|mimes:jpeg,jpg,png,webp,gif,svg,pdf|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
             'link_tiktok' => 'nullable|url',
@@ -225,8 +225,8 @@ class KontenAbsenController extends Controller
                 mkdir(storage_path('app/public/absen_konten'), 0755, true);
             }
 
-            // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
-            if (in_array($extension, ['png', 'jpg', 'jpeg', 'heif'])) {
+            // JPG/PNG dari Android atau hasil konversi HEIC iPhone
+            if (in_array($extension, ['png', 'jpg', 'jpeg'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -249,6 +249,7 @@ class KontenAbsenController extends Controller
 
                     $path = $file->storeAs('absen_konten', $filename, 'public');
                 }
+
             } elseif (in_array($extension, ['gif', 'webp'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
@@ -257,7 +258,9 @@ class KontenAbsenController extends Controller
                 $img->save($destinationPath, quality: 75);
 
                 $path = 'absen_konten/' . $filename;
+
             } else {
+                // PDF / SVG
                 $path = $file->storeAs('absen_konten', $filename, 'public');
             }
         }
@@ -282,18 +285,24 @@ class KontenAbsenController extends Controller
         $data = absenkonten::findOrFail($request->id);
 
         if ($data->status_verifikasi === 'valid') {
-            return response()->json(['message' => 'Konten yang sudah VALID tidak dapat diedit.'], 403);
+            return response()->json([
+                'message' => 'Konten yang sudah VALID tidak dapat diedit.'
+            ], 403);
         }
 
         $request->validate([
-            'bukti_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf,heif|max:10240',
+            'bukti_foto' => 'nullable|file|mimes:jpeg,jpg,png,webp,pdf|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
             'link_tiktok' => 'nullable|url',
         ]);
 
         if ($request->hasFile('bukti_foto')) {
-            if ($data->bukti_foto && Storage::disk('public')->exists($data->bukti_foto)) {
+
+            if (
+                $data->bukti_foto &&
+                Storage::disk('public')->exists($data->bukti_foto)
+            ) {
                 Storage::disk('public')->delete($data->bukti_foto);
             }
 
@@ -302,8 +311,7 @@ class KontenAbsenController extends Controller
             $filename = time() . '_' . uniqid() . '.' . $extension;
             $destinationPath = storage_path('app/public/absen_konten/' . $filename);
 
-            // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
-            if (in_array($extension, ['png', 'jpg', 'jpeg', 'heif'])) {
+            if (in_array($extension, ['png', 'jpg', 'jpeg'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -317,15 +325,25 @@ class KontenAbsenController extends Controller
                 $img->toWebp(75)->save($webpPath);
                 clearstatcache(true, $webpPath);
 
-                if (file_exists($webpPath) && filesize($webpPath) < $file->getSize()) {
+                if (
+                    file_exists($webpPath) &&
+                    filesize($webpPath) < $file->getSize()
+                ) {
                     $data->bukti_foto = 'absen_konten/' . $webpFilename;
+
                 } else {
+
                     if (file_exists($webpPath)) {
                         unlink($webpPath);
                     }
 
-                    $data->bukti_foto = $file->storeAs('absen_konten', $filename, 'public');
+                    $data->bukti_foto = $file->storeAs(
+                        'absen_konten',
+                        $filename,
+                        'public'
+                    );
                 }
+
             } elseif (in_array($extension, ['gif', 'webp'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
@@ -334,8 +352,13 @@ class KontenAbsenController extends Controller
                 $img->save($destinationPath, quality: 75);
 
                 $data->bukti_foto = 'absen_konten/' . $filename;
+
             } else {
-                $data->bukti_foto = $file->storeAs('absen_konten', $filename, 'public');
+                $data->bukti_foto = $file->storeAs(
+                    'absen_konten',
+                    $filename,
+                    'public'
+                );
             }
         }
 
