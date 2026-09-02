@@ -187,8 +187,7 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             $('#id_ruangan').select2({
@@ -221,22 +220,19 @@
                     file.type === 'image/heif';
 
                 btnSimpan.disabled = true;
-
+//
                 try {
 
                     // HEIC / HEIF → JPG
                     if (isHeic) {
                         btnSimpan.innerHTML = '⏳ Memproses Foto...';
 
-                        const converted = await heic2any({
+                        // BARU
+                        const jpegBlob = await HeicTo({
                             blob: file,
-                            toType: 'image/jpeg',
+                            type: 'image/jpeg',
                             quality: 0.90
                         });
-
-                        const jpegBlob = Array.isArray(converted) ?
-                            converted[0] :
-                            converted;
 
                         const jpegFile = new File(
                             [jpegBlob],
