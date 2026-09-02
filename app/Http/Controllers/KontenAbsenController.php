@@ -206,7 +206,7 @@ class KontenAbsenController extends Controller
     {
         $request->validate([
             'tanggal' => 'required|date',
-            'bukti_foto' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf|max:10240',
+            'bukti_foto' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf,heif|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
             'link_tiktok' => 'nullable|url',
@@ -226,7 +226,7 @@ class KontenAbsenController extends Controller
             }
 
             // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
-            if (in_array($extension, ['png', 'jpg', 'jpeg'])) {
+            if (in_array($extension, ['png', 'jpg', 'jpeg', 'heif'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
@@ -286,7 +286,7 @@ class KontenAbsenController extends Controller
         }
 
         $request->validate([
-            'bukti_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'bukti_foto' => 'nullable|file|mimes:jpg,jpeg,png,pdf,heif|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
             'link_tiktok' => 'nullable|url',
@@ -303,7 +303,7 @@ class KontenAbsenController extends Controller
             $destinationPath = storage_path('app/public/absen_konten/' . $filename);
 
             // PNG: coba WebP, pakai hanya jika hasilnya lebih kecil
-            if (in_array($extension, ['png', 'jpg', 'jpeg'])) {
+            if (in_array($extension, ['png', 'jpg', 'jpeg', 'heif'])) {
                 $manager = new ImageManager(new Driver());
                 $img = $manager->read($file->getRealPath());
 
