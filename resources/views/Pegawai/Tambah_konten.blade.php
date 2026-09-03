@@ -220,7 +220,7 @@
                     file.type === 'image/heif';
 
                 btnSimpan.disabled = true;
-//
+
                 try {
 
                     // HEIC / HEIF → JPG
