@@ -161,6 +161,17 @@
                             </div>
                         </div>
 
+                        <!-- Tanggal -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Tanggal <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="date" name="tanggal" id="edit_tanggal" class="form-control"
+                                min="{{ now('Asia/Jakarta')->subDays(3)->format('Y-m-d') }}"
+                                max="{{ now('Asia/Jakarta')->format('Y-m-d') }}" required>
+                        </div>
+
                         <!-- Instagram -->
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Link Instagram</label>
@@ -204,7 +215,8 @@
                                     placeholder="Tidak ada file dipilih" readonly>
                             </div>
 
-                            <input type="file" name="bukti_foto" id="edit_bukti_foto" class="d-none" accept="image/*,.pdf">
+                            <input type="file" name="bukti_foto" id="edit_bukti_foto" class="d-none"
+                                accept="image/*,.pdf">
                         </div>
 
                     </div>
@@ -232,8 +244,8 @@
         let end_date = '';
         let table;
 
-        $(document).ready(function () {
-            $(document).on('click', '.btnLihatBukti', function () {
+        $(document).ready(function() {
+            $(document).on('click', '.btnLihatBukti', function() {
                 let url = $(this).data('url');
                 let type = $(this).data('type');
                 let container = $('#previewContainer');
@@ -259,7 +271,7 @@
             });
 
             // 🔥 BERSIHKAN PREVIEW SAAT MODAL DITUTUP (hemat memori & hentikan load PDF)
-            $('#modalPreviewBukti').on('hidden.bs.modal', function () {
+            $('#modalPreviewBukti').on('hidden.bs.modal', function() {
                 $('#previewContainer').empty();
                 $('#btnBukaTabBaru').attr('href', '#');
             });
@@ -276,7 +288,7 @@
             });
 
             // APPLY FILTER TANGGAL
-            $('#filterTanggal').on('apply.daterangepicker', function (ev, picker) {
+            $('#filterTanggal').on('apply.daterangepicker', function(ev, picker) {
                 start_date = picker.startDate.format('YYYY-MM-DD');
                 end_date = picker.endDate.format('YYYY-MM-DD');
 
@@ -285,7 +297,7 @@
             });
 
             // RESET FILTER TANGGAL
-            $('#filterTanggal').on('cancel.daterangepicker', function () {
+            $('#filterTanggal').on('cancel.daterangepicker', function() {
                 $(this).val('');
                 start_date = '';
                 end_date = '';
@@ -301,55 +313,55 @@
 
                 ajax: {
                     url: "{{ route('pegawai.konten.index') }}",
-                    data: function (d) {
+                    data: function(d) {
                         d.start_date = start_date;
                         d.end_date = end_date;
                     }
                 },
 
                 columns: [{
-                    data: 'DT_RowIndex',
-                    orderable: false,
-                    searchable: false
-                },
-                {
-                    data: 'tanggal'
-                },
-                {
-                    data: 'bukti',
-                    orderable: false
-                },
-                {
-                    data: 'link_ig',
-                    orderable: false
-                },
-                {
-                    data: 'link_fb',
-                    orderable: false
-                },
-                {
-                    data: 'link_tiktok',
-                    orderable: false
-                },
-                // {
-                //     data: 'keterangan',
-                //     orderable: false
-                // },
-                {
-                    data: 'verified_by',
-                    orderable: false
-                },
-                {
-                    data: 'status',
-                    orderable: false,
-                    responsivePriority: 2
-                },
-                {
-                    data: 'aksi',
-                    orderable: false,
-                    searchable: false,
-                    responsivePriority: 1
-                }
+                        data: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'tanggal'
+                    },
+                    {
+                        data: 'bukti',
+                        orderable: false
+                    },
+                    {
+                        data: 'link_ig',
+                        orderable: false
+                    },
+                    {
+                        data: 'link_fb',
+                        orderable: false
+                    },
+                    {
+                        data: 'link_tiktok',
+                        orderable: false
+                    },
+                    // {
+                    //     data: 'keterangan',
+                    //     orderable: false
+                    // },
+                    {
+                        data: 'verified_by',
+                        orderable: false
+                    },
+                    {
+                        data: 'status',
+                        orderable: false,
+                        responsivePriority: 2
+                    },
+                    {
+                        data: 'aksi',
+                        orderable: false,
+                        searchable: false,
+                        responsivePriority: 1
+                    }
                 ],
 
                 language: {
@@ -383,11 +395,12 @@
                     text: '{{ session('error') }}'
                 });
             @endif
-            $(document).on('click', '.btnEdit', function () {
+            $(document).on('click', '.btnEdit', function() {
 
                 let btn = $(this);
 
                 let id = btn.data('id');
+                let tanggal = btn.data('tanggal') || '';
                 let ig = btn.data('ig') || '';
                 let fb = btn.data('fb') || '';
                 let tiktok = btn.data('tiktok') || '';
@@ -396,6 +409,7 @@
                 let keterangan = btn.data('keterangan') || 'Tidak ada alasan khusus';
 
                 $('#edit_id').val(id);
+                $('#edit_tanggal').val(tanggal);
                 $('#edit_link_ig').val(ig);
                 $('#edit_link_fb').val(fb);
                 $('#edit_link_tiktok').val(tiktok);
@@ -428,18 +442,18 @@
                 $('#modalEdit').modal('show');
             });
 
-            $(document).on('click', '#btnChooseFile', function () {
+            $(document).on('click', '#btnChooseFile', function() {
                 $('#edit_bukti_foto').click();
             });
 
-            $(document).on('change', '#edit_bukti_foto', function () {
+            $(document).on('change', '#edit_bukti_foto', function() {
 
                 if (this.files && this.files.length > 0) {
                     let namaFileBaru = this.files[0].name;
                     $('#nama_file_display').val(namaFileBaru);
                 }
             });
-            $('#formUpdateKonten').submit(function (e) {
+            $('#formUpdateKonten').submit(function(e) {
                 e.preventDefault();
 
                 let formData = new FormData(this);
@@ -454,7 +468,7 @@
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function (res) {
+                    success: function(res) {
                         $('#modalEdit').modal('hide');
                         table.ajax.reload(null, false);
 
@@ -466,7 +480,7 @@
                             showConfirmButton: false
                         });
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         let msg = xhr.responseJSON?.message || 'Gagal memperbarui data';
                         Swal.fire({
                             icon: 'error',
@@ -474,7 +488,7 @@
                             text: msg
                         });
                     },
-                    complete: function () {
+                    complete: function() {
                         btn.prop('disabled', false).html('💾 Simpan Perubahan');
                     }
                 });
