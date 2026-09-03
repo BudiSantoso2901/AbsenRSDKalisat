@@ -23,7 +23,8 @@ class KontenAbsenController extends Controller
 
             $data = absenkonten::with('verifier')
                 ->where('id_pegawai', $pegawaiId)
-                ->latest('created_at');
+                ->orderByDesc('tanggal')
+                ->orderByDesc('updated_at');
 
             // FILTER TANGGAL
             if ($request->start_date && $request->end_date) {
@@ -122,15 +123,16 @@ class KontenAbsenController extends Controller
                         $fb = e($row->link_fb ?? '');
                         $tiktok = e($row->link_tiktok ?? '');
                         $ket = e($row->keterangan ?? '');
+                        $tanggal = \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d');
 
                         return '
             <button class="btn btn-warning btn-sm btnEdit"
                 data-id="' . $row->id . '"
+                data-tanggal="' . e($tanggal) . '"
                 data-ig="' . $ig . '"
                 data-fb="' . $fb . '"
                 data-tiktok="' . $tiktok . '"
                 data-status="' . $status . '"
-                data-keterangan="' . $ket . '"
                 data-keterangan="' . $ket . '"
                 data-bukti-foto="' . e($row->bukti_foto) . '"
             >
@@ -291,6 +293,12 @@ class KontenAbsenController extends Controller
         }
 
         $request->validate([
+            'tanggal' => [
+                'required',
+                'date',
+                'after_or_equal:' . now('Asia/Jakarta')->subDays(3)->format('Y-m-d'),
+                'before_or_equal:' . now('Asia/Jakarta')->format('Y-m-d'),
+            ],
             'bukti_foto' => 'nullable|file|mimes:jpeg,jpg,png,webp,pdf|max:10240',
             'link_fb' => 'nullable|url',
             'link_ig' => 'nullable|url',
@@ -363,6 +371,7 @@ class KontenAbsenController extends Controller
         }
 
         $data->update([
+            'tanggal' => $request->tanggal,
             'link_fb' => $request->link_fb,
             'link_ig' => $request->link_ig,
             'link_tiktok' => $request->link_tiktok,
