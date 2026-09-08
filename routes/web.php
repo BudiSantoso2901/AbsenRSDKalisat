@@ -55,6 +55,7 @@ Route::prefix('/')
             Route::delete('/delete/{id}', [RuanganController::class, 'destroy']);
         });
         Route::prefix('konten')->group(function () {
+            Route::get('distribusi-upload-ruangan',[KontenAbsenController::class, 'distribusi_upload_ruangan'])->name('admin.konten.distribusi');
             Route::get('/', [KontenAbsenController::class, 'view_konten_admin'])->name('admin.konten');
             Route::get('/admin/konten/export', [KontenAbsenController::class, 'export_konten_admin'])->name('admin.konten.export');
             Route::post('/admin/konten/valid', [KontenAbsenController::class, 'valid'])->name('admin.konten.valid');
