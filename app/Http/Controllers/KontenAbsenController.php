@@ -12,6 +12,9 @@ use Intervention\Image\Drivers\Gd\Driver;
 use App\Exports\AbsenKontenExport;
 use App\Models\Pegawai;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class KontenAbsenController extends Controller
 {
@@ -393,6 +396,218 @@ class KontenAbsenController extends Controller
 
         return Excel::download(new AbsenKontenExport($request, $userRuanganIds), $fileName);
     }
+
+    public function distribusi_upload_ruangan(Request $request)
+    {
+        $now = now('Asia/Jakarta');
+
+        $bulan = (int) ($request->bulan ?? $now->month);
+        $tahun = (int) ($request->tahun ?? $now->year);
+
+        // Default minggu mengikuti tanggal hari ini
+        $mingguDefault = match (true) {
+            $now->day <= 7 => 1,
+            $now->day <= 14 => 2,
+            $now->day <= 21 => 3,
+            default => 4,
+        };
+
+        // Kalau bukan bulan/tahun sekarang, default ke minggu 1
+        if ($bulan !== $now->month || $tahun !== $now->year) {
+            $mingguDefault = 1;
+        }
+
+        $minggu = (int) ($request->minggu ?? $mingguDefault);
+        $minggu = max(1, min(4, $minggu));
+
+        $awalBulan = Carbon::create($tahun, $bulan, 1);
+        $akhirBulan = $awalBulan->copy()->endOfMonth();
+        $jumlahHari = $awalBulan->daysInMonth;
+
+        /*
+         * 1–7
+         * 8–14
+         * 15–21
+         * 22–akhir bulan
+         */
+        $weeks = collect(range(1, 4))
+            ->map(function ($week) use ($awalBulan, $jumlahHari) {
+
+                $mulai = (($week - 1) * 7) + 1;
+
+                $selesai = $week === 4
+                    ? $jumlahHari
+                    : $week * 7;
+
+                return [
+                    'key' => $week,
+                    'label' => 'Minggu ' . $week,
+                    'range' =>
+                        $mulai . '-' .
+                        $selesai . ' ' .
+                        $awalBulan->locale('id')->translatedFormat('M'),
+                    'mulai' => $mulai,
+                    'selesai' => $selesai,
+                ];
+            })
+            ->values();
+
+        $mingguTerpilih = $weeks->firstWhere('key', $minggu);
+
+        /*
+         * Satu query untuk:
+         * - total bulanan
+         * - minggu 1
+         * - minggu 2
+         * - minggu 3
+         * - minggu 4
+         */
+        $upload = absenkonten::query()
+            ->selectRaw("
+            id_ruangan,
+            SUM(CASE WHEN DAY(tanggal) BETWEEN 1 AND 7
+                THEN 1 ELSE 0 END) AS minggu_1,
+
+            SUM(CASE WHEN DAY(tanggal) BETWEEN 8 AND 14
+                THEN 1 ELSE 0 END) AS minggu_2,
+
+            SUM(CASE WHEN DAY(tanggal) BETWEEN 15 AND 21
+                THEN 1 ELSE 0 END) AS minggu_3,
+
+            SUM(CASE WHEN DAY(tanggal) >= 22
+                THEN 1 ELSE 0 END) AS minggu_4,
+
+            COUNT(*) AS total_bulan
+        ")
+            ->whereBetween('tanggal', [
+                $awalBulan->toDateString(),
+                $akhirBulan->toDateString()
+            ])
+            ->whereNotNull('id_ruangan')
+            ->groupBy('id_ruangan')
+            ->get()
+            ->keyBy('id_ruangan');
+
+        /*
+         * Semua ruangan tetap dimunculkan.
+         * Jadi ruangan dengan 0 upload juga bisa diketahui.
+         */
+        $ruangans = ruangan::select('id', 'nama_ruangan')
+            ->orderBy('nama_ruangan')
+            ->get();
+
+        $data = $ruangans
+            ->map(function ($ruangan) use ($upload, $minggu) {
+
+                $row = $upload->get($ruangan->id);
+
+                $weekCounts = [
+                    1 => (int) ($row->minggu_1 ?? 0),
+                    2 => (int) ($row->minggu_2 ?? 0),
+                    3 => (int) ($row->minggu_3 ?? 0),
+                    4 => (int) ($row->minggu_4 ?? 0),
+                ];
+
+                $totalBulan = (int) ($row->total_bulan ?? 0);
+                $totalMinggu = $weekCounts[$minggu] ?? 0;
+
+                return [
+                    'id_ruangan' => $ruangan->id,
+                    'ruangan' => $ruangan->nama_ruangan,
+
+                    // untuk lollipop
+                    'total_minggu' => $totalMinggu,
+
+                    // context bulanan
+                    'total_bulan' => $totalBulan,
+
+                    // tetap dipertahankan agar frontend lama tidak langsung rusak
+                    'total' => $totalBulan,
+                    'weeks' => $weekCounts,
+                ];
+            })
+            ->sortByDesc('total_minggu')
+            ->values();
+
+        $totalRuangan = $data->count();
+
+        /*
+         * SUMMARY MINGGUAN
+         */
+        $totalUploadMingguan = $data->sum('total_minggu');
+
+        $ruanganAktifMingguan = $data
+            ->where('total_minggu', '>', 0)
+            ->count();
+
+        /*
+         * SUMMARY BULANAN
+         */
+        $totalUploadBulanan = $data->sum('total_bulan');
+
+        $ruanganAktifBulanan = $data
+            ->where('total_bulan', '>', 0)
+            ->count();
+
+        return response()->json([
+
+            /*
+             * Tetap tersedia untuk kompatibilitas frontend lama
+             */
+            'periode' => $awalBulan
+                ->locale('id')
+                ->translatedFormat('F Y'),
+
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'minggu' => $minggu,
+
+            /*
+             * Informasi filter
+             */
+            'minggu_terpilih' => [
+                'key' => $minggu,
+                'label' => $mingguTerpilih['label'],
+                'range' => $mingguTerpilih['range'],
+            ],
+
+            'weeks' => $weeks,
+
+            /*
+             * SUMMARY MINGGU TERPILIH
+             */
+            'mingguan' => [
+                'total_upload' => $totalUploadMingguan,
+                'ruangan_aktif' => $ruanganAktifMingguan,
+                'belum_upload' =>
+                    $totalRuangan - $ruanganAktifMingguan,
+            ],
+
+            /*
+             * SUMMARY BULAN TERPILIH
+             */
+            'bulanan' => [
+                'total_upload' => $totalUploadBulanan,
+                'ruangan_aktif' => $ruanganAktifBulanan,
+                'belum_upload' =>
+                    $totalRuangan - $ruanganAktifBulanan,
+            ],
+
+            'total_ruangan' => $totalRuangan,
+
+            /*
+             * Legacy supaya heatmap lama sementara masih aman
+             */
+            'total_upload' => $totalUploadBulanan,
+            'ruangan_aktif' => $ruanganAktifBulanan,
+
+            /*
+             * Sudah urut berdasarkan upload minggu terpilih
+             */
+            'data' => $data,
+        ]);
+    }
+    
     public function view_konten_admin(Request $request)
     {
         /** @var \App\Models\User $user */

@@ -1,6 +1,169 @@
 @extends('_layouts.layouts')
 
 @section('content')
+    <style>
+        .upload-card {
+            border-radius: 16px;
+        }
+
+        .upload-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .upload-filter-row {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .upload-filter {
+            width: auto !important;
+            border-radius: 9px;
+            flex: 0 0 auto;
+        }
+
+        .upload-filter-week {
+            width: 115px !important;
+        }
+
+        .upload-filter-month {
+            width: 130px !important;
+        }
+
+        .upload-filter-year {
+            width: 95px !important;
+        }
+
+        .upload-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .upload-summary-item {
+            border: 1px solid #edf0f2;
+            border-radius: 12px;
+            padding: 14px 16px;
+            background: #fafbfc;
+        }
+
+        .upload-summary-label {
+            display: block;
+            font-size: 12px;
+            color: #89919a;
+            margin-bottom: 3px;
+        }
+
+        .upload-main-value {
+            display: block;
+            font-size: 24px;
+            color: #343a40;
+            line-height: 1.2;
+        }
+
+        .upload-month-value {
+            display: block;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #89919a;
+        }
+
+        .upload-month-value b {
+            color: #566a7f;
+        }
+
+        .upload-loading {
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #89919a;
+        }
+
+        .upload-chart-scroll {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        #uploadLollipopWrap {
+            min-width: 720px;
+            height: 420px;
+        }
+
+        .upload-toggle {
+            border-radius: 8px;
+            font-size: 11px;
+            padding: 5px 10px;
+        }
+
+        @media (max-width: 768px) {
+            .upload-summary {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+
+            .upload-summary-item {
+                padding: 10px 8px;
+            }
+
+            .upload-summary-label {
+                font-size: 9px;
+            }
+
+            .upload-main-value {
+                font-size: 18px;
+            }
+
+            .upload-month-value {
+                font-size: 9px;
+            }
+
+            .upload-header {
+                flex-direction: column;
+            }
+
+            .upload-filter-row {
+                width: 100%;
+                margin-left: 0;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 2px;
+            }
+
+            .upload-filter-week {
+                width: 105px !important;
+            }
+
+            .upload-filter-month {
+                width: 120px !important;
+            }
+
+            .upload-filter-year {
+                width: 90px !important;
+            }
+
+            .upload-filter {
+                font-size: 11px;
+            }
+
+            .upload-chart-scroll {
+                max-height: 500px;
+            }
+
+            #uploadLollipopWrap {
+                min-width: 680px;
+            }
+        }
+    </style>
+
     <div class="container-xxl flex-grow-1 container-p-y">
 
         {{-- ================= ROW 1 : WELCOME + STATISTIK ================= --}}
@@ -116,6 +279,207 @@
             </div>
 
         </div>
+
+        @php
+            $bulanUpload = [
+                1 => 'Januari',
+                2 => 'Februari',
+                3 => 'Maret',
+                4 => 'April',
+                5 => 'Mei',
+                6 => 'Juni',
+                7 => 'Juli',
+                8 => 'Agustus',
+                9 => 'September',
+                10 => 'Oktober',
+                11 => 'November',
+                12 => 'Desember',
+            ];
+
+            $nowUpload = now('Asia/Jakarta');
+
+            $mingguUpload = match (true) {
+                $nowUpload->day <= 7 => 1,
+                $nowUpload->day <= 14 => 2,
+                $nowUpload->day <= 21 => 3,
+                default => 4,
+            };
+        @endphp
+
+
+        {{-- ================= AKTIVITAS UPLOAD KONTEN ================= --}}
+        <div class="card border-0 shadow-sm mt-4 upload-card">
+
+            <div class="card-body">
+
+                {{-- HEADER + FILTER --}}
+                <div class="upload-header mb-3">
+
+                    <div>
+                        <h5 class="mb-1 fw-bold">
+                            Aktivitas Upload Konten Mingguan
+                        </h5>
+
+                        <small class="text-muted">
+                            Distribusi jumlah upload konten setiap ruangan
+                        </small>
+                    </div>
+
+
+                    <div class="upload-filter-row">
+
+                        {{-- MINGGU --}}
+                        <select id="uploadMinggu" class="form-select form-select-sm upload-filter upload-filter-week">
+
+                            <option value="1" {{ $mingguUpload == 1 ? 'selected' : '' }}>
+                                Minggu 1
+                            </option>
+
+                            <option value="2" {{ $mingguUpload == 2 ? 'selected' : '' }}>
+                                Minggu 2
+                            </option>
+
+                            <option value="3" {{ $mingguUpload == 3 ? 'selected' : '' }}>
+                                Minggu 3
+                            </option>
+
+                            <option value="4" {{ $mingguUpload == 4 ? 'selected' : '' }}>
+                                Minggu 4
+                            </option>
+
+                        </select>
+
+
+                        {{-- BULAN --}}
+                        <select id="uploadBulan" class="form-select form-select-sm upload-filter upload-filter-month">
+
+                            @foreach ($bulanUpload as $nomor => $nama)
+                                <option value="{{ $nomor }}" {{ $nomor == $nowUpload->month ? 'selected' : '' }}>
+                                    {{ $nama }}
+                                </option>
+                            @endforeach
+
+                        </select>
+
+
+                        {{-- TAHUN --}}
+                        <select id="uploadTahun" class="form-select form-select-sm upload-filter upload-filter-year">
+
+                            @for ($tahun = $nowUpload->year; $tahun >= $nowUpload->year - 2; $tahun--)
+                                <option value="{{ $tahun }}">
+                                    {{ $tahun }}
+                                </option>
+                            @endfor
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                {{-- SUMMARY --}}
+                <div class="upload-summary mb-3">
+
+                    <div class="upload-summary-item">
+
+                        <span class="upload-summary-label">
+                            Total Upload
+                        </span>
+
+                        <strong id="uploadTotalMinggu" class="upload-main-value">
+                            -
+                        </strong>
+
+                        <span class="upload-month-value">
+                            Bulan terpilih:
+                            <b id="uploadTotalBulan">-</b>
+                        </span>
+
+                    </div>
+
+
+                    <div class="upload-summary-item">
+
+                        <span class="upload-summary-label">
+                            Ruangan Aktif
+                        </span>
+
+                        <strong id="uploadAktifMinggu" class="upload-main-value">
+                            -
+                        </strong>
+
+                        <span class="upload-month-value">
+                            Bulan terpilih:
+                            <b id="uploadAktifBulan">-</b>
+                        </span>
+
+                    </div>
+
+
+                    <div class="upload-summary-item">
+
+                        <span class="upload-summary-label">
+                            Belum Upload
+                        </span>
+
+                        <strong id="uploadBelumMinggu" class="upload-main-value">
+                            -
+                        </strong>
+
+                        <span class="upload-month-value">
+                            Bulan terpilih:
+                            <b id="uploadBelumBulan">-</b>
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                {{-- PERIODE + BUTTON --}}
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+
+                    <small id="uploadPeriode" class="fw-semibold text-muted">
+                        Memuat periode...
+                    </small>
+
+                    <button type="button" id="btnToggleUpload" class="btn btn-sm btn-outline-secondary upload-toggle">
+
+                        Lihat Semua
+
+                    </button>
+
+                </div>
+
+
+                {{-- LOADING --}}
+                <div id="uploadLoading" class="upload-loading">
+
+                    <div class="spinner-border spinner-border-sm"></div>
+
+                    <span>
+                        Memuat aktivitas upload...
+                    </span>
+
+                </div>
+
+
+                {{-- CHART --}}
+                <div id="uploadChartScroll" class="upload-chart-scroll d-none">
+
+                    <div id="uploadLollipopWrap">
+
+                        <canvas id="chartUploadKonten"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
         {{-- card pegawai absensi hari ini  --}}
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -303,6 +667,433 @@
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script>
+        // =====================================================
+        // LOLLIPOP AKTIVITAS UPLOAD KONTEN
+        // =====================================================
+
+        const uploadBulan = document.getElementById('uploadBulan');
+        const uploadTahun = document.getElementById('uploadTahun');
+        const uploadMinggu = document.getElementById('uploadMinggu');
+
+        const uploadLoading = document.getElementById('uploadLoading');
+        const uploadChartScroll = document.getElementById('uploadChartScroll');
+        const uploadChartWrap = document.getElementById('uploadLollipopWrap');
+
+        const btnToggleUpload = document.getElementById('btnToggleUpload');
+
+        let uploadChart = null;
+        let uploadResult = null;
+        let tampilSemuaUpload = false;
+
+
+        /*
+         * Plugin custom:
+         * garis horizontal + titik + angka
+         */
+        const lollipopPlugin = {
+
+            id: 'lollipopPlugin',
+
+            beforeDatasetsDraw(chart) {
+
+                const {
+                    ctx,
+                    scales: {
+                        x
+                    }
+                } = chart;
+
+                const meta = chart.getDatasetMeta(0);
+
+                ctx.save();
+
+                ctx.strokeStyle = 'rgba(32, 201, 151, 0.35)';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+
+                meta.data.forEach((point, index) => {
+
+                    const value =
+                        Number(chart.data.datasets[0].data[index].x || 0);
+
+                    const startX =
+                        x.getPixelForValue(0);
+
+                    const endX =
+                        x.getPixelForValue(value);
+
+                    ctx.beginPath();
+                    ctx.moveTo(startX, point.y);
+                    ctx.lineTo(endX, point.y);
+                    ctx.stroke();
+
+                });
+
+                ctx.restore();
+            },
+
+
+            afterDatasetsDraw(chart) {
+
+                const {
+                    ctx
+                } = chart;
+
+                const meta =
+                    chart.getDatasetMeta(0);
+
+                ctx.save();
+
+                ctx.fillStyle = '#566a7f';
+                ctx.font = '600 11px sans-serif';
+                ctx.textBaseline = 'middle';
+
+                meta.data.forEach((point, index) => {
+
+                    const value =
+                        chart.data.datasets[0]
+                        .data[index]
+                        .x;
+
+                    ctx.fillText(
+                        value,
+                        point.x + 9,
+                        point.y
+                    );
+
+                });
+
+                ctx.restore();
+            }
+        };
+
+
+        async function loadUploadChart() {
+
+            uploadLoading.classList.remove('d-none');
+            uploadChartScroll.classList.add('d-none');
+
+            const params = new URLSearchParams({
+                bulan: uploadBulan.value,
+                tahun: uploadTahun.value,
+                minggu: uploadMinggu.value
+            });
+
+            try {
+
+                const response = await fetch(
+                    `{{ route('admin.konten.distribusi') }}?${params.toString()}`, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data upload');
+                }
+
+                const result = await response.json();
+
+                uploadResult = result;
+
+                updateUploadSummary(result);
+                updateWeekLabels(result);
+
+                uploadLoading.classList.add('d-none');
+                uploadChartScroll.classList.remove('d-none');
+
+                renderUploadChart(result);
+
+            } catch (error) {
+
+                console.error(
+                    'UPLOAD CHART ERROR:',
+                    error
+                );
+
+                uploadLoading.innerHTML = `
+            <span class="text-danger">
+                Gagal memuat aktivitas upload.
+            </span>
+        `;
+            }
+        }
+
+
+        function updateUploadSummary(result) {
+
+            document.getElementById('uploadTotalMinggu')
+                .textContent =
+                result.mingguan.total_upload ?? 0;
+
+            document.getElementById('uploadAktifMinggu')
+                .textContent =
+                result.mingguan.ruangan_aktif ?? 0;
+
+            document.getElementById('uploadBelumMinggu')
+                .textContent =
+                result.mingguan.belum_upload ?? 0;
+
+
+            document.getElementById('uploadTotalBulan')
+                .textContent =
+                result.bulanan.total_upload ?? 0;
+
+            document.getElementById('uploadAktifBulan')
+                .textContent =
+                result.bulanan.ruangan_aktif ?? 0;
+
+            document.getElementById('uploadBelumBulan')
+                .textContent =
+                result.bulanan.belum_upload ?? 0;
+
+
+            document.getElementById('uploadPeriode')
+                .textContent =
+                `${result.minggu_terpilih.label} • ` +
+                `${result.minggu_terpilih.range} ${result.tahun}`;
+        }
+
+
+        /*
+         * Update tulisan dropdown:
+         * Minggu 2 → Minggu 2 (8-14 Sep)
+         */
+        function updateWeekLabels(result) {
+
+            result.weeks.forEach(week => {
+
+                const option =
+                    uploadMinggu.querySelector(
+                        `option[value="${week.key}"]`
+                    );
+
+                if (option) {
+
+                    option.textContent =
+                        `${week.label}`;
+                }
+            });
+        }
+
+
+        function renderUploadChart(result) {
+
+            if (uploadChart) {
+
+                uploadChart.destroy();
+                uploadChart = null;
+            }
+
+
+            const dataTampil = tampilSemuaUpload ?
+                result.data :
+                result.data.slice(0, 15);
+
+
+            /*
+             * Tinggi mengikuti jumlah ruangan.
+             */
+            uploadChartWrap.style.height =
+                Math.max(
+                    420,
+                    dataTampil.length * 34 + 60
+                ) + 'px';
+
+
+            const chartData =
+                dataTampil.map(item => ({
+
+                    x: Number(item.total_minggu ?? 0),
+
+                    y: item.ruangan,
+
+                    totalBulan: Number(item.total_bulan ?? 0)
+                }));
+
+
+            uploadChart = new Chart(
+                document.getElementById('chartUploadKonten'), {
+
+                    type: 'scatter',
+
+                    data: {
+
+                        datasets: [{
+                            data: chartData,
+
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+
+                            pointBackgroundColor: '#20c997',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+
+
+                    plugins: [
+                        lollipopPlugin
+                    ],
+
+
+                    options: {
+
+                        responsive: true,
+                        maintainAspectRatio: false,
+
+                        animation: false,
+
+                        layout: {
+                            padding: {
+                                right: 35
+                            }
+                        },
+
+                        scales: {
+
+                            x: {
+
+                                beginAtZero: true,
+
+                                ticks: {
+                                    precision: 0
+                                },
+
+                                title: {
+                                    display: true,
+                                    text: 'Jumlah Upload'
+                                },
+
+                                grid: {
+                                    color: 'rgba(0,0,0,0.05)'
+                                }
+                            },
+
+
+                            y: {
+
+                                type: 'category',
+
+                                labels: dataTampil.map(
+                                    item => item.ruangan
+                                ),
+
+                                offset: true,
+
+                                ticks: {
+
+                                    autoSkip: false,
+
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            },
+
+
+                            tooltip: {
+
+                                callbacks: {
+
+                                    title(items) {
+
+                                        return items[0]
+                                            .raw
+                                            .y;
+                                    },
+
+
+                                    label(context) {
+
+                                        return `${context.raw.x} upload ` +
+                                            `• ${result.minggu_terpilih.range} ${result.tahun}`;
+                                    },
+
+
+                                    afterLabel(context) {
+
+                                        return `Bulan terpilih: ` +
+                                            `${context.raw.totalBulan} upload`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+
+        /*
+         * TOP 15 / SEMUA
+         */
+        btnToggleUpload.addEventListener(
+            'click',
+            function() {
+
+                tampilSemuaUpload = !tampilSemuaUpload;
+
+                this.textContent =
+                    tampilSemuaUpload ?
+                    'Tampilkan Top 15' :
+                    'Lihat Semua';
+
+                if (uploadResult) {
+                    renderUploadChart(uploadResult);
+                }
+            }
+        );
+
+
+        /*
+         * Filter
+         */
+        function reloadUploadChart() {
+
+            tampilSemuaUpload = false;
+
+            btnToggleUpload.textContent =
+                'Lihat Semua';
+
+            loadUploadChart();
+        }
+
+
+        uploadBulan.addEventListener(
+            'change',
+            reloadUploadChart
+        );
+
+        uploadTahun.addEventListener(
+            'change',
+            reloadUploadChart
+        );
+
+        uploadMinggu.addEventListener(
+            'change',
+            reloadUploadChart
+        );
+
+
+        /*
+         * Initial load
+         */
+        loadUploadChart();
+
         // PIE ABSENSI
         new Chart(document.getElementById('chartAbsensi'), {
             type: 'pie',
