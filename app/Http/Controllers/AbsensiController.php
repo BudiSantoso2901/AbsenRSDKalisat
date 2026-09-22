@@ -39,11 +39,11 @@ class AbsensiController extends Controller
         });
 
         return view('Pegawai.Kamera', [
-            'pegawai'   => $pegawai,
-            'lokasi'    => $pegawai->lokasi,
-            'jamKerja'  => $pegawai->jamKerja,
-            'absensi'   => $absensi,
-            'shifts'    => $shifts, // ✅ kirim ke blade
+            'pegawai' => $pegawai,
+            'lokasi' => $pegawai->lokasi,
+            'jamKerja' => $pegawai->jamKerja,
+            'absensi' => $absensi,
+            'shifts' => $shifts, // ✅ kirim ke blade
         ]);
     }
 
@@ -183,7 +183,7 @@ class AbsensiController extends Controller
                 ->addColumn(
                     'jam_pulang',
                     fn($row) =>
-                    $row->waktu_pulang
+                        $row->waktu_pulang
                         ? Carbon::parse($row->waktu_pulang)->format('H:i')
                         : '-'
                 )
@@ -216,10 +216,10 @@ class AbsensiController extends Controller
         /** ===============================
          * VIEW
          * =============================== */
-        $pegawai   = Pegawai::orderBy('name')->get();
-        $jabatan   = Jabatan::orderBy('nama_jabatan')->get();
-        $lokasi    = Lokasi::orderBy('nama_lokasi')->get();
-        $jamKerja  = JamKerja::orderBy('nama_jam_kerja')->get();
+        $pegawai = Pegawai::orderBy('name')->get();
+        $jabatan = Jabatan::orderBy('nama_jabatan')->get();
+        $lokasi = Lokasi::orderBy('nama_lokasi')->get();
+        $jamKerja = JamKerja::orderBy('nama_jam_kerja')->get();
 
         return view('Admin.Absen', compact(
             'pegawai',
@@ -304,7 +304,7 @@ class AbsensiController extends Controller
         $data = $query->orderBy('tanggal', 'asc')->get();
 
         $pdf = Pdf::loadView('PDF.laporan', [
-            'data'   => $data,
+            'data' => $data,
             'filter' => $request->all()
         ])->setPaper('a4', 'landscape');
 
@@ -347,8 +347,8 @@ class AbsensiController extends Controller
         /** ======================================
          * RANGE BULAN
          * ===================================== */
-        $start  = Carbon::create($tahunAktif, $bulanAktif, 1);
-        $end    = $start->copy()->endOfMonth();
+        $start = Carbon::create($tahunAktif, $bulanAktif, 1);
+        $end = $start->copy()->endOfMonth();
         $period = CarbonPeriod::create($start, $end);
 
         /** ======================================
@@ -403,18 +403,18 @@ class AbsensiController extends Controller
 
                 // Kalau tidak ada absensi sama sekali
                 $absensi[] = (object) [
-                    'tanggal'        => $tgl,
-                    'waktu_masuk'    => null,
-                    'waktu_pulang'   => null,
-                    'foto_masuk'     => null,
-                    'foto_pulang'    => null,
-                    'latitude'       => null,
-                    'longitude'      => null,
-                    'surat'          => null,
-                    'status'         => 'belum_hadir',
+                    'tanggal' => $tgl,
+                    'waktu_masuk' => null,
+                    'waktu_pulang' => null,
+                    'foto_masuk' => null,
+                    'foto_pulang' => null,
+                    'latitude' => null,
+                    'longitude' => null,
+                    'surat' => null,
+                    'status' => 'belum_hadir',
                     'menit_terlambat' => 0,
-                    'tl'             => null,
-                    'shift'          => null,
+                    'tl' => null,
+                    'shift' => null,
                 ];
             }
         }
@@ -453,9 +453,9 @@ class AbsensiController extends Controller
         $absensi = Absensi::findOrFail($id);
 
         return response()->json([
-            'latitude'  => $absensi->latitude,
+            'latitude' => $absensi->latitude,
             'longitude' => $absensi->longitude,
-            'tanggal'   => $absensi->tanggal,
+            'tanggal' => $absensi->tanggal,
         ]);
     }
 
@@ -486,20 +486,21 @@ class AbsensiController extends Controller
     {
         /** ================= AUTH ================= */
         $pegawai = auth()->guard('pegawai')->user();
-        if (!$pegawai) abort(401);
+        if (!$pegawai)
+            abort(401);
 
         /** ================= VALIDASI ================= */
         $request->validate([
-            'status'     => 'required|in:hadir,izin,sakit',
-            'latitude'   => 'required_if:status,hadir',
-            'longitude'  => 'required_if:status,hadir',
-            'foto'       => 'required_if:status,hadir|image',
+            'status' => 'required|in:hadir,izin,sakit',
+            'latitude' => 'required_if:status,hadir',
+            'longitude' => 'required_if:status,hadir',
+            'foto' => 'required_if:status,hadir|image',
             'keterangan' => 'required_if:status,izin|required_if:status,sakit|string',
-            'surat'      => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            'surat' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
         ]);
 
-        $now       = Carbon::now('Asia/Jakarta');
-        $today     = $now->toDateString();
+        $now = Carbon::now('Asia/Jakarta');
+        $today = $now->toDateString();
         $yesterday = Carbon::yesterday('Asia/Jakarta')->toDateString();
 
         /** ================= JAM KERJA ================= */
@@ -509,7 +510,7 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Jam kerja belum ditentukan'], 422);
         }
 
-        $jamMulaiJam   = Carbon::parse($jamKerja->jam_mulai);
+        $jamMulaiJam = Carbon::parse($jamKerja->jam_mulai);
         $jamSelesaiJam = Carbon::parse($jamKerja->jam_selesai);
 
         // SHIFT MALAM
@@ -547,11 +548,11 @@ class AbsensiController extends Controller
             $jamSelesai->addDay();
         }
 
-        $early     = $jamKerja->early_absen_menit ?? 120;
+        $early = $jamKerja->early_absen_menit ?? 120;
         $toleransi = $jamKerja->toleransi_menit ?? 0;
 
         $jamBolehMasuk = $jamMulai->copy()->subMinutes($early);
-        $jamToleransi  = $jamMulai->copy()->addMinutes($toleransi);
+        $jamToleransi = $jamMulai->copy()->addMinutes($toleransi);
 
         $absenHariIni = Absensi::where('id_pegawai', $pegawai->id)
             ->whereDate('tanggal', $tanggal)
@@ -569,10 +570,10 @@ class AbsensiController extends Controller
 
             Absensi::create([
                 'id_pegawai' => $pegawai->id,
-                'tanggal'    => $tanggal,
-                'status'     => $request->status,
+                'tanggal' => $tanggal,
+                'status' => $request->status,
                 'keterangan' => $request->keterangan,
-                'surat'      => $request->hasFile('surat')
+                'surat' => $request->hasFile('surat')
                     ? $request->file('surat')->store('surat_absensi', 'public')
                     : null
             ]);
@@ -616,14 +617,14 @@ class AbsensiController extends Controller
             $menitTelat = $telat ? $jamToleransi->diffInMinutes($now) : 0;
 
             Absensi::create([
-                'id_pegawai'  => $pegawai->id,
-                'tanggal'     => $tanggal,
-                'shift_id'    => $shiftId,
+                'id_pegawai' => $pegawai->id,
+                'tanggal' => $tanggal,
+                'shift_id' => $shiftId,
                 'waktu_masuk' => $now,
-                'foto_masuk'  => $fotoPath,
-                'latitude'    => $request->latitude,
-                'longitude'   => $request->longitude,
-                'status'      => 'hadir',
+                'foto_masuk' => $fotoPath,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'status' => 'hadir',
             ]);
 
             return response()->json([
@@ -647,8 +648,8 @@ class AbsensiController extends Controller
 
             $absenAktif->waktu_pulang = $now;
             $absenAktif->foto_pulang = $fotoPath;
-            $absenAktif->latitude    = $request->latitude;
-            $absenAktif->longitude   = $request->longitude;
+            $absenAktif->latitude = $request->latitude;
+            $absenAktif->longitude = $request->longitude;
             $absenAktif->save();
 
             return response()->json([
@@ -672,33 +673,33 @@ class AbsensiController extends Controller
 
         /** ================= VALIDASI ================= */
         $request->validate([
-            'latitude'  => 'required',
+            'latitude' => 'required',
             'longitude' => 'required',
-            'foto'      => 'required|image',
+            'foto' => 'required|image',
         ]);
 
         /** ================= WAKTU ================= */
-        $now   = Carbon::now('Asia/Jakarta');
+        $now = Carbon::now('Asia/Jakarta');
         $today = $now->toDateString();
-        $hari  = $now->format('l');
+        $hari = $now->format('l');
 
         /** ================= CONFIG KEGIATAN ================= */
         $configKegiatan = [
             'Monday' => [
-                'label'   => 'Apel',
-                'mulai'   => '06:30',
+                'label' => 'Apel',
+                'mulai' => '06:30',
                 'selesai' => '10:00',
-                'lat'     => -8.13484147,
-                'lng'     => 113.82144392,
-                'radius'  => 50,
+                'lat' => -8.13484147,
+                'lng' => 113.82144392,
+                'radius' => 50,
             ],
             'Friday' => [
-                'label'   => 'Jumat Sehat',
-                'mulai'   => '06:30',
+                'label' => 'Jumat Sehat',
+                'mulai' => '06:30',
                 'selesai' => '10:00',
-                'lat'     => -8.13484147,
-                'lng'     => 113.82144392,
-                'radius'  => 50,
+                'lat' => -8.13484147,
+                'lng' => 113.82144392,
+                'radius' => 50,
             ]
         ];
 
@@ -710,10 +711,10 @@ class AbsensiController extends Controller
         }
 
         $kegiatan = $configKegiatan[$hari];
-        $label    = $kegiatan['label'];
+        $label = $kegiatan['label'];
 
         /** ================= VALIDASI JAM ================= */
-        $jamMulai   = Carbon::parse("$today {$kegiatan['mulai']}");
+        $jamMulai = Carbon::parse("$today {$kegiatan['mulai']}");
         $jamSelesai = Carbon::parse("$today {$kegiatan['selesai']}");
 
         if ($now->lt($jamMulai) || $now->gt($jamSelesai)) {
@@ -755,15 +756,15 @@ class AbsensiController extends Controller
 
         /** ================= SIMPAN DATA ================= */
         Absensi::create([
-            'id_pegawai'  => $pegawai->id,
-            'tanggal'     => $today,
+            'id_pegawai' => $pegawai->id,
+            'tanggal' => $today,
             'waktu_masuk' => $now,
-            'foto_masuk'  => $fotoPath,
-            'latitude'    => $request->latitude,
-            'longitude'   => $request->longitude,
-            'status'      => 'hadir',
-            'keterangan'  => $keterangan,
-            'shift_id'    => null
+            'foto_masuk' => $fotoPath,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'status' => 'hadir',
+            'keterangan' => $keterangan,
+            'shift_id' => null
         ]);
 
         return response()->json([
@@ -790,17 +791,19 @@ class AbsensiController extends Controller
             $menit <= 30 => 'TL1',
             $menit <= 60 => 'TL2',
             $menit <= 90 => 'TL3',
-            default      => 'TL4',
+            default => 'TL4',
         };
     }
     public function update(Request $request, $id)
     {
         /** ================= VALIDASI ================= */
         $request->validate([
-            'waktu_masuk'  => 'nullable|date_format:Y-m-d\TH:i',
+            'waktu_masuk' => 'nullable|date_format:Y-m-d\TH:i',
+            'foto_masuk' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
             'waktu_pulang' => 'nullable|date_format:Y-m-d\TH:i',
-            'alasan_edit'  => 'required|string|min:5',
-            'shift_id'     => 'nullable|exists:jam_kerja,id',
+            'foto_pulang' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'alasan_edit' => 'required|string|min:5',
+            'shift_id' => 'nullable|exists:jam_kerja,id',
         ]);
 
         /** ================= AUTH ADMIN ================= */
@@ -816,8 +819,8 @@ class AbsensiController extends Controller
         /** ================= PREPARE DATA ================= */
         $dataUpdate = [
             'alasan_edit' => $request->alasan_edit,
-            'edited_by'   => auth()->id(),
-            'edited_at'   => now(),
+            'edited_by' => auth()->id(),
+            'edited_at' => now(),
         ];
 
         // ⛳ HANDLE SHIFT
@@ -834,6 +837,13 @@ class AbsensiController extends Controller
             )->format('Y-m-d H:i:s');
         }
 
+        /** ================= FOTO MASUK ================= */
+        if ($request->hasFile('foto_masuk')) {
+            $dataUpdate['foto_masuk'] = $request
+                ->file('foto_masuk')
+                ->store('absensi_foto', 'public');
+        }
+
         /** ================= WAKTU PULANG ================= */
         if ($request->filled('waktu_pulang')) {
             $dataUpdate['waktu_pulang'] = Carbon::createFromFormat(
@@ -841,6 +851,13 @@ class AbsensiController extends Controller
                 $request->waktu_pulang,
                 'Asia/Jakarta'
             )->format('Y-m-d H:i:s');
+        }
+
+        /** ================= FOTO PULANG ================= */
+        if ($request->hasFile('foto_pulang')) {
+            $dataUpdate['foto_pulang'] = $request
+                ->file('foto_pulang')
+                ->store('absensi_foto', 'public');
         }
 
         /** ================= UPDATE ABSENSI ================= */
@@ -858,21 +875,21 @@ class AbsensiController extends Controller
 
         /** ================= RESPONSE ================= */
         return response()->json([
-            'success'       => true,
-            'message'       => 'Data absensi & shift pegawai berhasil diperbarui',
-            'waktu_masuk'   => $absensi->waktu_masuk
+            'success' => true,
+            'message' => 'Data absensi & shift pegawai berhasil diperbarui',
+            'waktu_masuk' => $absensi->waktu_masuk
                 ? Carbon::parse($absensi->waktu_masuk)->format('H:i')
                 : '-',
-            'waktu_pulang'  => $absensi->waktu_pulang
+            'waktu_pulang' => $absensi->waktu_pulang
                 ? Carbon::parse($absensi->waktu_pulang)->format('H:i')
                 : '-',
-            'alasan_edit'   => $absensi->alasan_edit,
-            'edited_by'     => $absensi->editor->name ?? '-',
-            'edited_at'     => $absensi->edited_at
+            'alasan_edit' => $absensi->alasan_edit,
+            'edited_by' => $absensi->editor->name ?? '-',
+            'edited_at' => $absensi->edited_at
                 ? Carbon::parse($absensi->edited_at)->format('d-m-Y H:i')
                 : '-',
-            'shift_id'      => $absensi->shift_id,
-            'shift_nama'    => $absensi->shift
+            'shift_id' => $absensi->shift_id,
+            'shift_nama' => $absensi->shift
                 ? $absensi->shift->nama_jam_kerja
                 : '-',
         ]);
@@ -899,8 +916,8 @@ class AbsensiController extends Controller
 
         $pegawai->load(['jabatan', 'lokasi', 'jamKerja']);
 
-        $start  = Carbon::create($tahunAktif, $bulanAktif, 1);
-        $end    = $start->copy()->endOfMonth();
+        $start = Carbon::create($tahunAktif, $bulanAktif, 1);
+        $end = $start->copy()->endOfMonth();
         $period = CarbonPeriod::create($start, $end);
 
         $absensiDb = Absensi::with('editor')
@@ -918,15 +935,15 @@ class AbsensiController extends Controller
             if (isset($absensiDb[$tgl])) {
                 $absensi[] = $absensiDb[$tgl];
             } else {
-                $absensi[] = (object)[
-                    'tanggal'       => $tgl,
-                    'waktu_masuk'   => null,
-                    'waktu_pulang'  => null,
-                    'status'        => 'belum_hadir',
-                    'alasan_edit'   => null,
-                    'edited_by'     => null,
-                    'edited_at'     => null,
-                    'keterangan'    => null,
+                $absensi[] = (object) [
+                    'tanggal' => $tgl,
+                    'waktu_masuk' => null,
+                    'waktu_pulang' => null,
+                    'status' => 'belum_hadir',
+                    'alasan_edit' => null,
+                    'edited_by' => null,
+                    'edited_at' => null,
+                    'keterangan' => null,
                     'edited_by_name' => '-',
                 ];
             }
