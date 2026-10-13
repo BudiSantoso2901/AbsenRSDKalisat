@@ -111,13 +111,15 @@
                                     @if ($isAdmin && $isHadir && $hasMasuk)
                                         <button class="btn btn-sm btn-outline-primary"
                                             onclick="openEditWaktuModal(
-       {{ $row->id }},
+    {{ $row->id }},
     '{{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('Y-m-d\TH:i') : '' }}',
     '{{ $row->waktu_pulang ? \Carbon\Carbon::parse($row->waktu_pulang)->format('Y-m-d\TH:i') : '' }}',
     '{{ $row->alasan_edit ?? '' }}',
     '{{ $row->edited_by_name ?? '-' }}',
     '{{ $row->edited_at ? \Carbon\Carbon::parse($row->edited_at)->format('d-m-Y H:i') : '-' }}',
-    {{ $row->shift_id ?? 'null' }}
+    {{ $row->shift_id ?? 'null' }},
+    '{{ $row->foto_masuk ?? '' }}',
+    '{{ $row->foto_pulang ?? '' }}'
 
     )">
                                             {{ $row->waktu_masuk ? \Carbon\Carbon::parse($row->waktu_masuk)->format('H:i') : '-' }}
@@ -228,7 +230,7 @@
                 <div class="modal-content">
 
                     <div class="modal-header py-2">
-                        <h6 class="modal-title">Edit Waktu Masuk</h6>
+                        <h6 class="modal-title">Edit Data Absensi</h6>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
@@ -239,12 +241,62 @@
                             <label class="form-label">Waktu Masuk</label>
                             <input type="datetime-local" class="form-control" id="edit-waktu-masuk" name="waktu_masuk"
                                 step="60">
-
                         </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Edit Foto Masuk</label>
+
+                            <div class="input-group">
+                                <label for="edit-foto-masuk"
+                                    class="btn btn-outline-secondary mb-0 px-3 d-flex align-items-center justify-content-center"
+                                    title="Pilih foto">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+
+                                        <path d="M3 6h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" />
+                                        <path d="M3 10h18" />
+                                    </svg>
+
+                                </label>
+
+                                <input type="text" class="form-control" id="nama-foto-masuk" readonly>
+
+                                <input type="file" id="edit-foto-masuk" name="foto_masuk" accept="image/*"
+                                    class="d-none">
+                            </div>
+                        </div>
+
                         <div class="mb-2">
                             <label class="form-label">Waktu Pulang</label>
                             <input type="datetime-local" class="form-control" id="edit-waktu-pulang" name="waktu_pulang"
                                 step="60">
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Edit Foto Pulang</label>
+
+                            <div class="input-group">
+                                <label for="edit-foto-pulang"
+                                    class="btn btn-outline-secondary mb-0 px-3 d-flex align-items-center justify-content-center"
+                                    title="Pilih foto">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+
+                                        <path d="M3 6h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" />
+                                        <path d="M3 10h18" />
+                                    </svg>
+
+                                </label>
+
+                                <input type="text" class="form-control" id="nama-foto-pulang" readonly>
+
+                                <input type="file" id="edit-foto-pulang" name="foto_pulang" accept="image/*"
+                                    class="d-none">
+                            </div>
                         </div>
                         <div class="mb-2">
                             <label class="form-label">Alasan Edit <span class="text-danger">*</span></label>
@@ -254,7 +306,7 @@
                             <label class="form-label">Shift</label>
                             <select class="form-control" id="edit-shift" name="shift_id">
                                 <option value="">Pilih Shift</option>
-                                 @foreach ($shifts as $shift)
+                                @foreach ($shifts as $shift)
                                     <option value="{{ $shift['id'] }}">{{ $shift['nama'] }}</option>
                                 @endforeach
                             </select>
@@ -371,7 +423,40 @@
             return datetime.replace(' ', 'T').slice(0, 16);
         }
 
-        function openEditWaktuModal(id, waktuMasuk, waktuPulang, alasan, editedBy, editedAt, shift_id) {
+        function pendekkanNamaFile(filename, maxLength = 25) {
+            if (!filename) {
+                return 'Belum ada file';
+            }
+
+            if (filename.length <= maxLength) {
+                return filename;
+            }
+
+            const dotIndex = filename.lastIndexOf('.');
+
+            const extension = dotIndex !== -1 ?
+                filename.slice(dotIndex) :
+                '';
+
+            const nama = dotIndex !== -1 ?
+                filename.slice(0, dotIndex) :
+                filename;
+
+            const tersedia = maxLength - extension.length - 3;
+
+            const kiri = Math.ceil(tersedia / 2);
+            const kanan = Math.floor(tersedia / 2);
+
+            return (
+                nama.slice(0, kiri) +
+                '...' +
+                nama.slice(-kanan) +
+                extension
+            );
+        }
+
+        function openEditWaktuModal(id, waktuMasuk, waktuPulang, alasan, editedBy, editedAt, shift_id, fotoMasuk,
+            fotoPulang) {
 
             document.getElementById('edit-id').value = id;
 
@@ -381,15 +466,69 @@
             document.getElementById('edit-by').innerText = editedBy || '-';
             document.getElementById('edit-at').innerText = editedAt || '-';
             document.getElementById('edit-shift').value = String(shift_id || '');
+            // reset file input
+            document.getElementById('edit-foto-masuk').value = '';
+            document.getElementById('edit-foto-pulang').value = '';
+            // tampilkan nama file yang saat ini tersimpan
+            const namaFotoMasuk = fotoMasuk ?
+                fotoMasuk.split('/').pop() :
+                '';
+
+            const namaFotoPulang = fotoPulang ?
+                fotoPulang.split('/').pop() :
+                '';
+
+            document.getElementById('nama-foto-masuk').value =
+                pendekkanNamaFile(namaFotoMasuk);
+
+            document.getElementById('nama-foto-masuk').title =
+                namaFotoMasuk;
+
+            document.getElementById('nama-foto-pulang').value =
+                pendekkanNamaFile(namaFotoPulang);
+
+            document.getElementById('nama-foto-pulang').title =
+                namaFotoPulang;
+
             const modal = new bootstrap.Modal(document.getElementById('modalEditWaktu'));
             modal.show();
         }
+
+        document
+            .getElementById('edit-foto-masuk')
+            .addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const nama = this.files[0].name;
+
+                    document.getElementById('nama-foto-masuk').value =
+                        pendekkanNamaFile(nama);
+
+                    document.getElementById('nama-foto-masuk').title =
+                        nama;
+                }
+            });
+
+        document
+            .getElementById('edit-foto-pulang')
+            .addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const nama = this.files[0].name;
+
+                    document.getElementById('nama-foto-pulang').value =
+                        pendekkanNamaFile(nama);
+
+                    document.getElementById('nama-foto-pulang').title =
+                        nama;
+                }
+            });
 
         function simpanEditWaktu() {
             const id = document.getElementById('edit-id').value;
             const waktuMasuk = document.getElementById('edit-waktu-masuk').value;
             const waktuPulang = document.getElementById('edit-waktu-pulang').value;
             const alasan = document.getElementById('edit-alasan').value.trim();
+            const fotoMasuk = document.getElementById('edit-foto-masuk').files[0];
+            const fotoPulang = document.getElementById('edit-foto-pulang').files[0];
             const shift_id = document.getElementById('edit-shift').value;
             if (!alasan || alasan.length < 5) {
                 const modalEl = document.getElementById('modalEditWaktu');
@@ -407,7 +546,6 @@
 
                 return;
             }
-
 
             // ⬅️ TUTUP MODAL DAHULU
             const modalEl = document.getElementById('modalEditWaktu');
@@ -434,26 +572,38 @@
                         didOpen: () => Swal.showLoading()
                     });
 
+                    const formData = new FormData();
+
+                    formData.append('_method', 'PUT');
+                    formData.append('waktu_masuk', waktuMasuk || '');
+                    formData.append('waktu_pulang', waktuPulang || '');
+                    formData.append('alasan_edit', alasan);
+                    formData.append('shift_id', shift_id || '');
+
+                    if (fotoMasuk) {
+                        formData.append('foto_masuk', fotoMasuk);
+                    }
+
+                    if (fotoPulang) {
+                        formData.append('foto_pulang', fotoPulang);
+                    }
+
                     fetch(`{{ route('absensi.inline-update', ':id') }}`.replace(':id', id), {
-                            method: 'PUT',
+                            method: 'POST',
+
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json',
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({
-                                waktu_masuk: waktuMasuk || null,
-                                waktu_pulang: waktuPulang || null,
-                                alasan_edit: alasan,
-                                shift_id: shift_id || null
-                            })
+
+                            body: formData
                         })
                         .then(res => res.json())
                         .then(() => {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
-                                text: 'Waktu masuk diperbarui',
+                                text: 'Data absensi berhasil diperbarui',
                                 timer: 1500,
                                 showConfirmButton: false
                             }).then(() => location.reload());
