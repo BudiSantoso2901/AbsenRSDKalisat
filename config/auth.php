@@ -44,6 +44,10 @@ return [
             'driver' => 'session',
             'provider' => 'pegawais',
         ],
+        'mobil_cinta' => [
+            'driver' => 'session',
+            'provider' => 'mobil_cinta_accounts',
+        ],
     ],
 
     /*
@@ -71,6 +75,10 @@ return [
         'pegawais' => [
             'driver' => 'eloquent',
             'model' => App\Models\Pegawai::class,
+        ],
+        'mobil_cinta_accounts' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\MobilCinta\Account::class,
         ],
         // 'users' => [
         //     'driver' => 'database',
