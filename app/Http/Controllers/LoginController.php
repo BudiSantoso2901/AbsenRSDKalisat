@@ -145,6 +145,7 @@ class LoginController extends Controller
     */
         Auth::guard('web')->logout();
         Auth::guard('pegawai')->logout();
+        Auth::guard('mobil_cinta')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -210,6 +211,7 @@ class LoginController extends Controller
     {
         Auth::guard('web')->logout();
         Auth::guard('pegawai')->logout();
+        Auth::guard('mobil_cinta')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

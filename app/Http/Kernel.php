@@ -66,5 +66,7 @@ class Kernel extends HttpKernel
         'check-access' => \App\Http\Middleware\MultiAuthUser::class,
         'admin.auth' => \App\Http\Middleware\AdminAuth::class,
         'pegawai.auth' => \App\Http\Middleware\PegawaiAuth::class,
+        'mobil-cinta.auth' => \App\Http\Middleware\MobilCinta\AuthenticateMobilCinta::class,
+        'mobil-cinta.role' => \App\Http\Middleware\MobilCinta\EnsureMobilCintaRole::class,
     ];
 }

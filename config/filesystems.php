@@ -36,6 +36,13 @@ return [
             'throw' => false,
         ],
 
+        'mobil_cinta_private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/mobil-cinta-private'),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
